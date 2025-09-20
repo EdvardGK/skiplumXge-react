@@ -118,34 +118,83 @@ export async function GET(request: NextRequest) {
 
     // Sort addresses to prioritize exact matches and better relevance
     const sortedAddresses = validAddresses.sort((a, b) => {
-      const queryLower = query.toLowerCase();
-      const aText = a.adressetekst.toLowerCase();
-      const bText = b.adressetekst.toLowerCase();
+      const queryLower = query.toLowerCase().trim();
+      const aText = a.adressetekst.toLowerCase().trim();
+      const bText = b.adressetekst.toLowerCase().trim();
 
-      // Check for exact matches first
-      const aExact = aText === queryLower;
-      const bExact = bText === queryLower;
+      // Normalize for better matching (remove extra spaces, handle special chars)
+      const normalizeText = (text: string) => text.replace(/\s+/g, ' ').trim();
+      const queryNormalized = normalizeText(queryLower);
+      const aNormalized = normalizeText(aText);
+      const bNormalized = normalizeText(bText);
+
+      // Debug logging for the specific query
+      if (queryLower.includes('jørgen') && queryLower.includes('2')) {
+        if (aText.includes('2') && !aText.includes('20')) {
+          console.log(`Checking address: "${aText}" vs query: "${queryLower}"`);
+        }
+      }
+
+      // 1. EXACT MATCHES get highest priority
+      const aExact = aNormalized === queryNormalized;
+      const bExact = bNormalized === queryNormalized;
 
       if (aExact && !bExact) return -1;
       if (!aExact && bExact) return 1;
 
-      // Then check if it starts with the query
-      const aStarts = aText.startsWith(queryLower);
-      const bStarts = bText.startsWith(queryLower);
+      // 2. STARTS WITH full query (high priority)
+      const aStartsWithQuery = aNormalized.startsWith(queryNormalized);
+      const bStartsWithQuery = bNormalized.startsWith(queryNormalized);
 
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
+      if (aStartsWithQuery && !bStartsWithQuery) return -1;
+      if (!aStartsWithQuery && bStartsWithQuery) return 1;
 
-      // For similar matches, sort by string similarity
-      // Prefer addresses where the street name exactly matches what was typed
-      const aStreetMatch = a.streetName?.toLowerCase() === query.split(/\s+/)[0]?.toLowerCase();
-      const bStreetMatch = b.streetName?.toLowerCase() === query.split(/\s+/)[0]?.toLowerCase();
+      // 3. Extract street name and house number for better matching
+      const parseAddress = (addr: string) => {
+        const parts = addr.split(/\s+/);
+        const numberIndex = parts.findIndex(part => /^\d/.test(part));
+
+        if (numberIndex > 0) {
+          return {
+            street: parts.slice(0, numberIndex).join(' '),
+            number: parts.slice(numberIndex).join(' ')
+          };
+        }
+        return { street: addr, number: '' };
+      };
+
+      const queryParsed = parseAddress(queryNormalized);
+      const aParsed = parseAddress(aNormalized);
+      const bParsed = parseAddress(bNormalized);
+
+      // 4. STREET + NUMBER exact match (very high priority)
+      const aStreetNumberMatch = aParsed.street === queryParsed.street && aParsed.number === queryParsed.number;
+      const bStreetNumberMatch = bParsed.street === queryParsed.street && bParsed.number === queryParsed.number;
+
+      if (aStreetNumberMatch && !bStreetNumberMatch) return -1;
+      if (!aStreetNumberMatch && bStreetNumberMatch) return 1;
+
+      // 5. STREET exact match (medium priority)
+      const aStreetMatch = aParsed.street === queryParsed.street;
+      const bStreetMatch = bParsed.street === queryParsed.street;
 
       if (aStreetMatch && !bStreetMatch) return -1;
       if (!aStreetMatch && bStreetMatch) return 1;
 
-      // Finally, sort alphabetically by municipality for identical addresses
-      return `${a.adressetekst} ${a.municipality}`.localeCompare(`${b.adressetekst} ${b.municipality}`);
+      // 6. CONTAINS all query words (lower priority)
+      const queryWords = queryNormalized.split(/\s+/);
+      const aContainsAll = queryWords.every(word => aNormalized.includes(word));
+      const bContainsAll = queryWords.every(word => bNormalized.includes(word));
+
+      if (aContainsAll && !bContainsAll) return -1;
+      if (!aContainsAll && bContainsAll) return 1;
+
+      // 7. String length (shorter addresses first - more specific)
+      const lengthDiff = aText.length - bText.length;
+      if (Math.abs(lengthDiff) > 10) return lengthDiff;
+
+      // 8. Finally, sort alphabetically
+      return aText.localeCompare(bText);
     });
 
     // Return the transformed and sorted addresses

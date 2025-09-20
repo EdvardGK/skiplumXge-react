@@ -4,22 +4,32 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar, Map } from "lucide-react";
+import { MapDataService } from "@/services/map-data.service";
+import dynamic from 'next/dynamic';
 
-interface BuildingInfo {
+// Dynamically import react-leaflet components to avoid SSR issues
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Polygon = dynamic(() => import('react-leaflet').then(mod => mod.Polygon), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+const Tooltip = dynamic(() => import('react-leaflet').then(mod => mod.Tooltip), { ssr: false });
+
+interface MapBuilding {
+  id: string;
+  type: string;
+  coordinates: [number, number][];
+  area?: number;
+  levels?: number;
+  name?: string;
+}
+
+interface EnovaCertificate {
   bygningsnummer: string;
   energyClass?: string;
   buildingCategory?: string;
-  heatedArea?: number;
   energyConsumption?: number;
   constructionYear?: number;
-  isRegistered: boolean;
-}
-
-interface BuildingDetectionResult {
-  hasMultipleBuildings: boolean;
-  buildingCount: number;
-  buildings: BuildingInfo[];
 }
 
 export default function SelectBuildingPage() {
@@ -36,55 +46,101 @@ export default function SelectBuildingPage() {
   const gnr = searchParams.get('gnr');
   const bnr = searchParams.get('bnr');
 
-  const [buildingData, setBuildingData] = useState<BuildingDetectionResult | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
+  const [mapBuildings, setMapBuildings] = useState<MapBuilding[]>([]);
+  const [enovaCertificates, setEnovaCertificates] = useState<EnovaCertificate[]>([]);
+  const [isLoadingMap, setIsLoadingMap] = useState(true);
+  const [isLoadingEnova, setIsLoadingEnova] = useState(true);
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
+  const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+  const [showCertificates, setShowCertificates] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([59.9139, 10.7522]); // Oslo fallback
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [mapRef, setMapRef] = useState<any>(null);
+  const [currentZoom, setCurrentZoom] = useState(19);
 
-  // Fetch building data using new Enova API
+  // Fetch map buildings and Enova certificates in parallel
   useEffect(() => {
-    const fetchBuildings = async () => {
-      if (!address || !gnr || !bnr) {
+    const fetchData = async () => {
+      if (!address || !lat || !lon) {
         router.push('/');
         return;
       }
 
-      setIsLoading(true);
-
+      // Fetch map buildings
+      setIsLoadingMap(true);
       try {
-        const response = await fetch(`/api/buildings/detect?gnr=${gnr}&bnr=${bnr}&address=${encodeURIComponent(address)}`);
+        const buildings = await MapDataService.fetchNearbyBuildings(
+          parseFloat(lat),
+          parseFloat(lon),
+          100 // 100m radius for building selection
+        );
+        setMapBuildings(buildings);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch building data');
-        }
-
-        const data = await response.json();
-        setBuildingData(data);
-
-        // If only one building, auto-select it
-        if (!data.hasMultipleBuildings && data.buildings.length === 1) {
-          setSelectedBuilding(data.buildings[0].bygningsnummer);
-        }
+        // Simple: just center on address coordinates
+        setMapCenter([parseFloat(lat), parseFloat(lon)]);
       } catch (error) {
-        console.error('Failed to fetch building data:', error);
-        // Fallback to building form
-        const params = new URLSearchParams({
-          address: address,
-          lat: lat || '',
-          lon: lon || '',
-          municipality: municipality || '',
-          municipalityNumber: municipalityNumber || '',
-          postalCode: postalCode || '',
-          gnr,
-          bnr,
-        });
-        router.push(`/building-data?${params.toString()}`);
+        console.error('Failed to fetch map buildings:', error);
+        setMapBuildings([]);
       } finally {
-        setIsLoading(false);
+        setIsLoadingMap(false);
+      }
+
+      // Fetch Enova certificates if we have gnr/bnr
+      if (gnr && bnr) {
+        setIsLoadingEnova(true);
+        try {
+          const response = await fetch(`/api/buildings/detect?gnr=${gnr}&bnr=${bnr}&address=${encodeURIComponent(address)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setEnovaCertificates(data.buildings || []);
+          }
+        } catch (error) {
+          console.error('Failed to fetch Enova certificates:', error);
+          setEnovaCertificates([]);
+        } finally {
+          setIsLoadingEnova(false);
+        }
+      } else {
+        setIsLoadingEnova(false);
       }
     };
 
-    fetchBuildings();
-  }, [address, gnr, bnr, lat, lon, municipality, municipalityNumber, postalCode, router]);
+    fetchData();
+  }, [address, lat, lon, gnr, bnr, router]);
+
+  // Helper function to get building number for display
+  const getBuildingNumber = (building: MapBuilding) => {
+    const index = mapBuildings.findIndex(b => b.id === building.id);
+    return index + 1;
+  };
+
+
+  // Helper function to create numbered building markers
+  const createBuildingIcon = async (buildingNumber: number, isSelected: boolean = false) => {
+    if (typeof window === 'undefined') return null;
+
+    const L = await import('leaflet');
+
+    const iconHtml = `
+      <div class="relative">
+        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 transition-all duration-300 ${
+          isSelected
+            ? 'bg-cyan-400 border-cyan-300 scale-125 shadow-lg shadow-cyan-400/50'
+            : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+        }">
+          ${buildingNumber}
+        </div>
+        ${isSelected ? '<div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-cyan-400 rotate-45"></div>' : ''}
+      </div>
+    `;
+
+    return L.divIcon({
+      html: iconHtml,
+      className: 'custom-building-marker',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+    });
+  };
 
   // Color coding for energy classes
   const getEnergyClassColor = (energyClass?: string) => {
@@ -117,12 +173,55 @@ export default function SelectBuildingPage() {
     return colorMap[energyClass.toUpperCase()] || 'bg-gray-600 text-white border-gray-500';
   };
 
-  const handleBuildingSelect = (buildingNumber: string) => {
-    setSelectedBuilding(buildingNumber);
+  const handleMapBuildingSelect = (buildingId: string) => {
+    setSelectedBuildingId(buildingId);
+    // Focus map on the newly selected building
+    setTimeout(() => focusOnBuilding(buildingId), 100);
   };
 
-  const handleContinue = () => {
-    if (!selectedBuilding) return;
+  // Function to focus map on a specific building
+  const focusOnBuilding = (buildingId: string) => {
+    if (!buildingId || !mapRef) return;
+
+    const building = mapBuildings.find(b => b.id === buildingId);
+    if (building && building.coordinates && building.coordinates.length > 0) {
+      // Calculate bounds of the building polygon
+      const coords = building.coordinates;
+      let minLat = Infinity, maxLat = -Infinity;
+      let minLon = Infinity, maxLon = -Infinity;
+
+      coords.forEach(([lat, lon]) => {
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+        minLon = Math.min(minLon, lon);
+        maxLon = Math.max(maxLon, lon);
+      });
+
+      // Add small padding around the building (5% margin)
+      const latRange = maxLat - minLat;
+      const lonRange = maxLon - minLon;
+      const padding = 0.05; // 5% padding
+
+      const paddedBounds = [
+        [minLat - (latRange * padding), minLon - (lonRange * padding)],
+        [maxLat + (latRange * padding), maxLon + (lonRange * padding)]
+      ];
+
+      // Fit the map to the building bounds with animation
+      mapRef.fitBounds(paddedBounds, {
+        animate: true,
+        duration: 1.0,
+        maxZoom: 20 // Don't zoom closer than this
+      });
+    }
+  };
+
+  const handleCertificateSelect = (certificateId: string | null) => {
+    setSelectedCertificate(certificateId);
+  };
+
+  const proceedToForm = () => {
+    if (!selectedBuildingId) return;
 
     const params = new URLSearchParams({
       address: address || '',
@@ -131,41 +230,50 @@ export default function SelectBuildingPage() {
       municipality: municipality || '',
       municipalityNumber: municipalityNumber || '',
       postalCode: postalCode || '',
-      gnr: gnr || '',
-      bnr: bnr || '',
-      bygningsnummer: selectedBuilding,
+      ...(gnr && { gnr }),
+      ...(bnr && { bnr }),
+      buildingId: selectedBuildingId,
+      ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
     });
 
     router.push(`/building-data?${params.toString()}`);
   };
 
-  if (isLoading) {
+  const handleBack = () => {
+    if (showCertificates) {
+      setShowCertificates(false);
+      setSelectedCertificate(null);
+    } else {
+      router.push('/');
+    }
+  };
+
+  if (isLoadingMap || isLoadingEnova) {
     return (
-      <div className="min-h-screen bg-[#0c0c0e] relative overflow-hidden">
+      <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
           <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
         </div>
 
-        <div className="relative z-10 container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center">
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <div className="text-center">
             <Building className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
-            <h1 className="text-2xl font-bold text-white mb-2">Søker etter bygninger...</h1>
-            <p className="text-slate-400">Sjekker Enova-registeret for denne eiendommen</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Laster bygningsdata...</h1>
+            <p className="text-slate-400">
+              {isLoadingMap && isLoadingEnova && "Henter kart og energisertifikater"}
+              {isLoadingMap && !isLoadingEnova && "Henter kartdata"}
+              {!isLoadingMap && isLoadingEnova && "Henter energisertifikater"}
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!buildingData || buildingData.buildings.length === 0) {
-    // No buildings found - redirect handled in useEffect
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-[#0c0c0e] relative overflow-hidden">
+    <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
@@ -173,178 +281,493 @@ export default function SelectBuildingPage() {
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+      <div className="relative z-10 h-screen flex flex-col">
+        {/* Minimal Header */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/20 backdrop-blur-lg">
           <Button
             variant="ghost"
-            onClick={() => router.push('/')}
+            onClick={handleBack}
             className="text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Tilbake til søk
+            {showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
           </Button>
-        </div>
 
-        {/* Page Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">Velg bygning</h1>
-          <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-            {buildingData.hasMultipleBuildings
-              ? `Vi fant ${buildingData.buildingCount} bygninger registrert på denne eiendommen. Velg riktig bygning.`
-              : 'Bekreft bygningen du vil analysere.'
-            }
-          </p>
-        </div>
-
-        {/* Address Info */}
-        <Card className="bg-white/5 backdrop-blur-lg border-white/10 mb-8 max-w-2xl mx-auto">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 text-white">
-              <MapPin className="w-5 h-5 text-cyan-400" />
-              <div>
-                <div className="font-medium">{address}</div>
-                <div className="text-slate-400 text-sm">
-                  {municipality} • {postalCode}
-                </div>
-                <div className="text-slate-500 text-xs mt-1">
-                  Gnr: {gnr} • Bnr: {bnr}
-                </div>
-              </div>
+          <div className="flex items-center gap-3 text-white">
+            <MapPin className="w-4 h-4 text-cyan-400" />
+            <div className="text-sm">
+              <span className="font-medium">{address}</span>
+              <span className="text-slate-400 ml-2">{municipality}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Color-Coded Building Selection */}
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-white/5 backdrop-blur-lg border-white/10">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Building className="w-5 h-5 text-cyan-400" />
-                Registrerte bygninger
-              </CardTitle>
-              <CardDescription className="text-slate-300">
-                Klikk på bygningen du vil analysere. Informasjon hentet fra Enova-registeret.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {buildingData.buildings.map((building) => {
-                const isSelected = selectedBuilding === building.bygningsnummer;
-                const energyColor = getEnergyClassColor(building.energyClass);
-                const badgeColor = getEnergyClassBadgeColor(building.energyClass);
+          {selectedBuildingId && !showCertificates && (
+            <Button
+              onClick={() => {
+                if (enovaCertificates.length > 0) {
+                  setShowCertificates(true);
+                } else {
+                  proceedToForm();
+                }
+              }}
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+            >
+              Fortsett
+            </Button>
+          )}
+          {showCertificates && (
+            <Button
+              onClick={proceedToForm}
+              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+            >
+              Fortsett med valgt bygning
+            </Button>
+          )}
+        </div>
 
-                return (
-                  <Card
-                    key={building.bygningsnummer}
-                    className={`cursor-pointer transition-all duration-300 ${
-                      isSelected
-                        ? 'bg-cyan-400/20 border-cyan-400/50 scale-[1.02]'
-                        : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                    }`}
-                    onClick={() => handleBuildingSelect(building.bygningsnummer)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {/* Building Number Badge */}
-                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                            isSelected ? 'bg-cyan-400 text-slate-900' : 'bg-slate-700 text-white'
-                          }`}>
-                            {building.bygningsnummer}
-                          </div>
+        {/* Interactive Map + Building/Certificate Selection */}
+        {(
+          <div className="flex-1 flex overflow-hidden">
+            {mapBuildings.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Card className="bg-white/5 backdrop-blur-lg border-white/10 max-w-md">
+                  <CardContent className="text-center py-8 text-slate-400">
+                    <Building className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <h3 className="text-white text-lg font-semibold mb-2">Ingen bygninger funnet</h3>
+                    <p className="mb-4">Ingen bygningsdata tilgjengelig for denne adressen.</p>
+                    <Button
+                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                      onClick={proceedToForm}
+                    >
+                      Fortsett uten kartdata
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                {/* Interactive Map - Takes most of the screen */}
+                <div className="flex-1 relative">
+                  {!isMapReady && (
+                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-10">
+                      <div className="text-white text-sm">Laster kart...</div>
+                    </div>
+                  )}
+                  <div className="w-full h-full bg-slate-900">
+                    {typeof window !== 'undefined' && (
+                      <MapContainer
+                        center={mapCenter}
+                        zoom={19}
+                        maxZoom={20}
+                        minZoom={10}
+                        style={{ height: '100%', width: '100%' }}
+                        zoomControl={true}
+                        attributionControl={false}
+                        whenReady={() => setIsMapReady(true)}
+                        ref={setMapRef}
+                        onZoomEnd={(e) => {
+                          const newZoom = e.target.getZoom();
+                          console.log('Zoom changed to:', newZoom);
+                          setCurrentZoom(newZoom);
+                        }}
+                        scrollWheelZoom={true}
+                        zoomDelta={0.5}
+                        zoomSnap={0.25}
+                        wheelDebounceTime={100}
+                        wheelPxPerZoomLevel={120}
+                      >
+                        <TileLayer
+                          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                          maxZoom={20}
+                          minZoom={10}
+                        />
 
-                          {/* Building Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="text-white font-semibold">
-                                Bygning {building.bygningsnummer}
-                              </h3>
+                        {mapBuildings.map((building) => (
+                          <BuildingMarker
+                            key={building.id}
+                            building={building}
+                            buildingNumber={getBuildingNumber(building)}
+                            isSelected={selectedBuildingId === building.id}
+                            onSelect={() => handleMapBuildingSelect(building.id)}
+                            showCertificates={showCertificates}
+                            enovaCertificates={enovaCertificates}
+                            selectedBuildingId={selectedBuildingId}
+                            currentZoom={currentZoom}
+                            selectedCertificate={selectedCertificate}
+                          />
+                        ))}
+                      </MapContainer>
+                    )}
+                  </div>
+                </div>
 
-                              {/* Energy Class Badge */}
-                              {building.energyClass && (
-                                <div className={`px-2 py-1 rounded-full text-xs font-bold border ${badgeColor}`}>
-                                  Klasse {building.energyClass}
+                {/* Building/Certificate List - Right sidebar */}
+                <div className="w-80 border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col">
+                  <div className="p-4 border-b border-white/10">
+                    {!showCertificates ? (
+                      <>
+                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                          <Building className="w-5 h-5 text-cyan-400" />
+                          Bygninger ({mapBuildings.length})
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                          Klikk bygning i kartet eller listen
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                          <Zap className="w-5 h-5 text-cyan-400" />
+                          Energisertifikater ({enovaCertificates.length})
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                          Velg sertifikat eller fortsett uten
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {!showCertificates ? (
+                      // Building List - Sort selected building to top
+                      [...mapBuildings]
+                        .sort((a, b) => {
+                          if (selectedBuildingId === a.id) return -1;
+                          if (selectedBuildingId === b.id) return 1;
+                          return 0;
+                        })
+                        .map((building) => {
+                        const isSelected = selectedBuildingId === building.id;
+                        const originalIndex = mapBuildings.findIndex(b => b.id === building.id);
+                        const buildingNumber = originalIndex + 1;
+
+                        return (
+                          <Card
+                            key={building.id}
+                            className={`cursor-pointer transition-all duration-300 ${
+                              isSelected
+                                ? 'bg-fuchsia-500/20 border-fuchsia-400/50 scale-[1.02]'
+                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                            }`}
+                            onClick={() => handleMapBuildingSelect(building.id)}
+                          >
+                            <CardContent className="p-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 ${
+                                  isSelected
+                                    ? 'bg-fuchsia-500 border-fuchsia-400 text-white'
+                                    : 'bg-slate-700 border-slate-600 text-white'
+                                }`}>
+                                  {buildingNumber}
                                 </div>
-                              )}
 
-                              {/* Registration Status */}
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                building.isRegistered
-                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                  : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-white font-medium text-sm truncate">
+                                      {building.name || `Bygning ${buildingNumber}`}
+                                    </h4>
+                                    {isSelected && (
+                                      <CheckCircle className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
+                                    )}
+                                  </div>
+
+                                  <div className="text-xs text-slate-300 space-y-1">
+                                    {building.area && (
+                                      <div>{Math.round(building.area)} m²</div>
+                                    )}
+                                    {building.type && (
+                                      <div className="capitalize">{building.type}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    ) : (
+                      // Certificate List
+                      <>
+                        {/* Option to proceed without certificate */}
+                        <Card
+                          className={`cursor-pointer transition-all duration-300 ${
+                            selectedCertificate === null
+                              ? 'bg-cyan-400/20 border-cyan-400/50 scale-[1.02]'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                          }`}
+                          onClick={() => handleCertificateSelect(null)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${
+                                selectedCertificate === null ? 'bg-cyan-400 text-slate-900' : 'bg-slate-700 text-white'
                               }`}>
-                                {building.isRegistered ? '✓ Registrert' : 'Ikke registrert'}
+                                ✕
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="text-white font-medium text-sm">Ikke bruk sertifikat</h4>
+                                  {selectedCertificate === null && (
+                                    <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-slate-400 text-xs">Fyll ut energidata manuelt</p>
                               </div>
                             </div>
+                          </CardContent>
+                        </Card>
 
-                            {/* Building Details */}
-                            <div className="flex items-center gap-4 text-sm text-slate-300">
-                              {building.buildingCategory && (
-                                <div className="flex items-center gap-1">
-                                  <Home className="w-4 h-4" />
-                                  {building.buildingCategory}
+                        {/* Available certificates */}
+                        {enovaCertificates.map((cert) => {
+                          const isSelected = selectedCertificate === cert.bygningsnummer;
+                          const badgeColor = getEnergyClassBadgeColor(cert.energyClass);
+
+                          return (
+                            <Card
+                              key={cert.bygningsnummer}
+                              className={`cursor-pointer transition-all duration-300 ${
+                                isSelected
+                                  ? 'bg-cyan-400/20 border-cyan-400/50 scale-[1.02]'
+                                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                              }`}
+                              onClick={() => handleCertificateSelect(cert.bygningsnummer)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="text-white font-medium text-sm">
+                                        Bygning {cert.bygningsnummer}
+                                      </h4>
+                                      {cert.energyClass && (
+                                        <div className={`px-1.5 py-0.5 rounded text-xs font-bold border ${badgeColor}`}>
+                                          {cert.energyClass}
+                                        </div>
+                                      )}
+                                      {isSelected && (
+                                        <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                      )}
+                                    </div>
+
+                                    <div className="text-xs text-slate-300 space-y-1">
+                                      {cert.buildingCategory && (
+                                        <div className="flex items-center gap-1">
+                                          <Home className="w-3 h-3" />
+                                          {cert.buildingCategory}
+                                        </div>
+                                      )}
+                                      {cert.constructionYear && (
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="w-3 h-3" />
+                                          {cert.constructionYear}
+                                        </div>
+                                      )}
+                                      {cert.energyConsumption && (
+                                        <div className="flex items-center gap-1">
+                                          <Zap className="w-3 h-3" />
+                                          {cert.energyConsumption} kWh/år
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
-
-                              {building.heatedArea && (
-                                <div className="flex items-center gap-1">
-                                  <Building className="w-4 h-4" />
-                                  {building.heatedArea} m²
-                                </div>
-                              )}
-
-                              {building.constructionYear && (
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-4 h-4" />
-                                  {building.constructionYear}
-                                </div>
-                              )}
-
-                              {building.energyConsumption && (
-                                <div className="flex items-center gap-1">
-                                  <Zap className="w-4 h-4" />
-                                  {building.energyConsumption} kWh/år
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Selection Indicator */}
-                        {isSelected && (
-                          <CheckCircle className="w-6 h-6 text-cyan-400" />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Continue Button */}
-        {selectedBuilding && (
-          <div className="max-w-4xl mx-auto mt-8 text-center">
-            <Button
-              size="lg"
-              onClick={handleContinue}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 py-4 text-lg shadow-xl shadow-emerald-500/25"
-            >
-              <ArrowRight className="w-5 h-5 mr-2" />
-              Fortsett med bygning {selectedBuilding}
-            </Button>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {/* Help Text */}
-        <div className="text-center mt-8 text-slate-400 text-sm max-w-2xl mx-auto">
-          <p>
-            Velg bygningen som samsvarer med eiendommen du vil analysere.
-            Data hentet fra Enova energisertifikatregister og Kartverket.
-          </p>
-        </div>
       </div>
     </div>
+  );
+}
+
+// Separate component for building markers to handle dynamic icons
+interface BuildingMarkerProps {
+  building: MapBuilding;
+  buildingNumber: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  showCertificates: boolean;
+  enovaCertificates: EnovaCertificate[];
+  selectedBuildingId: string | null;
+  currentZoom: number;
+  selectedCertificate: string | null;
+}
+
+function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCertificates, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate }: BuildingMarkerProps) {
+  const [centroid, setCentroid] = useState<[number, number] | null>(null);
+  const [numberIcon, setNumberIcon] = useState<any>(null);
+
+  // Calculate polygon centroid
+  useEffect(() => {
+    if (building.coordinates && building.coordinates.length > 0) {
+      // Calculate centroid of the polygon
+      const coords = building.coordinates;
+      let x = 0, y = 0;
+
+      for (const [lat, lon] of coords) {
+        x += lat;
+        y += lon;
+      }
+
+      const centroidLat = x / coords.length;
+      const centroidLon = y / coords.length;
+      setCentroid([centroidLat, centroidLon]);
+    }
+  }, [building.coordinates]);
+
+  // Create number/grade icon for centroid
+  useEffect(() => {
+    const createNumberIcon = async () => {
+      if (typeof window === 'undefined') return;
+
+      const L = await import('leaflet');
+
+      // Determine what to display: number or energy grade
+      let displayText = buildingNumber.toString();
+      let bgColor = 'bg-slate-700 text-white';
+
+      if (showCertificates && enovaCertificates.length > 0 && building.id === selectedBuildingId) {
+        // Only show energy grade for the selected building
+        let cert = null;
+
+        if (selectedCertificate) {
+          // Find the specific selected certificate
+          cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
+        } else {
+          // If no certificate selected (user chose "Ikke bruk sertifikat"), don't show any grade
+          cert = null;
+        }
+
+        if (cert && cert.energyClass) {
+          displayText = cert.energyClass;
+          // Color code the energy grade
+          const gradeColors: Record<string, string> = {
+            'A': 'bg-green-500 text-white',
+            'B': 'bg-lime-500 text-white',
+            'C': 'bg-yellow-500 text-black',
+            'D': 'bg-orange-500 text-white',
+            'E': 'bg-red-500 text-white',
+            'F': 'bg-red-600 text-white',
+            'G': 'bg-red-700 text-white'
+          };
+          bgColor = gradeColors[cert.energyClass.toUpperCase()] || 'bg-gray-500 text-white';
+        }
+      }
+
+      // Hide numbers when zoomed out 2+ levels from starting zoom (19)
+      const shouldShowNumber = currentZoom >= 17; // 19 - 2 = 17
+
+      console.log('Current zoom:', currentZoom, 'Should show number:', shouldShowNumber);
+
+      const iconHtml = shouldShowNumber ? `
+        <div class="flex items-center justify-center w-8 h-8 rounded-full font-bold text-lg shadow-lg cursor-pointer transition-all duration-300 border-2 ${bgColor} ${
+          isSelected
+            ? 'border-fuchsia-500 scale-110'
+            : 'border-slate-600'
+        }">
+          ${displayText}
+        </div>
+      ` : `
+        <div style="display: none;"></div>
+      `;
+
+      const icon = L.divIcon({
+        html: iconHtml,
+        className: 'building-number-marker',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+
+      setNumberIcon(icon);
+    };
+
+    createNumberIcon();
+  }, [buildingNumber, isSelected, showCertificates, enovaCertificates, selectedBuildingId, building.id, currentZoom, selectedCertificate]);
+
+  if (!building.coordinates || building.coordinates.length === 0 || !centroid || !numberIcon) {
+    return null;
+  }
+
+  // Convert coordinates to Leaflet format [lat, lon]
+  const polygonCoords = building.coordinates.map(([lat, lon]) => [lat, lon] as [number, number]);
+
+  // Dashboard color palette - completely remove stroke
+  const polygonStyle = {
+    fillColor: isSelected ? '#e879f9' : '#22c55e', // Magenta for selected, Green for others
+    weight: 0, // No stroke/border
+    opacity: 0, // No stroke opacity
+    stroke: false, // Disable stroke entirely
+    fillOpacity: isSelected ? 0.8 : 0.6,
+  };
+
+  return (
+    <>
+      {/* Building Polygon */}
+      <Polygon
+        positions={polygonCoords}
+        pathOptions={polygonStyle}
+        eventHandlers={{
+          click: (e) => {
+            // Immediately blur the element to remove focus
+            e.target.getElement()?.blur();
+            // Prevent default focus behavior
+            e.originalEvent?.preventDefault();
+            // Call our selection handler
+            onSelect();
+          },
+          mouseover: (e) => {
+            const target = e.target;
+            target.setStyle({
+              fillOpacity: isSelected ? 0.9 : 0.7,
+              stroke: false,
+              weight: 0,
+            });
+          },
+          mouseout: (e) => {
+            const target = e.target;
+            target.setStyle({
+              fillOpacity: isSelected ? 0.8 : 0.6,
+              stroke: false,
+              weight: 0,
+            });
+          },
+        }}
+      >
+        <Tooltip direction="top" offset={[0, -10]} className="custom-tooltip">
+          <div className="p-2 min-w-48">
+            <h3 className={`font-bold text-sm mb-2 ${isSelected ? 'text-fuchsia-400' : 'text-emerald-400'}`}>
+              🏢 {isSelected ? 'Valgt bygning' : 'Klikk for å velge'}
+            </h3>
+            <div className="space-y-1 text-xs text-slate-300">
+              <div><strong>Bygning:</strong> {buildingNumber}</div>
+              {building.name && <div><strong>Navn:</strong> {building.name}</div>}
+              {building.type && <div><strong>Type:</strong> {building.type}</div>}
+              {building.area && <div><strong>Areal:</strong> ~{Math.round(building.area)} m²</div>}
+              {building.levels && <div><strong>Etasjer:</strong> {building.levels}</div>}
+              <div className="text-slate-400 mt-2 text-xs">Kilde: OpenStreetMap</div>
+            </div>
+          </div>
+        </Tooltip>
+      </Polygon>
+
+      {/* Number Label at Centroid */}
+      <Marker
+        position={centroid}
+        icon={numberIcon}
+        eventHandlers={{
+          click: onSelect,
+        }}
+      />
+    </>
   );
 }

@@ -323,4 +323,108 @@
   .aurora-red-accent {
     color: var(--aurora-red);
   }
+
+  /* Leaflet Tooltip Styling to match dashboard theme */
+  .leaflet-tooltip {
+    background-color: rgba(15, 23, 42, 0.95) !important; /* slate-900/95 */
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    color: #fafafa !important;
+  }
+
+  .leaflet-tooltip-bottom:before {
+    border-bottom-color: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  .leaflet-tooltip-top:before {
+    border-top-color: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  .leaflet-tooltip-left:before {
+    border-left-color: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  .leaflet-tooltip-right:before {
+    border-right-color: rgba(15, 23, 42, 0.95) !important;
+  }
+
+  /* Remove white selection frame from leaflet polygons */
+  .leaflet-interactive:focus {
+    outline: none !important;
+  }
+
+  .leaflet-interactive:focus-visible {
+    outline: none !important;
+  }
+
+  /* Remove any white outline/border effects */
+  .leaflet-interactive[stroke="#ffffff"],
+  .leaflet-interactive[stroke="white"],
+  .leaflet-interactive[stroke="#fff"],
+  .leaflet-interactive[stroke="transparent"] {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    stroke-opacity: 0 !important;
+  }
+
+  /* Force remove all strokes from interactive polygons */
+  .leaflet-interactive {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    pointer-events: auto !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Prevent focus on SVG paths */
+  .leaflet-interactive[tabindex] {
+    tabindex: -1 !important;
+  }
+
+  /* Make paths non-focusable */
+  .leaflet-overlay-pane svg path {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  /* Remove hover/selection highlights that create white borders */
+  .leaflet-interactive:hover {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    outline: none !important;
+    filter: none !important;
+  }
+
+  .leaflet-interactive:active {
+    stroke: none !important;
+    stroke-width: 0 !important;
+    outline: none !important;
+    filter: none !important;
+  }
+
+  /* Remove any browser-generated selection effects */
+  .leaflet-interactive::selection {
+    background: transparent !important;
+  }
+
+  .leaflet-interactive::-moz-selection {
+    background: transparent !important;
+  }
+
+  /* Ensure no white frames appear on hover or selection */
+  .leaflet-polygon-path {
+    outline: none !important;
+  }
+
+  .leaflet-polygon-path:focus {
+    outline: none !important;
+  }
+
+  /* Remove any potential box-shadow or border effects */
+  .leaflet-interactive[stroke="none"] {
+    box-shadow: none !important;
+    border: none !important;
+  }
 }

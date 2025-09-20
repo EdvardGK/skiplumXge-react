@@ -8,7 +8,6 @@ interface BuildingDetectionResult {
     bygningsnummer: string;
     energyClass?: string;
     buildingCategory?: string;
-    heatedArea?: number;
     energyConsumption?: number;
     constructionYear?: number;
     isRegistered: boolean;
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest) {
         building_number,
         energy_class,
         building_category,
-        heated_area,
         energy_consumption,
         construction_year,
         certificate_id
@@ -65,7 +63,6 @@ export async function GET(request: NextRequest) {
             bygningsnummer: buildingNum,
             energyClass: cert.energy_class,
             buildingCategory: cert.building_category,
-            heatedArea: cert.heated_area,
             energyConsumption: cert.energy_consumption,
             constructionYear: cert.construction_year,
             isRegistered: true,
