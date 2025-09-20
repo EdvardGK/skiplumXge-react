@@ -3,22 +3,19 @@
   "outputDirectory": ".next",
   "installCommand": "yarn install --frozen-lockfile",
   "framework": "nextjs",
+  "regions": ["arn1"],
   "functions": {
     "src/app/api/dashboard/screenshot/route.ts": {
-      "maxDuration": 30,
-      "regions": ["arn1"]
+      "maxDuration": 30
     },
     "src/app/api/reports/generate/route.ts": {
-      "maxDuration": 60,
-      "regions": ["arn1"]
+      "maxDuration": 60
     },
     "src/app/api/addresses/search/route.ts": {
-      "maxDuration": 10,
-      "regions": ["arn1"]
+      "maxDuration": 10
     },
     "src/app/api/buildings/detect/route.ts": {
-      "maxDuration": 10,
-      "regions": ["arn1"]
+      "maxDuration": 10
     }
   },
   "headers": [
