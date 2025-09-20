@@ -1,0 +1,273 @@
+🔍 System Diagnostics for Node.js Package Manager Issues
+
+============================================================
+🖥️  SYSTEM INFORMATION
+============================================================
+OS: Windows_NT 10.0.26100 x64
+Platform: win32
+Node.js: v22.16.0
+Current Working Directory: C:\Users\edkjo\theSpruceForgeDevelopment\projects\active\landingsside-energi-react
+
+🌍 ENVIRONMENT VARIABLES
+============================================================
+PATH: C:\Users\edkjo\miniconda3;C:\Users\edkjo\miniconda3\Library\mingw-w64\bin;C:\Users\edkjo\miniconda3\Library\usr\bin;C:\Users\edkjo\miniconda3\Library\bin;C:\Users\edkjo\miniconda3\Scripts;C:\Users\edkjo\miniconda3\bin;C:\Users\edkjo\miniconda3\condabin;C:\Program Files\PowerShell\7;C:\Program Files\dotnet;C:\Program Files\nodejs;C:\Program Files\Git\cmd;C:\Program Files\Neovim\bin;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit;C:\WINDOWS\system32\config\systemprofile\AppData\Local\Muse Hub\lib;C:\Program Files\PowerShell\7;C:\Users\edkjo\miniconda3;C:\Users\edkjo\miniconda3\Library\mingw-w64\bin;C:\Users\edkjo\miniconda3\Library\usr\bin;C:\Users\edkjo\miniconda3\Library\bin;C:\Users\edkjo\miniconda3\Scripts;C:\Program Files\PowerShell\7;C:\Program Files\dotnet;C:\Program Files\Git\cmd;C:\Users\edkjo\AppData\Local\Microsoft\WindowsApps;C:\Users\edkjo\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\edkjo\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\edkjo\AppData\Roaming\Python\Python313\Scripts;C:\Program Files\PostgreSQL\17\bin;C:\Program Files\Git\usr\bin;C:\Windows\System32;C:\Program Files\JetBrains\PyCharm Community Edition 2025.1.1.1\bin;C:\Users\edkjo\AppData\Local\Programs\Ollama;C:\Users\edkjo\AppData\Roaming\npm;C:\Users\edkjo\AppData\Local\gitkraken\bin;C:\LokalMappe_Blade15\CodingProjects\theSpruceForge\tool;C:\LokalMappe_Blade15\CodingProjects\theSpruceForge\tools\PotreeConverter;C:\Users\edkjo\theSpruceForgeDevelopment\tools;C:\Program Files\Solibri\SOLIBRI;C:\Users\edkjo\AppData\Local\Programs\Microsoft VS Code;C:\Users\edkjo\theSpruceForgeDevelopment\sandbox;C:\Users\edkjo\AppData\Local\Programs\MiKTeX\miktex\bin\x64;c:\Users\edkjo\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\debugCommand
+NODE_PATH: [NOT SET]
+NPM_CONFIG_PREFIX: [NOT SET]
+YARN_CACHE_FOLDER: [NOT SET]
+APPDATA: C:\Users\edkjo\AppData\Roaming
+LOCALAPPDATA: C:\Users\edkjo\AppData\Local
+
+📋 Node.js Version
+Command: node --version
+----------------------------------------
+v22.16.0
+
+📋 npm Version
+Command: npm --version
+----------------------------------------
+11.3.0
+
+📋 Yarn Version (if installed)
+Command: yarn --version
+----------------------------------------
+1.22.22
+
+📋 npm Configuration
+Command: npm config list
+----------------------------------------
+; "builtin" config from C:\Users\edkjo\AppData\Roaming\npm\node_modules\npm\npmrc
+
+prefix = "C:\\Users\\edkjo\\AppData\\Roaming\\npm"
+
+; "user" config from C:\Users\edkjo\.npmrc
+
+os = "linux"
+
+; node bin location = C:\Program Files\nodejs\node.exe
+; node version = v22.16.0
+; npm local prefix = C:\Users\edkjo\theSpruceForgeDevelopment\projects\active\landingsside-energi-react
+; npm version = 11.3.0
+; cwd = C:\Users\edkjo\theSpruceForgeDevelopment\projects\active\landingsside-energi-react
+; HOME = C:\Users\edkjo
+; Run `npm config ls -l` to show all defaults.
+
+📋 npm Global Prefix
+Command: npm config get prefix
+----------------------------------------
+C:\Users\edkjo\AppData\Roaming\npm
+
+📋 npm Cache Location
+Command: npm config get cache
+----------------------------------------
+C:\Users\edkjo\AppData\Local\npm-cache
+
+📋 npm Registry
+Command: npm config get registry
+----------------------------------------
+https://registry.npmjs.org/
+
+📋 Node.js Installation Locations (Windows)
+Command: where node
+----------------------------------------
+C:\Program Files\nodejs\node.exe
+
+📋 npm Installation Locations (Windows)
+Command: where npm
+----------------------------------------
+C:\Program Files\nodejs\npm
+C:\Program Files\nodejs\npm.cmd
+C:\Users\edkjo\AppData\Roaming\npm\npm
+C:\Users\edkjo\AppData\Roaming\npm\npm.cmd
+
+📋 Yarn Installation Locations (Windows)
+Command: where yarn
+----------------------------------------
+C:\Users\edkjo\AppData\Roaming\npm\yarn
+C:\Users\edkjo\AppData\Roaming\npm\yarn.cmd
+
+📦 PROJECT-SPECIFIC CHECKS
+============================================================
+
+📄 Package.json
+Path: package.json
+----------------------------------------
+✅ EXISTS - Size: 1920 bytes, Modified: 2025-09-17T19:13:41.430Z
+
+📄 npm Lock File
+Path: package-lock.json
+----------------------------------------
+❌ NOT FOUND
+
+📄 Yarn Lock File
+Path: yarn.lock
+----------------------------------------
+❌ NOT FOUND
+
+📄 Yarn RC File
+Path: .yarnrc
+----------------------------------------
+❌ NOT FOUND
+
+📄 Yarn RC YAML File
+Path: .yarnrc.yml
+----------------------------------------
+❌ NOT FOUND
+
+📄 Node Modules Directory
+Path: node_modules
+----------------------------------------
+✅ EXISTS - Size: 0 bytes, Modified: 2025-09-18T10:25:54.186Z
+
+📁 Node Modules Contents (top level)
+Path: node_modules
+----------------------------------------
+✅ Directory exists with 356 items
+  - @adobe
+  - @alloc
+  - @babel
+  - @bcoe
+  - @eslint
+  - @eslint-community
+  - @floating-ui
+  - @hookform
+  - @humanfs
+  - @humanwhocodes
+  ... and 346 more items
+
+📁 Node Modules Bin Directory
+Path: node_modules/.bin
+----------------------------------------
+❌ Directory not found
+
+📄 Next.js Installation
+Path: node_modules/next
+----------------------------------------
+✅ EXISTS - Size: 0 bytes, Modified: 2025-09-18T10:25:32.782Z
+
+📁 Next.js Binary Directory
+Path: node_modules/next/dist/bin
+----------------------------------------
+✅ Directory exists with 0 items
+
+📄 Next.js Binary File
+Path: node_modules/next/dist/bin/next
+----------------------------------------
+❌ NOT FOUND
+
+📁 NPM Binary Links
+Path: node_modules/.bin
+----------------------------------------
+❌ Directory not found
+
+📋 Global npm Packages
+Command: npm list -g --depth=0
+----------------------------------------
+C:\Users\edkjo\AppData\Roaming\npm
+├── electron@34.2.0
+├── npm@11.3.0
+├── typescript@5.8.3
+├── typescritp@1.0.0
+└── yarn@1.22.22
+
+📜 PACKAGE.JSON SCRIPTS
+============================================================
+dev: next dev
+dev:turbo: next dev --turbopack
+build: next build
+build:turbo: next build --turbopack
+start: next start
+lint: eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+lint:fix: prettier --write . && eslint . --ext ts,tsx --fix
+type-check: tsc --noEmit
+format: prettier --write .
+test: jest
+test:watch: jest --watch
+test:coverage: jest --coverage
+
+🧪 COMMAND EXECUTION TESTS
+============================================================
+
+📋 List available npm scripts
+Command: npm run --silent
+----------------------------------------
+[No output]
+
+🔧 NEXT.JS EXECUTION TESTS
+============================================================
+
+📋 Next.js via npx
+Command: npx next --version
+----------------------------------------
+Next.js v15.5.3
+
+📋 Next.js via direct binary (Windows)
+Command: node_modules\.bin\next --version
+----------------------------------------
+❌ Error: Command failed: node_modules\.bin\next --version
+The system cannot find the path specified.
+
+Stderr: The system cannot find the path specified.
+
+
+📋 Next.js via Node.js direct
+Command: node node_modules/next/dist/bin/next --version
+----------------------------------------
+❌ Error: Command failed: node node_modules/next/dist/bin/next --version
+node:internal/modules/cjs/loader:1404
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\Users\edkjo\theSpruceForgeDevelopment\projects\active\landingsside-energi-react\node_modules\next\dist\bin\next'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.16.0
+
+Stderr: node:internal/modules/cjs/loader:1404
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\Users\edkjo\theSpruceForgeDevelopment\projects\active\landingsside-energi-react\node_modules\next\dist\bin\next'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.16.0
+
+
+🪟 WINDOWS-SPECIFIC CHECKS
+============================================================
+
+📋 CMD Location
+Command: where cmd
+----------------------------------------
+C:\Windows\System32\cmd.exe
+
+📋 Windows Path Extensions
+Command: echo %PATHEXT%
+----------------------------------------
+.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW;.CPL
+
+============================================================
+🏁 Diagnostics Complete!
+============================================================
+
+💡 QUICK ANALYSIS:
+❌ ISSUE: node_modules/.bin directory missing - corrupted installation

@@ -1,0 +1,358 @@
+fylke_name,fylke_number,kommune_name,kommune_number,price_zone
+Oslo,03,Oslo,0301,NO1
+Rogaland,11,Eigersund,1101,NO5
+Rogaland,11,Stavanger,1103,NO5
+Rogaland,11,Haugesund,1106,NO5
+Rogaland,11,Sandnes,1108,NO5
+Rogaland,11,Sokndal,1111,NO5
+Rogaland,11,Lund,1112,NO5
+Rogaland,11,Bjerkreim,1114,NO5
+Rogaland,11,Hå,1119,NO5
+Rogaland,11,Klepp,1120,NO5
+Rogaland,11,Time,1121,NO5
+Rogaland,11,Gjesdal,1122,NO5
+Rogaland,11,Sola,1124,NO5
+Rogaland,11,Randaberg,1127,NO5
+Rogaland,11,Strand,1130,NO5
+Rogaland,11,Hjelmeland,1133,NO5
+Rogaland,11,Suldal,1134,NO5
+Rogaland,11,Sauda,1135,NO5
+Rogaland,11,Kvitsøy,1144,NO5
+Rogaland,11,Bokn,1145,NO5
+Rogaland,11,Tysvær,1146,NO5
+Rogaland,11,Karmøy,1149,NO5
+Rogaland,11,Utsira,1151,NO5
+Rogaland,11,Vindafjord,1160,NO5
+Møre og Romsdal,15,Kristiansund,1505,NO5
+Møre og Romsdal,15,Molde,1506,NO5
+Møre og Romsdal,15,Ålesund,1508,NO5
+Møre og Romsdal,15,Vanylven,1511,NO5
+Møre og Romsdal,15,Sande,1514,NO5
+Møre og Romsdal,15,Herøy,1515,NO5
+Møre og Romsdal,15,Ulstein,1516,NO5
+Møre og Romsdal,15,Hareid,1517,NO5
+Møre og Romsdal,15,Ørsta,1520,NO5
+Møre og Romsdal,15,Stranda,1525,NO5
+Møre og Romsdal,15,Sykkylven,1528,NO5
+Møre og Romsdal,15,Sula,1531,NO5
+Møre og Romsdal,15,Giske,1532,NO5
+Møre og Romsdal,15,Vestnes,1535,NO5
+Møre og Romsdal,15,Rauma,1539,NO5
+Møre og Romsdal,15,Aukra,1547,NO5
+Møre og Romsdal,15,Averøy,1554,NO5
+Møre og Romsdal,15,Gjemnes,1557,NO5
+Møre og Romsdal,15,Tingvoll,1560,NO5
+Møre og Romsdal,15,Sunndal,1563,NO5
+Møre og Romsdal,15,Surnadal,1566,NO5
+Møre og Romsdal,15,Smøla,1573,NO5
+Møre og Romsdal,15,Aure,1576,NO5
+Møre og Romsdal,15,Volda,1577,NO5
+Møre og Romsdal,15,Fjord,1578,NO5
+Møre og Romsdal,15,Hustadvika,1579,NO5
+Møre og Romsdal,15,Haram,1580,NO5
+Nordland - Nordlánnda,18,Bodø,1804,NO4
+Nordland - Nordlánnda,18,Narvik,1806,NO4
+Nordland - Nordlánnda,18,Bindal,1811,NO4
+Nordland - Nordlánnda,18,Sømna,1812,NO4
+Nordland - Nordlánnda,18,Brønnøy,1813,NO4
+Nordland - Nordlánnda,18,Vega,1815,NO4
+Nordland - Nordlánnda,18,Vevelstad,1816,NO4
+Nordland - Nordlánnda,18,Herøy,1818,NO4
+Nordland - Nordlánnda,18,Alstahaug,1820,NO4
+Nordland - Nordlánnda,18,Leirfjord,1822,NO4
+Nordland - Nordlánnda,18,Vefsn,1824,NO4
+Nordland - Nordlánnda,18,Grane,1825,NO4
+Nordland - Nordlánnda,18,Aarborte - Hattfjelldal,1826,NO4
+Nordland - Nordlánnda,18,Dønna,1827,NO4
+Nordland - Nordlánnda,18,Nesna,1828,NO4
+Nordland - Nordlánnda,18,Hemnes,1832,NO4
+Nordland - Nordlánnda,18,Rana,1833,NO4
+Nordland - Nordlánnda,18,Lurøy,1834,NO4
+Nordland - Nordlánnda,18,Træna,1835,NO4
+Nordland - Nordlánnda,18,Rødøy,1836,NO4
+Nordland - Nordlánnda,18,Meløy,1837,NO4
+Nordland - Nordlánnda,18,Gildeskål,1838,NO4
+Nordland - Nordlánnda,18,Beiarn,1839,NO4
+Nordland - Nordlánnda,18,Saltdal,1840,NO4
+Nordland - Nordlánnda,18,Fauske - Fuossko,1841,NO4
+Nordland - Nordlánnda,18,Sørfold,1845,NO4
+Nordland - Nordlánnda,18,Steigen,1848,NO4
+Nordland - Nordlánnda,18,Lødingen,1851,NO4
+Nordland - Nordlánnda,18,Evenes - Evenášši,1853,NO4
+Nordland - Nordlánnda,18,Røst,1856,NO4
+Nordland - Nordlánnda,18,Værøy,1857,NO4
+Nordland - Nordlánnda,18,Flakstad,1859,NO4
+Nordland - Nordlánnda,18,Vestvågøy,1860,NO4
+Nordland - Nordlánnda,18,Vågan,1865,NO4
+Nordland - Nordlánnda,18,Hadsel,1866,NO4
+Nordland - Nordlánnda,18,Bø,1867,NO4
+Nordland - Nordlánnda,18,Øksnes,1868,NO4
+Nordland - Nordlánnda,18,Sortland - Suortá,1870,NO4
+Nordland - Nordlánnda,18,Andøy,1871,NO4
+Nordland - Nordlánnda,18,Moskenes,1874,NO4
+Nordland - Nordlánnda,18,Hábmer - Hamarøy,1875,NO4
+Østfold,31,Halden,3101,NO1
+Østfold,31,Moss,3103,NO1
+Østfold,31,Sarpsborg,3105,NO1
+Østfold,31,Fredrikstad,3107,NO1
+Østfold,31,Hvaler,3110,NO1
+Østfold,31,Råde,3112,NO1
+Østfold,31,Våler,3114,NO1
+Østfold,31,Skiptvet,3116,NO1
+Østfold,31,Indre Østfold,3118,NO1
+Østfold,31,Rakkestad,3120,NO1
+Østfold,31,Marker,3122,NO1
+Østfold,31,Aremark,3124,NO1
+Akershus,32,Bærum,3201,NO1
+Akershus,32,Asker,3203,NO1
+Akershus,32,Lillestrøm,3205,NO1
+Akershus,32,Nordre Follo,3207,NO1
+Akershus,32,Ullensaker,3209,NO1
+Akershus,32,Nesodden,3212,NO1
+Akershus,32,Frogn,3214,NO1
+Akershus,32,Vestby,3216,NO1
+Akershus,32,Ås,3218,NO1
+Akershus,32,Enebakk,3220,NO1
+Akershus,32,Lørenskog,3222,NO1
+Akershus,32,Rælingen,3224,NO1
+Akershus,32,Aurskog-Høland,3226,NO1
+Akershus,32,Nes,3228,NO1
+Akershus,32,Gjerdrum,3230,NO1
+Akershus,32,Nittedal,3232,NO1
+Akershus,32,Lunner,3234,NO1
+Akershus,32,Jevnaker,3236,NO1
+Akershus,32,Nannestad,3238,NO1
+Akershus,32,Eidsvoll,3240,NO1
+Akershus,32,Hurdal,3242,NO1
+Buskerud,33,Drammen,3301,NO1
+Buskerud,33,Kongsberg,3303,NO1
+Buskerud,33,Ringerike,3305,NO1
+Buskerud,33,Hole,3310,NO1
+Buskerud,33,Lier,3312,NO1
+Buskerud,33,Øvre Eiker,3314,NO1
+Buskerud,33,Modum,3316,NO1
+Buskerud,33,Krødsherad,3318,NO1
+Buskerud,33,Flå,3320,NO1
+Buskerud,33,Nesbyen,3322,NO1
+Buskerud,33,Gol,3324,NO1
+Buskerud,33,Hemsedal,3326,NO1
+Buskerud,33,Ål,3328,NO1
+Buskerud,33,Hol,3330,NO1
+Buskerud,33,Sigdal,3332,NO1
+Buskerud,33,Flesberg,3334,NO1
+Buskerud,33,Rollag,3336,NO1
+Buskerud,33,Nore og Uvdal,3338,NO1
+Innlandet,34,Kongsvinger,3401,NO1
+Innlandet,34,Hamar,3403,NO1
+Innlandet,34,Lillehammer,3405,NO1
+Innlandet,34,Gjøvik,3407,NO1
+Innlandet,34,Ringsaker,3411,NO1
+Innlandet,34,Løten,3412,NO1
+Innlandet,34,Stange,3413,NO1
+Innlandet,34,Nord-Odal,3414,NO1
+Innlandet,34,Sør-Odal,3415,NO1
+Innlandet,34,Eidskog,3416,NO1
+Innlandet,34,Grue,3417,NO1
+Innlandet,34,Åsnes,3418,NO1
+Innlandet,34,Våler,3419,NO1
+Innlandet,34,Elverum,3420,NO1
+Innlandet,34,Trysil,3421,NO1
+Innlandet,34,Åmot,3422,NO1
+Innlandet,34,Stor-Elvdal,3423,NO1
+Innlandet,34,Rendalen,3424,NO1
+Innlandet,34,Engerdal,3425,NO1
+Innlandet,34,Tolga,3426,NO1
+Innlandet,34,Tynset,3427,NO1
+Innlandet,34,Alvdal,3428,NO1
+Innlandet,34,Folldal,3429,NO1
+Innlandet,34,Os,3430,NO1
+Innlandet,34,Dovre,3431,NO1
+Innlandet,34,Lesja,3432,NO1
+Innlandet,34,Skjåk,3433,NO1
+Innlandet,34,Lom,3434,NO1
+Innlandet,34,Vågå,3435,NO1
+Innlandet,34,Nord-Fron,3436,NO1
+Innlandet,34,Sel,3437,NO1
+Innlandet,34,Sør-Fron,3438,NO1
+Innlandet,34,Ringebu,3439,NO1
+Innlandet,34,Øyer,3440,NO1
+Innlandet,34,Gausdal,3441,NO1
+Innlandet,34,Østre Toten,3442,NO1
+Innlandet,34,Vestre Toten,3443,NO1
+Innlandet,34,Gran,3446,NO1
+Innlandet,34,Søndre Land,3447,NO1
+Innlandet,34,Nordre Land,3448,NO1
+Innlandet,34,Sør-Aurdal,3449,NO1
+Innlandet,34,Etnedal,3450,NO1
+Innlandet,34,Nord-Aurdal,3451,NO1
+Innlandet,34,Vestre Slidre,3452,NO1
+Innlandet,34,Øystre Slidre,3453,NO1
+Innlandet,34,Vang,3454,NO1
+Vestfold,39,Horten,3901,NO1
+Vestfold,39,Holmestrand,3903,NO1
+Vestfold,39,Tønsberg,3905,NO1
+Vestfold,39,Sandefjord,3907,NO1
+Vestfold,39,Larvik,3909,NO1
+Vestfold,39,Færder,3911,NO1
+Telemark,40,Porsgrunn,4001,NO2
+Telemark,40,Skien,4003,NO2
+Telemark,40,Notodden,4005,NO2
+Telemark,40,Siljan,4010,NO2
+Telemark,40,Bamble,4012,NO2
+Telemark,40,Kragerø,4014,NO2
+Telemark,40,Drangedal,4016,NO2
+Telemark,40,Nome,4018,NO2
+Telemark,40,Midt-Telemark,4020,NO2
+Telemark,40,Seljord,4022,NO2
+Telemark,40,Hjartdal,4024,NO2
+Telemark,40,Tinn,4026,NO2
+Telemark,40,Kviteseid,4028,NO2
+Telemark,40,Nissedal,4030,NO2
+Telemark,40,Fyresdal,4032,NO2
+Telemark,40,Tokke,4034,NO2
+Telemark,40,Vinje,4036,NO2
+Agder,42,Risør,4201,NO2
+Agder,42,Grimstad,4202,NO2
+Agder,42,Arendal,4203,NO2
+Agder,42,Kristiansand,4204,NO2
+Agder,42,Lindesnes,4205,NO2
+Agder,42,Farsund,4206,NO2
+Agder,42,Flekkefjord,4207,NO2
+Agder,42,Gjerstad,4211,NO2
+Agder,42,Vegårshei,4212,NO2
+Agder,42,Tvedestrand,4213,NO2
+Agder,42,Froland,4214,NO2
+Agder,42,Lillesand,4215,NO2
+Agder,42,Birkenes,4216,NO2
+Agder,42,Åmli,4217,NO2
+Agder,42,Iveland,4218,NO2
+Agder,42,Evje og Hornnes,4219,NO2
+Agder,42,Bygland,4220,NO2
+Agder,42,Valle,4221,NO2
+Agder,42,Bykle,4222,NO2
+Agder,42,Vennesla,4223,NO2
+Agder,42,Åseral,4224,NO2
+Agder,42,Lyngdal,4225,NO2
+Agder,42,Hægebostad,4226,NO2
+Agder,42,Kvinesdal,4227,NO2
+Agder,42,Sirdal,4228,NO2
+Vestland,46,Bergen,4601,NO5
+Vestland,46,Kinn,4602,NO5
+Vestland,46,Etne,4611,NO5
+Vestland,46,Sveio,4612,NO5
+Vestland,46,Bømlo,4613,NO5
+Vestland,46,Stord,4614,NO5
+Vestland,46,Fitjar,4615,NO5
+Vestland,46,Tysnes,4616,NO5
+Vestland,46,Kvinnherad,4617,NO5
+Vestland,46,Ullensvang,4618,NO5
+Vestland,46,Eidfjord,4619,NO5
+Vestland,46,Ulvik,4620,NO5
+Vestland,46,Voss,4621,NO5
+Vestland,46,Kvam,4622,NO5
+Vestland,46,Samnanger,4623,NO5
+Vestland,46,Bjørnafjorden,4624,NO5
+Vestland,46,Austevoll,4625,NO5
+Vestland,46,Øygarden,4626,NO5
+Vestland,46,Askøy,4627,NO5
+Vestland,46,Vaksdal,4628,NO5
+Vestland,46,Modalen,4629,NO5
+Vestland,46,Osterøy,4630,NO5
+Vestland,46,Alver,4631,NO5
+Vestland,46,Austrheim,4632,NO5
+Vestland,46,Fedje,4633,NO5
+Vestland,46,Masfjorden,4634,NO5
+Vestland,46,Gulen,4635,NO5
+Vestland,46,Solund,4636,NO5
+Vestland,46,Hyllestad,4637,NO5
+Vestland,46,Høyanger,4638,NO5
+Vestland,46,Vik,4639,NO5
+Vestland,46,Sogndal,4640,NO5
+Vestland,46,Aurland,4641,NO5
+Vestland,46,Lærdal,4642,NO5
+Vestland,46,Årdal,4643,NO5
+Vestland,46,Luster,4644,NO5
+Vestland,46,Askvoll,4645,NO5
+Vestland,46,Fjaler,4646,NO5
+Vestland,46,Sunnfjord,4647,NO5
+Vestland,46,Bremanger,4648,NO5
+Vestland,46,Stad,4649,NO5
+Vestland,46,Gloppen,4650,NO5
+Vestland,46,Stryn,4651,NO5
+Trøndelag - Trööndelage,50,Trondheim - Tråante,5001,NO3
+Trøndelag - Trööndelage,50,Steinkjer,5006,NO3
+Trøndelag - Trööndelage,50,Namsos - Nåavmesjenjaelmie,5007,NO3
+Trøndelag - Trööndelage,50,Frøya,5014,NO3
+Trøndelag - Trööndelage,50,Osen,5020,NO3
+Trøndelag - Trööndelage,50,Oppdal,5021,NO3
+Trøndelag - Trööndelage,50,Rennebu,5022,NO3
+Trøndelag - Trööndelage,50,Rosse - Røros,5025,NO3
+Trøndelag - Trööndelage,50,Holtålen,5026,NO3
+Trøndelag - Trööndelage,50,Midtre Gauldal,5027,NO3
+Trøndelag - Trööndelage,50,Melhus,5028,NO3
+Trøndelag - Trööndelage,50,Skaun,5029,NO3
+Trøndelag - Trööndelage,50,Malvik,5031,NO3
+Trøndelag - Trööndelage,50,Selbu,5032,NO3
+Trøndelag - Trööndelage,50,Tydal,5033,NO3
+Trøndelag - Trööndelage,50,Meråker,5034,NO3
+Trøndelag - Trööndelage,50,Stjørdal,5035,NO3
+Trøndelag - Trööndelage,50,Frosta,5036,NO3
+Trøndelag - Trööndelage,50,Levanger,5037,NO3
+Trøndelag - Trööndelage,50,Verdal,5038,NO3
+Trøndelag - Trööndelage,50,Snåase - Snåsa,5041,NO3
+Trøndelag - Trööndelage,50,Lierne,5042,NO3
+Trøndelag - Trööndelage,50,Raarvihke - Røyrvik,5043,NO3
+Trøndelag - Trööndelage,50,Namsskogan,5044,NO3
+Trøndelag - Trööndelage,50,Grong,5045,NO3
+Trøndelag - Trööndelage,50,Høylandet,5046,NO3
+Trøndelag - Trööndelage,50,Overhalla,5047,NO3
+Trøndelag - Trööndelage,50,Flatanger,5049,NO3
+Trøndelag - Trööndelage,50,Leka,5052,NO3
+Trøndelag - Trööndelage,50,Inderøy,5053,NO3
+Trøndelag - Trööndelage,50,Indre Fosen,5054,NO3
+Trøndelag - Trööndelage,50,Heim,5055,NO3
+Trøndelag - Trööndelage,50,Hitra,5056,NO3
+Trøndelag - Trööndelage,50,Ørland,5057,NO3
+Trøndelag - Trööndelage,50,Åfjord,5058,NO3
+Trøndelag - Trööndelage,50,Orkland,5059,NO3
+Trøndelag - Trööndelage,50,Nærøysund,5060,NO3
+Trøndelag - Trööndelage,50,Rindal,5061,NO3
+Troms – Romsa – Tromssa,55,Tromsø,5501,NO4
+Troms – Romsa – Tromssa,55,Harstad - Hárstták,5503,NO4
+Troms – Romsa – Tromssa,55,Kvæfjord,5510,NO4
+Troms – Romsa – Tromssa,55,Tjeldsund - Dielddanuorri,5512,NO4
+Troms – Romsa – Tromssa,55,Ibestad,5514,NO4
+Troms – Romsa – Tromssa,55,Gratangen,5516,NO4
+Troms – Romsa – Tromssa,55,Loabák - Lavangen,5518,NO4
+Troms – Romsa – Tromssa,55,Bardu,5520,NO4
+Troms – Romsa – Tromssa,55,Salangen,5522,NO4
+Troms – Romsa – Tromssa,55,Målselv,5524,NO4
+Troms – Romsa – Tromssa,55,Sørreisa,5526,NO4
+Troms – Romsa – Tromssa,55,Dyrøy,5528,NO4
+Troms – Romsa – Tromssa,55,Senja,5530,NO4
+Troms – Romsa – Tromssa,55,Balsfjord,5532,NO4
+Troms – Romsa – Tromssa,55,Karlsøy,5534,NO4
+Troms – Romsa – Tromssa,55,Lyngen,5536,NO4
+Troms – Romsa – Tromssa,55,Storfjord - Omasvuotna - Omasvuono,5538,NO4
+Troms – Romsa – Tromssa,55,Gáivuotna - Kåfjord - Kaivuono,5540,NO4
+Troms – Romsa – Tromssa,55,Skjervøy,5542,NO4
+Troms – Romsa – Tromssa,55,Nordreisa - Ráisa - Raisi,5544,NO4
+Troms – Romsa – Tromssa,55,Kvænangen,5546,NO4
+Finnmark – Finnmárku – Finmarkku,56,Alta,5601,NO4
+Finnmark – Finnmárku – Finmarkku,56,Hammerfest - Hámmerfeasta,5603,NO4
+Finnmark – Finnmárku – Finmarkku,56,Sør-Varanger,5605,NO4
+Finnmark – Finnmárku – Finmarkku,56,Vadsø,5607,NO4
+Finnmark – Finnmárku – Finmarkku,56,Kárášjohka - Karasjok,5610,NO4
+Finnmark – Finnmárku – Finmarkku,56,Guovdageaidnu - Kautokeino,5612,NO4
+Finnmark – Finnmárku – Finmarkku,56,Loppa,5614,NO4
+Finnmark – Finnmárku – Finmarkku,56,Hasvik,5616,NO4
+Finnmark – Finnmárku – Finmarkku,56,Måsøy,5618,NO4
+Finnmark – Finnmárku – Finmarkku,56,Nordkapp,5620,NO4
+Finnmark – Finnmárku – Finmarkku,56,Porsanger - Porsáŋgu - Porsanki,5622,NO4
+Finnmark – Finnmárku – Finmarkku,56,Lebesby,5624,NO4
+Finnmark – Finnmárku – Finmarkku,56,Gamvik,5626,NO4
+Finnmark – Finnmárku – Finmarkku,56,Deatnu - Tana,5628,NO4
+Finnmark – Finnmárku – Finmarkku,56,Berlevåg,5630,NO4
+Finnmark – Finnmárku – Finmarkku,56,Båtsfjord,5632,NO4
+Finnmark – Finnmárku – Finmarkku,56,Vardø,5634,NO4
+Finnmark – Finnmárku – Finmarkku,56,Unjárga - Nesseby,5636,NO4

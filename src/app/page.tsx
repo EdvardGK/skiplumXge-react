@@ -1,0 +1,361 @@
+'use client';
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Building, Zap, Target, MapPin, Loader2, ArrowRight, CheckCircle2, X } from "lucide-react";
+import { usePropertySearch } from "@/hooks/use-property-search";
+import { ValuePropositionSection } from "@/components/landing/ValuePropositionSection";
+import { TrustBadges } from "@/components/landing/TrustBadges";
+import { ContextualTooltip } from "@/components/ui/ContextualTooltip";
+
+export default function LandingPage() {
+  const router = useRouter();
+  const searchRef = useRef<HTMLDivElement>(null);
+  const {
+    query,
+    setQuery,
+    results,
+    selectedAddress,
+    setSelectedAddress,
+    isLoading,
+    error,
+    hasSelection,
+    clearSearch
+  } = usePropertySearch();
+  const [showResults, setShowResults] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#0c0c0e] relative overflow-hidden">
+      {/* Northern Lights Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '4s'}}></div>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 border-b border-gray-800/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <Zap className="w-8 h-8 text-emerald-400" />
+                <div className="absolute inset-0 w-8 h-8 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
+              </div>
+              <span className="text-2xl font-bold text-white">SkiplumXGE</span>
+            </div>
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors">Funksjoner</a>
+              <a href="#about" className="text-gray-300 hover:text-emerald-400 transition-colors">Om oss</a>
+              <Button variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400">
+                Kontakt
+              </Button>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      <main className="relative z-10">
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-16 md:py-24">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-4 py-2 mb-6">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-400 text-sm font-medium">Offisielle norske energidata</span>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
+              Spar tusenvis på
+              <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
+                energikostnadene
+              </span>
+            </h1>
+
+            <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed max-w-3xl mx-auto">
+              Få profesjonell energianalyse av din eiendom basert på offisielle norske data.
+              <strong className="text-white"> Oppdag besparingsmuligheter og TEK17-etterlevelse på minutter.</strong>
+            </p>
+
+            {/* Primary Search CTA */}
+            <div className="max-w-2xl mx-auto mb-8" ref={searchRef}>
+              <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl text-center text-white flex items-center justify-center gap-3">
+                    <Search className="w-6 h-6 text-emerald-400" />
+                    Start din energianalyse
+                  </CardTitle>
+                  <CardDescription className="text-center text-gray-400">
+                    <ContextualTooltip
+                      title="Hvordan fungerer søket?"
+                      content="Vi bruker Kartverkets offisielle adresseregister for å finne din eiendom. Skriv bare inn gateadresse og sted, så finner vi resten automatisk."
+                    >
+                      <span>Søk etter norsk adresse for å begynne</span>
+                    </ContextualTooltip>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pb-6">
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <Input
+                        type="text"
+                        placeholder="F.eks. 'Karl Johans gate 1, Oslo' eller 'Storgata 10, Bergen'"
+                        className="h-14 text-base bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-emerald-400/50 focus:ring-emerald-400/20 pr-10"
+                        value={query}
+                        onChange={(e) => {
+                          setQuery(e.target.value);
+                          setShowResults(true);
+                        }}
+                        onFocus={() => setShowResults(true)}
+                        autoComplete="off"
+                      />
+                      {query.length > 0 && (
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-700/50 rounded-md transition-colors"
+                          onClick={() => {
+                            clearSearch();
+                            setShowResults(false);
+                          }}
+                          aria-label="Tøm søkefelt"
+                        >
+                          <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                        </button>
+                      )}
+                      {query.length > 0 && query.length < 3 && !hasSelection && (
+                        <div className="absolute right-12 top-1/2 -translate-y-1/2">
+                          <span className="text-sm text-gray-500">
+                            Skriv minst 3 tegn
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-14 whitespace-nowrap shadow-xl shadow-emerald-500/25"
+                      onClick={() => {
+                        if (selectedAddress) {
+                          const params = new URLSearchParams({
+                            address: selectedAddress.adressetekst,
+                            lat: selectedAddress.coordinates.lat.toString(),
+                            lon: selectedAddress.coordinates.lon.toString(),
+                            municipality: selectedAddress.municipality,
+                            municipalityNumber: selectedAddress.municipalityNumber || '',
+                            postalCode: selectedAddress.postalCode,
+                            ...(selectedAddress.matrikkel?.gardsnummer && { gnr: selectedAddress.matrikkel.gardsnummer }),
+                            ...(selectedAddress.matrikkel?.bruksnummer && { bnr: selectedAddress.matrikkel.bruksnummer }),
+                          });
+                          router.push(`/building-data?${params.toString()}`);
+                        }
+                      }}
+                      disabled={!selectedAddress}
+                    >
+                      <ArrowRight className="w-5 h-5 mr-2" />
+                      Start Analyse
+                    </Button>
+                  </div>
+
+                  {/* Search Results Dropdown - only show when searching, not when selected */}
+                  {showResults && query.length >= 3 && !hasSelection && (
+                    <div className="relative">
+                      <div className="absolute w-full mt-1 bg-gray-800/95 border border-gray-700/50 rounded-lg shadow-2xl max-h-60 overflow-auto backdrop-blur-sm z-50">
+                        {isLoading && (
+                          <div className="p-4 text-center text-gray-400">
+                            <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                            Søker etter adresser...
+                          </div>
+                        )}
+
+                        {error && !isLoading && (
+                          <div className="p-4 text-center text-red-400">
+                            {error}
+                          </div>
+                        )}
+
+                        {!isLoading && !error && results.length === 0 && (
+                          <div className="p-4 text-center text-gray-400">
+                            Ingen adresser funnet
+                          </div>
+                        )}
+
+                        {!isLoading && results.length > 0 && (
+                          <div className="py-1">
+                            {results.map((address, index) => (
+                              <button
+                                key={index}
+                                className="w-full text-left px-4 py-3 hover:bg-gray-700/50 transition-colors"
+                                onClick={() => {
+                                  setSelectedAddress(address);
+                                  setShowResults(false);
+                                }}
+                              >
+                                <div className="text-white font-medium">
+                                  {address.adressetekst}
+                                </div>
+                                <div className="text-gray-400 text-sm">
+                                  {address.municipality} • {address.postalCode}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected Address Confirmation */}
+                  {selectedAddress && (
+                    <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Valgt adresse:
+                      </div>
+                      <div className="text-white font-medium">{selectedAddress.adressetekst}</div>
+                      <div className="text-gray-400 text-sm mt-1">
+                        Klikk "Start Analyse" for å fortsette til energianalyse
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-emerald-400">1.000+</div>
+                <div className="text-gray-400 text-sm">Analyserte eiendommer</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-cyan-400">92%</div>
+                <div className="text-gray-400 text-sm">Fant besparelser</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-violet-400">2 min</div>
+                <div className="text-gray-400 text-sm">Analysetid</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-400">100%</div>
+                <div className="text-gray-400 text-sm">Norske data</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Value Proposition Section */}
+        <ValuePropositionSection className="py-16" />
+
+        {/* Features Grid */}
+        <section className="container mx-auto px-4 py-16" id="features">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-white mb-4">Kraftige energianalyser</h2>
+            <p className="text-xl text-gray-300">Alt du trenger for å optimalisere din eiendoms energiforbruk</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="relative mb-4">
+                  <Search className="w-12 h-12 text-emerald-400 mx-auto" />
+                  <div className="absolute inset-0 w-12 h-12 bg-emerald-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-emerald-400/30"></div>
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-3">Adressesøk</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Kartverket-integrert søk med real-time validering av norske adresser
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="relative mb-4">
+                  <Building className="w-12 h-12 text-cyan-400 mx-auto" />
+                  <div className="absolute inset-0 w-12 h-12 bg-cyan-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-cyan-400/30"></div>
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-3">Eiendomsanalyse</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  TEK17 § 14-2 etterlevelse med energikarakter A-G klassifisering
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="relative mb-4">
+                  <Target className="w-12 h-12 text-violet-400 mx-auto" />
+                  <div className="absolute inset-0 w-12 h-12 bg-violet-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-violet-400/30"></div>
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-3">Investeringsguide</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Konservative investeringsanbefalinger basert på faktisk energisløsing
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
+              <CardContent className="p-6 text-center">
+                <div className="relative mb-4">
+                  <MapPin className="w-12 h-12 text-orange-400 mx-auto" />
+                  <div className="absolute inset-0 w-12 h-12 bg-orange-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-orange-400/30"></div>
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-3">Eiendomskart</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  Interaktiv visualisering med bygningsomriss og eiendomsgrenser
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Trust Badges */}
+        <TrustBadges className="py-16" />
+
+        {/* Final CTA */}
+        <section className="container mx-auto px-4 py-16">
+          <Card className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 border-gray-700/50 backdrop-blur-sm max-w-3xl mx-auto">
+            <CardContent className="p-12 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                Klar for energianalyse?
+              </h2>
+              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+                Start med å søke etter din eiendom og få umiddelbar tilgang til
+                profesjonell energianalyse basert på offisielle norske data.
+              </p>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-12 py-4 text-lg shadow-xl shadow-emerald-500/25"
+                onClick={() => document.querySelector('input')?.focus()}
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Kom i gang nå
+              </Button>
+            </CardContent>
+          </Card>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-gray-800/50 mt-20">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center text-gray-400">
+            <p>SkiplumXGE - Drevet av Skiplum | Data fra Kartverket, SSB, SINTEF og Enova</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

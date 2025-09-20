@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.nngroup.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:web.dev)",
+      "WebFetch(domain:www.smashingmagazine.com)",
+      "WebFetch(domain:www.interaction-design.org)",
+      "WebFetch(domain:material.io)",
+      "WebFetch(domain:m2.material.io)",
+      "WebSearch",
+      "Bash(find:*)",
+      "Read(//mnt/host/c/Users/edkjo/theSpruceForgeDevelopment/projects/active/landingsside-energi/**)",
+      "WebFetch(domain:ge.no)",
+      "WebFetch(domain:ws.geonorge.no)",
+      "WebFetch(domain:www.ssb.no)",
+      "WebFetch(domain:www.statista.com)",
+      "WebFetch(domain:data.ssb.no)",
+      "Bash(sqlite3:*)",
+      "Bash(python3:*)",
+      "Bash(tail:*)",
+      "Bash(yarn dev)",
+      "Bash(cat:*)",
+      "WebFetch(domain:www.kartverket.no)",
+      "WebFetch(domain:www.regjeringen.no)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

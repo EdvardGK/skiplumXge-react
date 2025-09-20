@@ -1,0 +1,326 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet Map Styles */
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  /* Deep Dark Base - True Black Foundation */
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #111111;
+  --card-foreground: #fafafa;
+  --popover: #111111;
+  --popover-foreground: #fafafa;
+  --primary: #10b981;
+  --primary-foreground: #0a0a0a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #fafafa;
+  --muted: #1a1a1a;
+  --muted-foreground: #71717a;
+  --accent: #1a1a1a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: #27272a;
+  --input: #2a2a2a;  /* Lighter input background */
+  --input-border: #3a3a3a;  /* Visible input border */
+  --ring: #71717a;
+  --chart-1: #10b981;
+  --chart-2: #06b6d4;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
+  --sidebar: #111111;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #1a1a1a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #71717a;
+
+  /* Northern Lights Palette - Aurora Inspired */
+  --aurora-green: #10b981;     /* Primary - Emerald Aurora */
+  --aurora-cyan: #06b6d4;      /* Secondary - Ice Blue */
+  --aurora-purple: #8b5cf6;    /* Accent - Violet Aurora */
+  --aurora-pink: #ec4899;      /* Highlight - Magenta Aurora */
+  --aurora-yellow: #f59e0b;    /* Warning - Golden Aurora */
+  --aurora-red: #ef4444;       /* Error - Red Aurora */
+
+  /* Dark Foundation */
+  --midnight: #0a0a0a;         /* True black background */
+  --charcoal: #111111;         /* Card backgrounds */
+  --slate: #1a1a1a;           /* Elevated surfaces */
+  --border-subtle: #27272a;    /* Subtle borders */
+  --text-primary: #fafafa;     /* High contrast text */
+  --text-secondary: #a1a1aa;   /* Medium contrast text */
+  --text-muted: #71717a;       /* Low contrast text */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  *:focus-visible {
+    @apply outline-ring;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* BI-Style Dashboard Grid Layout */
+@layer components {
+  .dashboard-container {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: calc(100vh - 120px); /* Fixed height based on viewport minus actual header height */
+    gap: 0.5rem; /* Compact gaps */
+    padding: 0.5rem; /* Minimal padding */
+    width: 100%;
+    max-width: 1400px; /* Slightly smaller max width */
+    margin: 0 auto;
+    overflow: hidden; /* Prevent any overflow */
+  }
+
+  .dashboard-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* Reduced from 0.75rem */
+    min-height: 0; /* Allow flexbox to shrink */
+  }
+
+  /* Fibonacci Grid System - Automatic positioning via DashboardGrid component */
+  .dashboard-grid {
+    /* Container managed by DashboardGrid component */
+  }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  /* Enhanced responsive breakpoints */
+
+  /* Large Desktop: 1440px+ - Full dashboard with optimal spacing */
+  @media (min-width: 1440px) {
+    .dashboard-container {
+      height: calc(100vh - 80px);
+      padding: 1rem;
+      gap: 1rem;
+    }
+  }
+
+  /* Standard Desktop: 1024px-1439px - Slightly compressed */
+  @media (max-width: 1439px) and (min-width: 1024px) {
+    .dashboard-container {
+      height: calc(100vh - 80px);
+      padding: 0.75rem;
+      gap: 0.75rem;
+    }
+  }
+
+  /* Tablet Landscape: 768px-1023px - Adaptive 2x2 grid */
+  @media (max-width: 1023px) and (min-width: 768px) {
+    .dashboard-container {
+      height: calc(100vh - 70px);
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .dashboard-header {
+      gap: 0.25rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1rem !important;
+    }
+
+    .dashboard-header .text-right div:first-child {
+      font-size: 0.875rem !important;
+    }
+  }
+
+  /* Tablet Portrait & Small Laptop: 480px-767px - Single column with scroll */
+  @media (max-width: 767px) and (min-width: 480px) {
+    .dashboard-container {
+      height: auto; /* Allow natural height on small screens */
+      min-height: calc(100vh - 60px);
+      padding: 0.5rem;
+      gap: 0.75rem;
+    }
+
+    .dashboard-header {
+      gap: 0.25rem;
+    }
+
+    .dashboard-header .flex {
+      flex-direction: column;
+      align-items: flex-start !important;
+      gap: 0.5rem;
+    }
+
+    .dashboard-header .text-right {
+      text-align: left !important;
+    }
+
+    .dashboard-header h1 {
+      font-size: 1rem !important;
+    }
+  }
+
+  /* Mobile: <480px - Minimal compact layout */
+  @media (max-width: 479px) {
+    .dashboard-container {
+      height: auto; /* Natural height on mobile */
+      min-height: calc(100vh - 60px);
+      padding: 0.25rem;
+      gap: 0.5rem;
+    }
+
+    .dashboard-header {
+      gap: 0.25rem;
+    }
+
+    .dashboard-header .flex {
+      flex-direction: column;
+      align-items: flex-start !important;
+      gap: 0.25rem;
+    }
+
+    .dashboard-header .text-right {
+      text-align: left !important;
+    }
+
+    .dashboard-header h1 {
+      font-size: 0.875rem !important;
+    }
+
+    .dashboard-header .text-xs {
+      font-size: 0.75rem !important;
+    }
+  }
+
+  /* Northern Lights Theme Utility Classes */
+  .aurora-card {
+    background: var(--charcoal);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .aurora-glow-green {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+  }
+
+  .aurora-glow-cyan {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+  }
+
+  .aurora-glow-purple {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
+  }
+
+  .aurora-bg {
+    background: var(--midnight);
+  }
+
+  .aurora-green-accent {
+    color: var(--aurora-green);
+  }
+
+  .aurora-cyan-accent {
+    color: var(--aurora-cyan);
+  }
+
+  .aurora-purple-accent {
+    color: var(--aurora-purple);
+  }
+
+  .aurora-pink-accent {
+    color: var(--aurora-pink);
+  }
+
+  .aurora-yellow-accent {
+    color: var(--aurora-yellow);
+  }
+
+  .aurora-red-accent {
+    color: var(--aurora-red);
+  }
+}

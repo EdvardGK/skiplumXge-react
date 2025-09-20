@@ -1,0 +1,551 @@
+'use client';
+
+import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Building,
+  Zap,
+  Target,
+  TrendingUp,
+  Award,
+  DollarSign,
+  FileText,
+  Settings,
+  MapPin,
+  AlertTriangle,
+  ArrowLeft,
+  Download,
+  Share,
+  CheckCircle
+} from "lucide-react";
+import { calculateEnergyAnalysis, BuildingEnergyData } from "@/lib/energy-calculations";
+import { BuildingType, HeatingSystem, LightingSystem, VentilationSystem, HotWaterSystem } from "@/types/norwegian-energy";
+import { useDashboardEnergyData } from "@/hooks/use-real-energy-data";
+import type { PriceZone } from "@/services/zone.service";
+import EnergyTimeSeriesChart from "@/components/charts/EnergyTimeSeriesChart";
+import EnergyGaugeChart from "@/components/charts/EnergyGaugeChart";
+import EnergySankeyChart from "@/components/charts/EnergySankeyChart";
+import NorwayPriceZoneMap from "@/components/charts/NorwayPriceZoneMap";
+import NPVInvestmentChart from "@/components/charts/NPVInvestmentChart";
+import DashboardGrid, { DashboardLayoutDefinition } from "@/components/grid/DashboardGrid";
+import DashboardTile from "@/components/grid/DashboardTile";
+
+// Toggle between mock and real data maps
+const USE_REAL_MAP_DATA = true; // Set to false to use mock data
+
+import PropertyMapWrapper from "@/components/PropertyMapWrapper";
+import dynamic from 'next/dynamic';
+
+// Import map component dynamically to prevent SSR issues with Leaflet
+const PropertyMapWithRealData = dynamic(
+  () => import("@/components/PropertyMapWithRealData"),
+  { ssr: false }
+);
+
+// Expanded 5x4 Grid Layout (includes action cards in row 5)
+const DASHBOARD_LAYOUT: DashboardLayoutDefinition = {
+  rows: 5,
+  cols: 4,
+  layout: [
+    // Row 1: Top row individual cards
+    ['tek17-gauge', 'enova-grade', 'energy-zone', 'roi-budget'],
+    // Row 2: Time series chart (2 cols), Map starts (2 cols)
+    ['time-series', 'time-series', 'map', 'map'],
+    // Row 3-4: Large Investment Sankey (2 cols), Map continues (2 cols)
+    ['investment-sankey', 'investment-sankey', 'map', 'map'],
+    ['investment-sankey', 'investment-sankey', 'map', 'map'],
+    // Row 5: Action cards
+    ['action-report', 'action-consultation', 'action-share', 'action-placeholder']
+  ]
+};
+
+// Real energy calculation function
+function calculateRealEnergyData(
+  buildingType: string,
+  totalArea: string,
+  heatedArea: string,
+  heatingSystem: string,
+  lightingSystem: string,
+  ventilationSystem: string,
+  hotWaterSystem: string,
+  buildingYear?: string
+) {
+  if (!buildingType || !totalArea || !heatedArea || !heatingSystem) {
+    return null; // No data available
+  }
+
+  const energyData: BuildingEnergyData = {
+    buildingType: buildingType as BuildingType,
+    totalArea: parseInt(totalArea),
+    heatedArea: parseInt(heatedArea),
+    heatingSystem: heatingSystem as HeatingSystem,
+    lightingSystem: (lightingSystem || 'LED') as LightingSystem,
+    ventilationSystem: (ventilationSystem || 'Naturlig') as VentilationSystem,
+    hotWaterSystem: (hotWaterSystem || 'Elektrisitet') as HotWaterSystem,
+    buildingYear: buildingYear ? parseInt(buildingYear) : undefined,
+  };
+
+  return calculateEnergyAnalysis(energyData);
+}
+
+export default function Dashboard() {
+  const searchParams = useSearchParams();
+  const addressParam = searchParams.get('address');
+  const lat = searchParams.get('lat');
+  const lon = searchParams.get('lon');
+  const buildingType = searchParams.get('buildingType');
+  const totalArea = searchParams.get('totalArea');
+  const heatedArea = searchParams.get('heatedArea');
+  const annualEnergyConsumption = searchParams.get('annualEnergyConsumption');
+  const heatingSystem = searchParams.get('heatingSystem');
+  const lightingSystem = searchParams.get('lightingSystem');
+  const ventilationSystem = searchParams.get('ventilationSystem');
+  const hotWaterSystem = searchParams.get('hotWaterSystem');
+  const buildingYear = searchParams.get('buildingYear');
+
+  // Additional parameters for real data integration
+  const priceZoneParam = searchParams.get('priceZone') as PriceZone | null;
+  const gnr = searchParams.get('gnr');
+  const bnr = searchParams.get('bnr');
+  const municipalityNumber = searchParams.get('municipalityNumber');
+
+
+  // Calculate real energy data if we have building information
+  const realEnergyData = calculateRealEnergyData(
+    buildingType || '',
+    totalArea || '',
+    heatedArea || '',
+    heatingSystem || '',
+    lightingSystem || '',
+    ventilationSystem || '',
+    hotWaterSystem || '',
+    buildingYear || ''
+  );
+
+  const hasRealBuildingData = realEnergyData !== null;
+
+  // Fetch real Enova and pricing data
+  const dashboardData = useDashboardEnergyData(
+    addressParam,
+    priceZoneParam,
+    gnr,
+    bnr,
+    realEnergyData
+  );
+
+
+
+  return (
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Header */}
+      <header className="container mx-auto px-4 py-2 border-b border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-300 hover:text-white px-2 py-1"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="w-3 h-3 mr-1" />
+              Tilbake
+            </Button>
+            <div className="flex items-center space-x-2">
+              <Zap className="w-6 h-6 text-cyan-400" />
+              <span className="text-xl font-bold text-white">SkiplumXGE</span>
+            </div>
+            {addressParam && (
+              <div className="ml-6 flex items-center space-x-2">
+                <span className="text-slate-400">•</span>
+                <span className="text-cyan-400 font-medium">{addressParam}</span>
+                {hasRealBuildingData && (
+                  <span className="text-slate-400 text-sm">({buildingType} • {totalArea}m²)</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 text-xs"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Rapport
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-secondary text-secondary-foreground hover:bg-secondary px-2 py-1 text-xs"
+            >
+              <Share className="w-3 h-3 mr-1" />
+              Del
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-border text-muted-foreground hover:bg-muted px-2 py-1 text-xs"
+            >
+              <Settings className="w-3 h-3 mr-1" />
+              Endre
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="dashboard-container px-2 md:px-4 lg:px-6">
+        {/* Dashboard Header */}
+        <div className="dashboard-header pt-4 pb-2">
+          <div className="text-xs text-slate-400 mb-3">
+            Hjem → Bygningsdata → <span className="text-cyan-400">Dashboard</span>
+          </div>
+          <div className="flex items-center justify-end">
+            <div className="text-right">
+              <div className="text-sm font-bold text-white">
+                TEK17: {hasRealBuildingData ? (
+                  <span className={realEnergyData.isCompliant ? "text-emerald-400" : "text-red-400"}>
+                    {realEnergyData.isCompliant ? 'OK' : 'OVER'}
+                  </span>
+                ) : (
+                  <span className="text-slate-400">IKKE BEREGNET</span>
+                )}
+              </div>
+              <div className="text-slate-300 text-xs">
+                {hasRealBuildingData ? `Krav: ${realEnergyData.tek17Requirement} kWh/m²/år` : "Trenger bygningsdata"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Clean 4x4 Grid Dashboard */}
+        <DashboardGrid
+          layout={DASHBOARD_LAYOUT}
+          debug={false}
+          className="mb-6"
+        >
+          {/* ROW 1: Individual cards across 4 columns */}
+          {/* 1. TEK17 Status */}
+          <DashboardTile id="tek17-gauge" variant="highlight">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Target className="w-5 h-5 text-cyan-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">TEK17</span>
+              </div>
+              <div className="text-xl font-bold text-white">
+                {hasRealBuildingData ? (
+                  <span className={realEnergyData.isCompliant ? "text-emerald-400" : "text-red-400"}>
+                    {realEnergyData.isCompliant ? 'OK' : 'OVER'}
+                  </span>
+                ) : (
+                  <span className="text-slate-400">–</span>
+                )}
+              </div>
+              <div className="text-slate-400 text-xs">
+                {hasRealBuildingData ? `Krav: ${realEnergyData.tek17Requirement} kWh/m²/år` : "Mangler data"}
+              </div>
+            </CardContent>
+          </DashboardTile>
+
+          {/* 2. Enova Grade with Gauge */}
+          <DashboardTile id="enova-grade">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Award className="w-5 h-5 text-emerald-400" />
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  dashboardData.isEnovaRegistered
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-slate-500/20 text-slate-400'
+                }`}>
+                  {dashboardData.isLoadingEnova ? 'LASTER...' : 'ENOVA'}
+                </span>
+              </div>
+              <div className="flex items-center justify-center" style={{ marginTop: '-30px', height: '80px' }}>
+                {dashboardData.isLoadingEnova ? (
+                  <div className="text-sm text-slate-400">Laster...</div>
+                ) : dashboardData.isEnovaRegistered && dashboardData.energyGrade ? (
+                  <EnergyGaugeChart
+                    currentGrade={dashboardData.energyGrade}
+                    currentValue={dashboardData.energyConsumption || 150}
+                    maxValue={300}
+                    tek17Limit={realEnergyData?.tek17Requirement || 115}
+                    size={160}
+                    showLabels={false}
+                  />
+                ) : (
+                  <div className="text-xl font-bold text-slate-400">–</div>
+                )}
+              </div>
+              <div className="text-slate-400 text-xs text-center">
+                {dashboardData.isLoadingEnova ? (
+                  "Sjekker Enova..."
+                ) : dashboardData.energyConsumption ? (
+                  `${Math.round(dashboardData.energyConsumption)} kWh/m²/år`
+                ) : dashboardData.enovaStatus === 'Ikke registrert' ? (
+                  "Ikke registrert i Enova"
+                ) : (
+                  "Ingen data"
+                )}
+              </div>
+            </CardContent>
+          </DashboardTile>
+
+          {/* 3. Energy Zone & Price */}
+          <DashboardTile id="energy-zone">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <MapPin className="w-5 h-5 text-cyan-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
+                  {dashboardData.isLoadingPricing ? '...' : dashboardData.priceZone || 'NO1'}
+                </span>
+              </div>
+              <div className="text-xl font-bold text-white">
+                {dashboardData.isLoadingPricing ? (
+                  'Laster...'
+                ) : dashboardData.currentSpotPrice ? (
+                  `${Math.round(dashboardData.currentSpotPrice)} øre`
+                ) : dashboardData.hasErrors ? (
+                  <span className="text-red-400">Ikke tilgjengelig</span>
+                ) : (
+                  <span className="text-slate-400">–</span>
+                )}
+              </div>
+              <div className="text-slate-400 text-xs">
+                {dashboardData.isLoadingPricing ? (
+                  'Henter prisdata...'
+                ) : dashboardData.hasErrors ? (
+                  'Prisdata utilgjengelig'
+                ) : dashboardData.priceZone ? (
+                  `Per kWh • NVE ${dashboardData.priceZone}`
+                ) : (
+                  'Ingen prisdata'
+                )}
+              </div>
+            </CardContent>
+          </DashboardTile>
+
+          {/* 4. ROI Budget */}
+          <DashboardTile id="roi-budget" variant="accent">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <Target className="w-5 h-5 text-fuchsia-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">10 ÅR</span>
+              </div>
+              <div className="text-xl font-bold text-white">
+                {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
+                  `${Math.round(realEnergyData.investmentRoom * 1.4).toLocaleString()} kr` : "–"
+                }
+              </div>
+              <div className="text-slate-400 text-xs">10 års NPV</div>
+            </CardContent>
+          </DashboardTile>
+
+          {/* ROW 2: Time Series Chart (2 cols) + Map starts (2 cols) */}
+          <DashboardTile id="time-series">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-sm text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-cyan-400" />
+                Strømpriser per kvartal
+              </CardTitle>
+              <CardDescription className="text-slate-400 text-xs">
+                {dashboardData.isLoadingHistory ? (
+                  'Laster prishistorikk...'
+                ) : dashboardData.priceZone ? (
+                  `36 ukers prishistorikk ${dashboardData.priceZone} (øre/kWh)`
+                ) : (
+                  '36 måneders prishistorikk (øre/kWh)'
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              {dashboardData.isLoadingHistory ? (
+                <div className="flex items-center justify-center h-20">
+                  <div className="text-sm text-slate-400">Laster prisdata...</div>
+                </div>
+              ) : dashboardData.priceHistory.length > 0 ? (
+                <EnergyTimeSeriesChart
+                  data={dashboardData.priceHistory.map(p => ({
+                    period: `${p.weekNumber}/${p.year}`,
+                    value: Math.round(p.spotPrice),
+                    week: p.week,
+                    date: p.date
+                  }))}
+                  type="bar"
+                  showSavings={false}
+                  height={80}
+                  showTitle={false}
+                  chartMode="price"
+                  energyZone={dashboardData.priceZone || "NO1"}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-20">
+                  <div className="text-sm text-red-400">Prishistorikk ikke tilgjengelig</div>
+                </div>
+              )}
+            </CardContent>
+          </DashboardTile>
+
+          {/* ROW 3-4: Large Investment & Energy Flow Sankey (2x2 tile) */}
+          <DashboardTile id="investment-sankey" variant="accent">
+            <CardHeader className="pb-1">
+              <CardTitle className="text-sm text-white flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
+                Investeringsanalyse & Energiflyt
+              </CardTitle>
+              <CardDescription className="text-slate-400 text-xs">
+                SINTEF-data kombinert med 10 års NPV-analyse (6% rente)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
+                {/* Large Sankey Diagram */}
+                <div className="lg:col-span-2">
+                  {hasRealBuildingData ? (
+                    <EnergySankeyChart
+                      totalEnergyConsumption={realEnergyData.annualEnergyConsumption}
+                      heatingSystem={heatingSystem || 'Elektrisitet'}
+                    />
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="text-sm font-bold text-white mb-2">Energiflyt & Investeringsmuligheter</div>
+                      <div className="text-slate-400 mb-2 text-xs">Krever bygningsdata for energifordeling</div>
+                      <div className="text-slate-500 text-xs">SINTEF: 70% oppvarming, 15% belysning, 15% øvrig</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Investment & Data Summary */}
+                <div className="space-y-2 h-full overflow-hidden">
+                  {/* Annual Savings */}
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                    <div className="text-xs text-cyan-400 mb-1">Årlig besparelse</div>
+                    <div className="text-sm font-bold text-white">
+                      {hasRealBuildingData && realEnergyData.annualWaste > 0 ?
+                        `${realEnergyData.annualWasteCost.toLocaleString()} kr` : "–"
+                      }
+                    </div>
+                    <div className="text-xs text-slate-400">Ved optimalisering</div>
+                  </div>
+
+                  {/* SINTEF Breakdown */}
+                  <div className="p-2 rounded-lg bg-secondary/10 border border-secondary/20">
+                    <div className="text-xs text-blue-400 mb-1">SINTEF Fordeling</div>
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-300">Oppvarming</span>
+                        <span className="text-white font-semibold">70%</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-300">Belysning</span>
+                        <span className="text-white font-semibold">15%</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-300">Øvrig</span>
+                        <span className="text-white font-semibold">15%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Combined Action Items & SSB Data */}
+                  <div className="p-2 rounded-lg bg-accent/10 border border-accent/20">
+                    <div className="text-xs text-fuchsia-400 mb-1">Anbefalte tiltak</div>
+                    <div className="space-y-0.5 text-xs text-slate-300">
+                      <div>• Varmepumpe oppgradering</div>
+                      <div>• LED belysning</div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-fuchsia-500/20">
+                      <div className="text-xs text-amber-400 mb-1">
+                        {dashboardData.isLoadingPricing ? 'Laster...' : `NVE ${dashboardData.priceZone || 'NO1'}`}
+                      </div>
+                      <div className="text-sm font-bold text-white">
+                        {dashboardData.isLoadingPricing ? (
+                          '...'
+                        ) : dashboardData.totalElectricityPrice ? (
+                          `${dashboardData.totalElectricityPrice.toFixed(2)} kr/kWh`
+                        ) : dashboardData.hasErrors ? (
+                          <span className="text-red-400">Ikke tilgjengelig</span>
+                        ) : (
+                          <span className="text-slate-400">–</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </DashboardTile>
+
+          {/* Property Map (2x2 in rows 2-3, columns 3-4) */}
+          <DashboardTile id="map" className="h-full">
+            <CardContent className="p-1 h-full">
+              {USE_REAL_MAP_DATA ? (
+                <PropertyMapWithRealData
+                  address={addressParam}
+                  coordinates={lat && lon ? { lat: parseFloat(lat), lon: parseFloat(lon) } : null}
+                  className="w-full h-full rounded-md overflow-hidden"
+                />
+              ) : (
+                <PropertyMapWrapper
+                  address={addressParam}
+                  coordinates={lat && lon ? { lat: parseFloat(lat), lon: parseFloat(lon) } : null}
+                  className="w-full h-full rounded-md overflow-hidden"
+                />
+              )}
+            </CardContent>
+          </DashboardTile>
+
+          {/* ROW 5: Action Cards */}
+          <DashboardTile id="action-report">
+            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+              <FileText className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-1">Detaljert rapport</h3>
+              <p className="text-slate-400 text-xs mb-3">PDF med komplett analyse</p>
+              <Button size="sm" className="w-full bg-primary hover:bg-primary/90">
+                <Download className="w-3 h-3 mr-1" />
+                Last ned
+              </Button>
+            </CardContent>
+          </DashboardTile>
+
+          <DashboardTile id="action-consultation">
+            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+              <Target className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-1">Book konsultasjon</h3>
+              <p className="text-slate-400 text-xs mb-3">Book konsultasjon</p>
+              <Button variant="outline" size="sm" className="w-full">
+                <Award className="w-3 h-3 mr-1" />
+                Book møte
+              </Button>
+            </CardContent>
+          </DashboardTile>
+
+          <DashboardTile id="action-share">
+            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+              <Share className="w-8 h-8 text-fuchsia-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-1">Del analyse</h3>
+              <p className="text-slate-400 text-xs mb-3">Send til leverandører</p>
+              <Button variant="outline" size="sm" className="w-full">
+                <Share className="w-3 h-3 mr-1" />
+                Del resultater
+              </Button>
+            </CardContent>
+          </DashboardTile>
+
+          <DashboardTile id="action-placeholder">
+            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+              <Settings className="w-8 h-8 text-slate-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-1">Endre data</h3>
+              <p className="text-slate-400 text-xs mb-3">Oppdater bygningsinfo</p>
+              <Button variant="outline" size="sm" className="w-full">
+                <Settings className="w-3 h-3 mr-1" />
+                Rediger
+              </Button>
+            </CardContent>
+          </DashboardTile>
+        </DashboardGrid>
+
+      </main>
+    </div>
+  );
+}
