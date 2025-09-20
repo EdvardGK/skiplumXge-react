@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+**/versions/**
+**/__tests__/**
+*.config.js
+*.config.ts
+*.config.mjs

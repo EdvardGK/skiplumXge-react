@@ -61,7 +61,7 @@ export default function LandingPage() {
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors">Funksjoner</a>
-              <a href="#about" className="text-gray-300 hover:text-emerald-400 transition-colors">Om oss</a>
+              <a href="https://www.skiplum.no/om-oss/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors">Om oss</a>
               <Button variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400">
                 Kontakt
               </Button>
