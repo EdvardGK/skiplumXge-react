@@ -111,7 +111,7 @@ export function useRealEnergyData(
         energyGrade: mapEnergyClass(directCertificateData.energyClass),
         energyConsumption: directCertificateData.energyConsumption || undefined,
         status: 'Registrert' as const,
-        source: 'direct_from_selector' as const
+        source: 'enova_database' as const
       }
 
       setEnovaResult(result)

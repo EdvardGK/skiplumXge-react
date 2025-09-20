@@ -289,11 +289,11 @@ export const MUNICIPAL_CASE_STUDIES = {
 
 export const INVESTMENT_FORMULAS = {
   conservativeInvestmentRoom: {
-    formula: 'Annual energy waste × 7 = Conservative investment room',
-    multiplier: 7, // NPV calculation at 6% discount with risk buffers
-    description: 'Conservative estimate based on 7-year payback with risk buffers',
+    formula: 'Annual energy waste × 7.36 = Conservative investment room',
+    multiplier: 7.36, // NPV calculation at 6% discount rate over 10 years
+    description: 'Present value of 10-year cash flows at 6% discount rate',
     verified: true,
-    source: 'Financial industry standard for energy investments'
+    source: 'NPV formula: (1 - (1.06)^-10) / 0.06 = 7.36'
   },
 
   energySystemBreakdown: {
@@ -371,7 +371,15 @@ export function getVerificationDate(sourceKey: string): string {
   }
 
   const source = allSources[sourceKey as keyof typeof allSources]
-  return source?.lastUpdated || 'Unknown'
+
+  if (!source) return 'Unknown'
+
+  // Handle different date property names
+  if ('lastUpdated' in source) return source.lastUpdated as string
+  if ('year' in source) return source.year.toString()
+  if ('years' in source) return source.years as string
+
+  return 'Unknown'
 }
 
 // =============================================================================

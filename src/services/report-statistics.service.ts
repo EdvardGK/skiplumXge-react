@@ -260,7 +260,7 @@ export async function generateReportClaims(
     ]
 
     let regionalClaims: string[] = []
-    let opportunityClaims: string[] = []
+    const opportunityClaims: string[] = []
 
     if (userKommuneNumber) {
       const regionalData = await getRegionalComparison(userKommuneNumber)

@@ -264,8 +264,8 @@ BEGIN
         waste_kr := 0;
     END IF;
 
-    -- Calculate investment room (7x multiplier - NPV at 6% discount)
-    investment_kr := waste_kr * 7;
+    -- Calculate investment room (7.36x multiplier - NPV at 6% discount rate for 10 years)
+    investment_kr := waste_kr * 7.36;
 
     RETURN QUERY
     SELECT
@@ -399,8 +399,8 @@ BEGIN
             NEW.annual_waste_kr := 0;
         END IF;
 
-        -- Investment room (7x multiplier)
-        NEW.investment_room_kr := NEW.annual_waste_kr * 7;
+        -- Investment room (7.36x multiplier - NPV at 6% discount rate for 10 years)
+        NEW.investment_room_kr := NEW.annual_waste_kr * 7.36;
 
         -- SINTEF breakdown (70/15/15)
         NEW.heating_investment := NEW.investment_room_kr * 0.70;

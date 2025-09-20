@@ -131,7 +131,11 @@ export async function getZoneStatistics(): Promise<{
       throw new Error(`Failed to get zone statistics: ${error.message}`)
     }
 
-    return data || []
+    // Transform snake_case to camelCase to match interface
+    return (data || []).map(item => ({
+      zone: item.zone,
+      municipalityCount: item.municipality_count
+    }))
 
   } catch (error) {
     console.error('Error fetching zone statistics:', error)

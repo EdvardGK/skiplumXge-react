@@ -178,7 +178,13 @@ export async function getPostalEnergyStats(postalCode: string): Promise<{
       throw new Error(`No energy statistics found for postal code ${postalCode}`)
     }
 
-    return data
+    // Transform snake_case properties to camelCase to match the return type
+    return {
+      totalBuildings: data.total_buildings,
+      averageEnergyConsumption: data.avg_energy_consumption,
+      mostCommonEnergyClass: data.most_common_energy_class,
+      constructionYearRange: data.construction_year_range
+    }
 
   } catch (error) {
     console.warn(`Postal statistics lookup failed for ${postalCode}:`, error)

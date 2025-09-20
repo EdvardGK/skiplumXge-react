@@ -305,6 +305,13 @@ export interface Database {
         }
         Returns: string
       }
+      get_zone_municipality_count: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          zone: string
+          municipality_count: number
+        }[]
+      }
       search_addresses: {
         Args: {
           query_text: string
@@ -336,6 +343,12 @@ export interface Database {
           bra_area: number
         }
         Returns: number
+      }
+      set_session_context: {
+        Args: {
+          session_id: string
+        }
+        Returns: undefined
       }
       track_conversion: {
         Args: {

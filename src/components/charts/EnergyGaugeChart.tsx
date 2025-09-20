@@ -38,15 +38,33 @@ export default function EnergyGaugeChart({
   const gaugeData = useMemo(() => {
     const segments = [];
 
-    Object.entries(energyGradeThresholds).forEach(([grade, threshold]) => {
-      const segmentSize = (threshold.max - threshold.min) / maxValue * 50; // Equal segments
-      segments.push({
-        name: grade,
-        value: segmentSize,
-        color: threshold.color,
-        isActive: grade === currentGrade
+    // If no grade provided, create northern lights gradient from green to magenta
+    if (!currentGrade) {
+      const numSegments = 7; // A through G
+      for (let i = 0; i < numSegments; i++) {
+        // Mathematical interpolation from green (120°) to magenta (300°)
+        const hue = 120 + (i / (numSegments - 1)) * 180; // 120° to 300°
+        const saturation = 70; // Rich colors
+        const lightness = 55; // Balanced brightness
+
+        segments.push({
+          name: String.fromCharCode(65 + i), // A, B, C, D, E, F, G
+          value: 50 / numSegments, // Equal segments
+          color: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+          isActive: false
+        });
+      }
+    } else {
+      Object.entries(energyGradeThresholds).forEach(([grade, threshold]) => {
+        const segmentSize = (threshold.max - threshold.min) / maxValue * 50; // Equal segments
+        segments.push({
+          name: grade,
+          value: segmentSize,
+          color: threshold.color,
+          isActive: grade === currentGrade
+        });
       });
-    });
+    }
 
     // Add empty segment to complete the circle (will be hidden by container)
     segments.push({

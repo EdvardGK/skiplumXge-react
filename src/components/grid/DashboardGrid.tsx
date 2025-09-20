@@ -129,14 +129,14 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
         }}
       >
         {React.Children.map(children, (child) => {
-          if (React.isValidElement(child) && child.props.id) {
-            const position = positions[child.props.id];
+          if (React.isValidElement(child) && (child.props as any)?.id) {
+            const position = positions[(child.props as any).id];
             if (position) {
-              return React.cloneElement(child, {
+              return React.cloneElement(child as any, {
                 style: {
                   gridColumn: position.gridColumn,
                   gridRow: position.gridRow,
-                  ...child.props.style,
+                  ...(child.props as any)?.style,
                 },
                 'data-grid-position': `${position.colSpan}x${position.rowSpan}`,
               });

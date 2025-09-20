@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPriceZoneByKommune } from '@/services/zone.service';
+import { createSecureResponse, createSecureErrorResponse, rateLimit, getClientIP } from '@/lib/security';
 
 // Kartverket API endpoint for address search
 const KARTVERKET_API_URL = 'https://ws.geonorge.no/adresser/v1/sok';
@@ -37,15 +38,20 @@ interface KartverketSearchResponse {
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(`address-search:${clientIP}`, 100, 60000); // 100 requests per minute
+
+    if (!rateLimitResult.allowed) {
+      return createSecureErrorResponse('Rate limit exceeded. Please try again later.', 429);
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q');
     const limit = searchParams.get('limit') || '10';
 
     if (!query || query.length < 3) {
-      return NextResponse.json(
-        { error: 'Query must be at least 3 characters long' },
-        { status: 400 }
-      );
+      return createSecureErrorResponse('Query must be at least 3 characters long', 400);
     }
 
     // Prepare Kartverket API request
@@ -198,7 +204,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Return the transformed and sorted addresses
-    return NextResponse.json({
+    return createSecureResponse({
       query: query,
       totalResults: data.metadata.totaltAntallTreff,
       addresses: sortedAddresses,
@@ -208,12 +214,9 @@ export async function GET(request: NextRequest) {
     console.error('Address search error:', error);
 
     // Return a user-friendly error message
-    return NextResponse.json(
-      {
-        error: 'Kunne ikke søke etter adresser. Vennligst prøv igjen senere.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    return createSecureErrorResponse(
+      'Kunne ikke søke etter adresser. Vennligst prøv igjen senere.',
+      500
     );
   }
 }

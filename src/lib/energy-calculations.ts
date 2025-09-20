@@ -5,7 +5,11 @@ import {
   VentilationSystem,
   HotWaterSystem,
   EnergyGrade,
-  TEK17_REQUIREMENTS
+  TEK17_REQUIREMENTS,
+  BuildingData,
+  EnergyAnalysis,
+  InvestmentGuidance,
+  InvestmentRecommendation
 } from '@/types/norwegian-energy';
 import { getCurrentElectricityPrice, FALLBACK_ELECTRICITY_PRICE, type NorwegianPriceZone } from '@/lib/electricity-pricing';
 
@@ -98,6 +102,9 @@ export interface EnergyCalculationResult {
   annualWaste: number; // kWh/år over TEK17
   annualWasteCost: number; // kr/år waste cost
   investmentRoom: number; // kr (7 year NPV)
+  npvOfWaste: number; // Full NPV calculation for reference
+  presentValueFactor: number; // Present value factor used in calculations
+  wastePerM2: number; // kWh/m²/år waste per square meter
   breakdown: {
     heating: number;
     lighting: number;
@@ -145,10 +152,10 @@ export function calculateEnergyAnalysis(data: BuildingEnergyData): EnergyCalcula
   const annualWaste = wastePerM2 * data.heatedArea;
   const annualWasteCost = Math.round(annualWaste * electricityPrice);
 
-  // NPV-based investment analysis
-  const npvOfWaste = calculateNPV(annualWasteCost);
-  const investmentRoom = Math.round(npvOfWaste * 0.95); // Conservative 95% of NPV
-  const presentValueFactor = getPresentValueFactor();
+  // NPV-based investment analysis (10 years at 6% discount rate)
+  const presentValueFactor = getPresentValueFactor(); // 7.36 for 10 years at 6%
+  const npvOfWaste = calculateNPV(annualWasteCost); // Full NPV calculation for reference
+  const investmentRoom = Math.round(annualWasteCost * presentValueFactor);
 
   // Energy breakdown by system (actual percentages based on user's systems)
   const breakdown = {
@@ -211,10 +218,136 @@ export function getInvestmentBreakdown(totalInvestmentRoom: number) {
 }
 
 /**
+ * Format Norwegian currency with proper thousand separators
+ * @param amount Amount in NOK
+ * @returns Formatted string with Norwegian thousand separators
+ */
+export function formatNOK(amount: number): string {
+  return amount.toLocaleString('nb-NO', {
+    style: 'currency',
+    currency: 'NOK',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
+/**
+ * Format energy consumption with proper units
+ * @param amount Energy amount in kWh
+ * @returns Formatted string with Norwegian thousand separators and kWh unit
+ */
+export function formatEnergyUse(amount: number): string {
+  return `${amount.toLocaleString('nb-NO')} kWh`;
+}
+
+/**
  * Get the current electricity price used in calculations
  * @param zone Norwegian pricing zone (defaults to NO1)
  * @returns Current electricity price in kr/kWh (36-month average from SSB data)
  */
 export function getCurrentElectricityPriceForDisplay(zone: NorwegianPriceZone = 'NO1'): number {
   return getElectricityPrice(zone);
+}
+
+/**
+ * Adapter function to convert BuildingData to BuildingEnergyData and perform energy analysis
+ */
+export function performEnergyAnalysis(buildingData: BuildingData): EnergyAnalysis {
+  // Convert BuildingData to BuildingEnergyData format
+  const energyData: BuildingEnergyData = {
+    buildingType: buildingData.type,
+    totalArea: buildingData.totalArea,
+    heatedArea: buildingData.heatedArea,
+    heatingSystem: buildingData.energySystems.heating,
+    lightingSystem: buildingData.energySystems.lighting,
+    ventilationSystem: buildingData.energySystems.ventilation,
+    hotWaterSystem: buildingData.energySystems.hotWater,
+    buildingYear: buildingData.buildingYear,
+    priceZone: 'NO1', // Default to Oslo region
+  };
+
+  // Perform the energy calculation
+  const result = calculateEnergyAnalysis(energyData);
+
+  // Convert EnergyCalculationResult to EnergyAnalysis format
+  return {
+    energyGrade: result.energyGrade,
+    totalEnergyUse: result.totalEnergyUse,
+    heatingEnergyUse: result.breakdown.heating, // Use percentage as proxy for heating energy
+    tek17Requirement: result.tek17Requirement,
+    compliance: {
+      isCompliant: result.isCompliant,
+      deviation: result.deviation,
+      requirement: result.tek17Requirement,
+      actual: result.totalEnergyUse,
+    },
+    breakdown: {
+      heating: result.breakdown.heating,
+      lighting: result.breakdown.lighting,
+      ventilation: result.breakdown.ventilation,
+      hotWater: result.breakdown.hotWater,
+    },
+    recommendations: [], // Empty array - will be populated by calculateInvestmentGuidance
+  };
+}
+
+/**
+ * Calculate investment guidance based on building data and energy analysis
+ */
+export function calculateInvestmentGuidance(
+  buildingData: BuildingData,
+  energyAnalysis: EnergyAnalysis
+): InvestmentGuidance {
+  // Calculate investment room using existing logic
+  const energyData: BuildingEnergyData = {
+    buildingType: buildingData.type,
+    totalArea: buildingData.totalArea,
+    heatedArea: buildingData.heatedArea,
+    heatingSystem: buildingData.energySystems.heating,
+    lightingSystem: buildingData.energySystems.lighting,
+    ventilationSystem: buildingData.energySystems.ventilation,
+    hotWaterSystem: buildingData.energySystems.hotWater,
+    buildingYear: buildingData.buildingYear,
+    priceZone: 'NO1',
+  };
+
+  const result = calculateEnergyAnalysis(energyData);
+  const breakdown = getInvestmentBreakdown(result.investmentRoom);
+
+  // Generate recommendations based on current systems
+  const recommendations: InvestmentRecommendation[] = [];
+
+  // Heating recommendations
+  if (buildingData.energySystems.heating === 'Elektrisitet') {
+    recommendations.push({
+      system: 'heating',
+      title: 'Installere varmepumpe',
+      description: 'Luft-til-luft varmepumpe kan redusere oppvarmingskostnader med 60-70%',
+      annualSavings: Math.round(result.annualWasteCost * 0.7),
+      estimatedCost: breakdown.heating.amount,
+      paybackPeriod: Math.round(breakdown.heating.amount / (result.annualWasteCost * 0.7)),
+      priority: 'high',
+    });
+  }
+
+  // Lighting recommendations
+  if (buildingData.energySystems.lighting !== 'LED') {
+    recommendations.push({
+      system: 'lighting',
+      title: 'Oppgradere til LED-belysning',
+      description: 'Smart LED-system med bevegelsessensorer og dagslysstyring',
+      annualSavings: Math.round(result.annualWasteCost * 0.15),
+      estimatedCost: breakdown.lighting.amount,
+      paybackPeriod: Math.round(breakdown.lighting.amount / (result.annualWasteCost * 0.15)),
+      priority: 'medium',
+    });
+  }
+
+  return {
+    annualEnergyWaste: result.annualWaste,
+    annualCostWaste: result.annualWasteCost,
+    conservativeInvestmentRoom: result.investmentRoom,
+    breakdown,
+    recommendations,
+  };
 }

@@ -4,7 +4,7 @@ import type { PriceZone } from '@/services/zone.service'
 
 // Cache for pricing data
 const priceCache = new Map<string, number>()
-const historyCache = new Map<string, ElectricityPrice[]>()
+const historyCache = new Map<string, PriceHistoryData[]>()
 const CACHE_DURATION = 60 * 60 * 1000 // 1 hour for current prices
 const HISTORY_CACHE_DURATION = 6 * 60 * 60 * 1000 // 6 hours for historical data
 
@@ -105,39 +105,31 @@ export async function getCurrentPriceByZone(zone: PriceZone): Promise<number> {
 }
 
 /**
- * Get 36-month average electricity price for a specific zone
+ * Get 36-month average household electricity price for a specific zone
+ * Uses SSB quarterly data (total household prices including grid costs and taxes)
  * @param zone - Norwegian electricity price zone (NO1-NO5)
  * @returns 36-month average price in øre/kWh
  */
 export async function get36MonthAverageByZone(zone: PriceZone): Promise<number> {
   try {
-    const cacheKey = `average_36m_${zone}`
+    const cacheKey = `average_36m_ssb_${zone}`
 
     // Check cache first
     if (priceCache.has(cacheKey)) {
       return priceCache.get(cacheKey)!
     }
 
-    // Get last 36 months of quarterly data for the zone
-    const { data, error } = await supabaseClient
-      .from('electricity_prices_nve')
-      .select('spot_price_ore_kwh')
-      .eq('zone', zone)
-      .order('year', { ascending: false })
-      .order('week_number', { ascending: false })
-      .limit(144) // Approximately 36 months of weekly data
+    // Import SSB quarterly data
+    const ssbData = await import('../data/ssb-electricity-prices.json')
+    const quarterlyPrices = ssbData.quarterlyPricesByZone[zone]
 
-    if (error) {
-      throw new Error(`Failed to get historical prices for zone ${zone}: ${error.message}`)
+    if (!quarterlyPrices || quarterlyPrices.length === 0) {
+      throw new Error(`No SSB quarterly price data found for zone ${zone}`)
     }
 
-    if (!data || data.length === 0) {
-      throw new Error(`No historical price data found for zone ${zone}`)
-    }
-
-    // Calculate average
-    const totalPrice = data.reduce((sum, week) => sum + week.spot_price_ore_kwh, 0)
-    const averagePrice = Math.round(totalPrice / data.length)
+    // Calculate average from all available quarters (currently 12 quarters = 36 months)
+    const totalPrice = quarterlyPrices.reduce((sum: number, quarter: any) => sum + quarter.priceOrePerKwh, 0)
+    const averagePrice = Math.round(totalPrice / quarterlyPrices.length)
 
     // Cache the result (longer cache for averages)
     priceCache.set(cacheKey, averagePrice)
@@ -146,7 +138,7 @@ export async function get36MonthAverageByZone(zone: PriceZone): Promise<number> 
     return averagePrice
 
   } catch (error) {
-    console.warn(`36-month average lookup failed for zone ${zone}:`, error)
+    console.warn(`36-month SSB average lookup failed for zone ${zone}:`, error)
     throw error
   }
 }

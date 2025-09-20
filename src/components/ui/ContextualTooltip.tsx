@@ -62,9 +62,12 @@ export function ContextualTooltip({
           className={`absolute z-50 ${positionStyles[position]} ${sizeStyles[size]}`}
           style={{
             left: position === 'top' || position === 'bottom' ? '50%' : undefined,
-            transform: position === 'top' || position === 'bottom' ? 'translateX(-50%)' : undefined,
             top: position === 'left' || position === 'right' ? '50%' : undefined,
-            transform: position === 'left' || position === 'right' ? 'translateY(-50%)' : undefined
+            transform: position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+              ? 'translateY(-50%)'
+              : undefined
           }}
         >
           <Card className={`backdrop-blur-lg border ${typeStyles[type]} shadow-xl`}>

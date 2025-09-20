@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,6 +31,7 @@ import NorwayPriceZoneMap from "@/components/charts/NorwayPriceZoneMap";
 import NPVInvestmentChart from "@/components/charts/NPVInvestmentChart";
 import DashboardGrid, { DashboardLayoutDefinition } from "@/components/grid/DashboardGrid";
 import DashboardTile from "@/components/grid/DashboardTile";
+import { usePdfReport, extractBuildingDataFromParams, buildAnalysisData } from "@/hooks/use-pdf-report";
 
 // Toggle between mock and real data maps
 const USE_REAL_MAP_DATA = true; // Set to false to use mock data
@@ -90,7 +91,7 @@ function calculateRealEnergyData(
   return calculateEnergyAnalysis(energyData);
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const addressParam = searchParams.get('address');
   const lat = searchParams.get('lat');
@@ -134,6 +135,9 @@ export default function Dashboard() {
   const hasRealBuildingData = realEnergyData !== null;
 
   // Prepare direct certificate data if available (memoized to prevent infinite re-renders)
+  // PDF Report generation hook
+  const { isGenerating, progress, error, generateReport } = usePdfReport();
+
   const directCertificateData = useMemo(() => {
     if (!energyClass && !energyConsumptionParam) return null;
 
@@ -147,17 +151,50 @@ export default function Dashboard() {
 
   // Fetch real Enova and pricing data
   const dashboardData = useDashboardEnergyData(
-    addressParam,
+    addressParam || undefined,
     priceZoneParam,
-    gnr,
-    bnr,
+    gnr || undefined,
+    bnr || undefined,
     realEnergyData,
-    municipalityNumber,
-    bygningsnummer,
+    municipalityNumber || undefined,
+    bygningsnummer || undefined,
     directCertificateData
   );
 
+  // PDF Report generation handler
+  const handleGenerateReport = async () => {
+    if (!addressParam) return;
 
+    try {
+      const buildingData = extractBuildingDataFromParams(searchParams);
+
+      // Add energy grade from dashboard data if available
+      if (dashboardData.energyGrade) {
+        buildingData.energyGrade = dashboardData.energyGrade;
+      }
+      if (dashboardData.energyConsumption) {
+        buildingData.energyConsumption = dashboardData.energyConsumption;
+      }
+
+      const analysisData = hasRealBuildingData && realEnergyData
+        ? buildAnalysisData(
+            realEnergyData.annualWaste,
+            realEnergyData.annualWasteCost,
+            realEnergyData.investmentRoom,
+            realEnergyData.breakdown
+          )
+        : undefined;
+
+      await generateReport({
+        address: addressParam,
+        buildingData,
+        municipalityNumber: municipalityNumber || undefined,
+        analysisData
+      });
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -278,7 +315,7 @@ export default function Dashboard() {
 
                     return (
                       <div>
-                        <div className={`text-3xl font-bold ${colorClass}`}>
+                        <div className={`text-4xl font-bold ${colorClass}`}>
                           {Math.abs(percentageDeviation)}%
                         </div>
                         <div className="text-xs text-slate-400 mt-1">
@@ -288,7 +325,7 @@ export default function Dashboard() {
                     );
                   })()
                 ) : (
-                  <span className="text-3xl font-bold text-slate-400">–</span>
+                  <span className="text-4xl font-bold text-slate-400">–</span>
                 )}
               </div>
             </CardContent>
@@ -320,7 +357,15 @@ export default function Dashboard() {
                     showLabels={false}
                   />
                 ) : (
-                  <div className="text-xl font-bold text-slate-400">–</div>
+                  <EnergyGaugeChart
+                    currentGrade={'' as any}
+                    currentValue={0}
+                    maxValue={300}
+                    tek17Limit={115}
+                    size={160}
+                    showLabels={false}
+                    className="opacity-60"
+                  />
                 )}
               </div>
               <div className="text-slate-400 text-xs text-center">
@@ -350,11 +395,13 @@ export default function Dashboard() {
                   {dashboardData.isLoadingPricing ? 'LASTER...' : dashboardData.priceZone || 'NO1'}
                 </span>
               </div>
-              <div className="text-xl font-bold text-white">
+              <div className="text-center">
                 {dashboardData.average36MonthPrice ? (
-                  `${Math.round(dashboardData.average36MonthPrice)} øre`
+                  <div className="text-4xl font-bold text-cyan-400">
+                    {Math.round(dashboardData.average36MonthPrice)} øre
+                  </div>
                 ) : (
-                  <span className="text-slate-400">–</span>
+                  <div className="text-4xl font-bold text-slate-400">–</div>
                 )}
               </div>
               <div className="text-slate-400 text-xs">
@@ -376,7 +423,7 @@ export default function Dashboard() {
               </div>
               <div className="text-xl font-bold text-white">
                 {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
-                  `${Math.round(realEnergyData.investmentRoom * 1.4).toLocaleString()} kr` : "–"
+                  `${realEnergyData.investmentRoom.toLocaleString()} kr` : "–"
                 }
               </div>
               <div className="text-slate-400 text-xs">Estimert budsjett for ROI over 10 år</div>
@@ -518,11 +565,30 @@ export default function Dashboard() {
             <CardContent className="p-4 text-center h-full flex flex-col justify-center">
               <FileText className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
               <h3 className="text-sm font-bold text-white mb-1">Detaljert rapport</h3>
-              <p className="text-slate-400 text-xs mb-3">PDF med komplett analyse</p>
-              <Button size="sm" className="w-full bg-primary hover:bg-primary/90">
-                <Download className="w-3 h-3 mr-1" />
-                Last ned
+              <p className="text-slate-400 text-xs mb-3">
+                {progress || (error ? 'Feil oppstod' : 'PDF med komplett analyse')}
+              </p>
+              <Button
+                size="sm"
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={handleGenerateReport}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1" />
+                    Genererer...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3 h-3 mr-1" />
+                    Last ned
+                  </>
+                )}
               </Button>
+              {error && (
+                <p className="text-red-400 text-xs mt-2">{error}</p>
+              )}
             </CardContent>
           </DashboardTile>
 
@@ -564,6 +630,33 @@ export default function Dashboard() {
         </DashboardGrid>
 
       </main>
+
+      {/* Dashboard ready indicator for screenshot capture */}
+      <div data-dashboard-ready="true" className="hidden" />
     </div>
+  );
+}
+
+// Loading component for Suspense boundary
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Zap className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-white mb-2">Laster energianalyse...</h1>
+          <p className="text-slate-400">Beregner energidata for eiendommen</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main exported component with Suspense boundary
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

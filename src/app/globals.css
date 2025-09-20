@@ -5,6 +5,67 @@
 /* Leaflet Map Styles */
 @import 'leaflet/dist/leaflet.css';
 
+/* Fix Recharts hover issues - clean bar highlighting only */
+.recharts-rectangle {
+  outline: none !important;
+  transition: fill-opacity 0.15s ease;
+}
+
+.recharts-rectangle:hover {
+  outline: none !important;
+  fill-opacity: 0.8 !important;  /* Slightly brighter fill on hover */
+  stroke-width: 1 !important;  /* Keep original stroke width */
+  stroke-opacity: 1 !important;  /* Keep original stroke opacity */
+}
+
+.recharts-rectangle:focus,
+.recharts-rectangle:active {
+  outline: none !important;
+}
+
+/* Prevent any selection or focus rectangles */
+.recharts-bar-rectangle,
+.recharts-bar-rectangle path {
+  outline: none !important;
+}
+
+.recharts-bar-rectangle:focus-within {
+  outline: none !important;
+}
+
+/* Remove all focus/selection outlines from Recharts */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-surface *,
+.recharts-layer,
+.recharts-layer *,
+.recharts-bar,
+.recharts-bar * {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Override any SVG selection styles */
+svg .recharts-rectangle {
+  pointer-events: painted !important;
+  outline: none !important;
+}
+
+svg .recharts-rectangle:hover {
+  filter: brightness(1.1);  /* Subtle brightness increase within bar */
+}
+
+/* Ensure no browser default focus styles */
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible,
+.recharts-bar path:focus-visible,
+.recharts-rectangle:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  stroke-width: 1 !important;
+}
+
 :root {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -426,5 +487,94 @@
   .leaflet-interactive[stroke="none"] {
     box-shadow: none !important;
     border: none !important;
+  }
+
+  /* Print-friendly styles for PDF generation */
+  @media print, screen and (color-scheme: none) {
+    /* Hide elements that shouldn't appear in PDF reports */
+    .no-print,
+    button:not(.print-keep),
+    .print-hide,
+    [data-print-hide="true"] {
+      display: none !important;
+    }
+
+    /* Optimize backgrounds for print */
+    .bg-gradient-to-br {
+      background: #1e293b !important;
+      print-color-adjust: exact !important;
+      -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Ensure text remains readable in print */
+    .text-white {
+      color: #ffffff !important;
+      print-color-adjust: exact !important;
+    }
+
+    .text-slate-300 {
+      color: #cbd5e1 !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Ensure charts and visualizations print correctly */
+    .recharts-wrapper,
+    .leaflet-container,
+    canvas,
+    svg {
+      print-color-adjust: exact !important;
+      -webkit-print-color-adjust: exact !important;
+    }
+
+    /* Remove animations and transitions for clean screenshots */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0s !important;
+      animation-delay: 0s !important;
+      transition-duration: 0s !important;
+      transition-delay: 0s !important;
+    }
+
+    /* Ensure proper contrast for PDF */
+    .aurora-card {
+      background: #111111 !important;
+      border: 1px solid #27272a !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Force high contrast for dashboard elements */
+    .dashboard-container {
+      background: #0a0a0a !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Ensure cards are visible in PDF */
+    .bg-white\/10 {
+      background-color: rgba(255, 255, 255, 0.1) !important;
+      print-color-adjust: exact !important;
+    }
+
+    .backdrop-blur-lg {
+      backdrop-filter: none !important; /* Remove blur for cleaner PDF capture */
+    }
+  }
+
+  /* Puppeteer-specific styles (applied via JavaScript) */
+  .puppeteer-capture {
+    /* Hide interactive elements during screenshot */
+    .hover\:scale-105,
+    .transition-all,
+    .cursor-pointer {
+      transform: none !important;
+      transition: none !important;
+      cursor: default !important;
+    }
+
+    /* Ensure all text is rendered clearly */
+    * {
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+    }
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +33,7 @@ interface EnovaCertificate {
   constructionYear?: number;
 }
 
-export default function SelectBuildingPage() {
+function SelectBuildingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -71,12 +71,14 @@ export default function SelectBuildingPage() {
 
       // Fetch map buildings
       setIsLoadingMap(true);
+      let fetchedBuildings: MapBuilding[] = [];
       try {
         const buildings = await MapDataService.fetchNearbyBuildings(
           parseFloat(lat),
           parseFloat(lon),
           100 // 100m radius for building selection
         );
+        fetchedBuildings = buildings;
         setMapBuildings(buildings);
 
         // Simple: just center on address coordinates
@@ -89,13 +91,15 @@ export default function SelectBuildingPage() {
       }
 
       // Fetch Enova certificates if we have gnr/bnr
+      let fetchedCertificates: EnovaCertificate[] = [];
       if (gnr && bnr) {
         setIsLoadingEnova(true);
         try {
           const response = await fetch(`/api/buildings/detect?gnr=${gnr}&bnr=${bnr}&address=${encodeURIComponent(address)}`);
           if (response.ok) {
             const data = await response.json();
-            setEnovaCertificates(data.buildings || []);
+            fetchedCertificates = data.buildings || [];
+            setEnovaCertificates(fetchedCertificates);
           }
         } catch (error) {
           console.error('Failed to fetch Enova certificates:', error);
@@ -105,6 +109,20 @@ export default function SelectBuildingPage() {
         }
       } else {
         setIsLoadingEnova(false);
+      }
+
+      // Auto-select if only one building
+      if (fetchedBuildings.length === 1) {
+        const singleBuilding = fetchedBuildings[0];
+        setSelectedBuildingId(singleBuilding.id);
+
+        // If no Enova certificates exist, skip certificate selection entirely
+        if (fetchedCertificates.length === 0) {
+          // Wait a moment for UI to render, then auto-proceed
+          setTimeout(() => {
+            setShowForm(true);
+          }, 1000);
+        }
       }
     };
 
@@ -403,11 +421,6 @@ export default function SelectBuildingPage() {
                         attributionControl={false}
                         whenReady={() => setIsMapReady(true)}
                         ref={setMapRef}
-                        onZoomEnd={(e) => {
-                          const newZoom = e.target.getZoom();
-                          console.log('Zoom changed to:', newZoom);
-                          setCurrentZoom(newZoom);
-                        }}
                         scrollWheelZoom={true}
                         zoomDelta={0.5}
                         zoomSnap={0.25}
@@ -651,6 +664,36 @@ export default function SelectBuildingPage() {
 
       </div>
     </div>
+  );
+}
+
+// Loading component for Suspense boundary
+function SelectBuildingLoading() {
+  return (
+    <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+      </div>
+
+      <div className="relative z-10 h-full flex items-center justify-center">
+        <div className="text-center">
+          <Building className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-white mb-2">Laster bygningsvalg...</h1>
+          <p className="text-slate-400">Klargjør bygningsdata</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main exported component with Suspense boundary
+export default function SelectBuildingPage() {
+  return (
+    <Suspense fallback={<SelectBuildingLoading />}>
+      <SelectBuildingContent />
+    </Suspense>
   );
 }
 

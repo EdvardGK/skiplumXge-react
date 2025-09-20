@@ -275,7 +275,7 @@ function BuildingMarker({ building, isSelected, onSelect, getEnergyGradeColor }:
     createIcon();
   }, [building, isSelected, getEnergyGradeColor]);
 
-  if (!icon) return null;
+  if (!icon || !building.coordinates) return null;
 
   const energyGrade = building.enovaStatus?.energyGrade;
 

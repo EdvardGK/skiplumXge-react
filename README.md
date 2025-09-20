@@ -94,7 +94,7 @@ All validated Norwegian energy data sources from the Streamlit version will be p
 - **TEK17 § 14-2**: Official building energy requirements
 - **SINTEF**: Energy system breakdowns (70% heating, 15% lighting)
 - **Enova**: Energy certificate database
-- **Investment Formula**: Conservative 7x annual savings multiplier
+- **Investment Formula**: NPV calculation using 7.36x multiplier (10 years at 6% discount rate)
 
 ## 📊 Dashboard Comparison
 

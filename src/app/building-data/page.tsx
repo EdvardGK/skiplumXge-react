@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -80,7 +80,7 @@ const hotWaterSystemOptions: { value: HotWaterSystem; label: string }[] = [
   { value: 'Gass', label: 'Naturgass' },
 ];
 
-export default function BuildingDataPage() {
+function BuildingDataContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const address = searchParams.get('address');
@@ -208,7 +208,7 @@ export default function BuildingDataPage() {
       setEnovaDataSource(null);
 
       try {
-        const result = await getEnovaGrade(gnr, bnr, bygningsnummer, address);
+        const result = await getEnovaGrade(gnr, bnr, bygningsnummer || undefined, address);
 
         if (result.found && result.certificate) {
           console.log('Found Enova certificate:', result.certificate);
@@ -751,5 +751,29 @@ export default function BuildingDataPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Loading component for Suspense boundary
+function BuildingDataLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Building className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold mb-2">Laster bygningsdata...</h1>
+          <p className="text-muted-foreground">Klargjør skjema for energianalyse</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main exported component with Suspense boundary
+export default function BuildingDataPage() {
+  return (
+    <Suspense fallback={<BuildingDataLoading />}>
+      <BuildingDataContent />
+    </Suspense>
   );
 }

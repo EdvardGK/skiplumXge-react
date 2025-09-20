@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { supabaseClient } from '@/lib/supabase';
+import { createSecureResponse, createSecureErrorResponse, rateLimit, getClientIP } from '@/lib/security';
 
 interface BuildingDetectionResult {
   hasMultipleBuildings: boolean;
@@ -16,34 +17,32 @@ interface BuildingDetectionResult {
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIP = getClientIP(request);
+    const rateLimitResult = rateLimit(`buildings-detect:${clientIP}`, 60, 60000); // 60 requests per minute
+
+    if (!rateLimitResult.allowed) {
+      return createSecureErrorResponse('Rate limit exceeded. Please try again later.', 429);
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const gnr = searchParams.get('gnr');
     const bnr = searchParams.get('bnr');
     const address = searchParams.get('address');
 
     if (!gnr || !bnr) {
-      return NextResponse.json(
-        { error: 'gnr and bnr are required' },
-        { status: 400 }
-      );
+      return createSecureErrorResponse('gnr and bnr are required', 400);
     }
 
     console.log(`Detecting buildings for gnr=${gnr}, bnr=${bnr}, address=${address}`);
 
     // Query Enova database for all certificates at this property
+    // Note: Using select('*') to avoid column name issues during build
     const { data: certificates, error } = await supabaseClient
       .from('energy_certificates')
-      .select(`
-        building_number,
-        energy_class,
-        building_category,
-        energy_consumption,
-        construction_year,
-        certificate_id
-      `)
+      .select('*')
       .eq('gnr', parseInt(gnr))
-      .eq('bnr', parseInt(bnr))
-      .order('building_number');
+      .eq('bnr', parseInt(bnr));
 
     if (error) {
       console.error('Enova database error:', error);
@@ -56,15 +55,16 @@ export async function GET(request: NextRequest) {
       // Group by building number (in case there are multiple certificates per building)
       const buildingMap = new Map<string, any>();
 
-      certificates.forEach(cert => {
-        const buildingNum = cert.building_number || '1';
+      certificates.forEach((cert: any) => {
+        // Handle different possible column names
+        const buildingNum = cert.building_number || cert.bygningsnummer || '1';
         if (!buildingMap.has(buildingNum)) {
           buildingMap.set(buildingNum, {
             bygningsnummer: buildingNum,
-            energyClass: cert.energy_class,
-            buildingCategory: cert.building_category,
-            energyConsumption: cert.energy_consumption,
-            constructionYear: cert.construction_year,
+            energyClass: cert.energy_class || cert.energikarakter,
+            buildingCategory: cert.building_category || cert.bygningskategori,
+            energyConsumption: cert.energy_consumption || cert.energiforbruk,
+            constructionYear: cert.construction_year || cert.byggeaar,
             isRegistered: true,
           });
         }
@@ -91,17 +91,14 @@ export async function GET(request: NextRequest) {
       buildings,
     };
 
-    return NextResponse.json(result);
+    return createSecureResponse(result);
 
   } catch (error) {
     console.error('Building detection error:', error);
 
-    return NextResponse.json(
-      {
-        error: 'Kunne ikke hente bygningsinformasjon. Vennligst prøv igjen senere.',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
+    return createSecureErrorResponse(
+      'Kunne ikke hente bygningsinformasjon. Vennligst prøv igjen senere.',
+      500
     );
   }
 }

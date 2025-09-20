@@ -287,7 +287,7 @@ export const useAppStore = create<StoreState & StoreActions>()(
               type: address.matrikkel.buildingType as any,
               totalArea: address.matrikkel.totalArea || 0,
               heatedArea: address.matrikkel.heatedArea || 0,
-              buildingYear: address.matrikkel.buildingYear,
+              buildingYear: address.matrikkel.buildingYear || undefined,
               energySystems: {
                 heating: 'Elektrisitet',
                 lighting: 'Fluorescerende',
