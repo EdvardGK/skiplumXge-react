@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "yarn build",
   "outputDirectory": ".next",
-  "installCommand": "npm ci",
+  "installCommand": "yarn install --frozen-lockfile",
   "framework": "nextjs",
   "functions": {
     "src/app/api/dashboard/screenshot/route.ts": {
