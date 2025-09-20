@@ -202,20 +202,7 @@ export default function Dashboard() {
             Hjem → Bygningsdata → <span className="text-cyan-400">Dashboard</span>
           </div>
           <div className="flex items-center justify-end">
-            <div className="text-right">
-              <div className="text-sm font-bold text-white">
-                TEK17: {hasRealBuildingData ? (
-                  <span className={realEnergyData.isCompliant ? "text-emerald-400" : "text-red-400"}>
-                    {realEnergyData.isCompliant ? 'OK' : 'OVER'}
-                  </span>
-                ) : (
-                  <span className="text-slate-400">IKKE BEREGNET</span>
-                )}
-              </div>
-              <div className="text-slate-300 text-xs">
-                {hasRealBuildingData ? `Krav: ${realEnergyData.tek17Requirement} kWh/m²/år` : "Trenger bygningsdata"}
-              </div>
-            </div>
+            {/* Header actions removed - TEK17 info now only in main tile */}
           </div>
         </div>
 
@@ -235,9 +222,26 @@ export default function Dashboard() {
               </div>
               <div className="text-xl font-bold text-white">
                 {hasRealBuildingData ? (
-                  <span className={realEnergyData.isCompliant ? "text-emerald-400" : "text-red-400"}>
-                    {realEnergyData.isCompliant ? 'OK' : 'OVER'}
-                  </span>
+                  (() => {
+                    const percentageDeviation = Math.round(((realEnergyData.totalEnergyUse - realEnergyData.tek17Requirement) / realEnergyData.tek17Requirement) * 100);
+
+                    // Use energy grade color scale for percentage deviation
+                    let colorClass = "text-emerald-400"; // A grade (excellent)
+                    if (percentageDeviation > 30) colorClass = "text-red-600";       // G grade (extreme)
+                    else if (percentageDeviation > 15) colorClass = "text-red-500";  // F grade (very poor)
+                    else if (percentageDeviation > 0) colorClass = "text-orange-500"; // E grade (poor)
+                    else if (percentageDeviation > -15) colorClass = "text-orange-400"; // D grade (below average)
+                    else if (percentageDeviation > -25) colorClass = "text-yellow-400"; // C grade (average)
+                    else if (percentageDeviation > -35) colorClass = "text-lime-500";   // B grade (good)
+                    // else stays emerald-400 for A grade
+
+                    const sign = percentageDeviation > 0 ? '+' : '';
+                    return (
+                      <span className={colorClass}>
+                        {sign}{percentageDeviation}%
+                      </span>
+                    );
+                  })()
                 ) : (
                   <span className="text-slate-400">–</span>
                 )}
@@ -301,25 +305,17 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="text-xl font-bold text-white">
-                {dashboardData.isLoadingPricing ? (
-                  'Laster...'
-                ) : dashboardData.currentSpotPrice ? (
-                  `${Math.round(dashboardData.currentSpotPrice)} øre`
-                ) : dashboardData.hasErrors ? (
-                  <span className="text-red-400">Ikke tilgjengelig</span>
+                {dashboardData.average36MonthPrice ? (
+                  `${Math.round(dashboardData.average36MonthPrice)} øre`
                 ) : (
                   <span className="text-slate-400">–</span>
                 )}
               </div>
               <div className="text-slate-400 text-xs">
-                {dashboardData.isLoadingPricing ? (
-                  'Henter prisdata...'
-                ) : dashboardData.hasErrors ? (
-                  'Prisdata utilgjengelig'
-                ) : dashboardData.priceZone ? (
-                  `Per kWh • NVE ${dashboardData.priceZone}`
+                {dashboardData.priceZone ? (
+                  `36 måneders snitt • SSB ${dashboardData.priceZone || 'NO1'}`
                 ) : (
-                  'Ingen prisdata'
+                  'Ukjent sone'
                 )}
               </div>
             </CardContent>
@@ -330,14 +326,14 @@ export default function Dashboard() {
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Target className="w-5 h-5 text-fuchsia-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">10 ÅR</span>
+                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">ROI</span>
               </div>
               <div className="text-xl font-bold text-white">
                 {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
                   `${Math.round(realEnergyData.investmentRoom * 1.4).toLocaleString()} kr` : "–"
                 }
               </div>
-              <div className="text-slate-400 text-xs">10 års NPV</div>
+              <div className="text-slate-400 text-xs">Estimert budsjett for ROI over 10 år</div>
             </CardContent>
           </DashboardTile>
 

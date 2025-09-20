@@ -33,6 +33,32 @@ export interface PriceHistoryData {
 }
 
 /**
+ * Get price zone for a municipality
+ * @param kommunenummer - Norwegian municipality number from address search
+ * @returns Price zone (NO1-NO5) or null if not found
+ */
+export async function getPriceZoneByKommune(kommunenummer: string): Promise<PriceZone | null> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('municipality_price_zones')
+      .select('price_zone')
+      .eq('kommune_number', kommunenummer)
+      .single()
+
+    if (error || !data) {
+      console.warn(`Zone lookup failed for kommune ${kommunenummer}:`, error?.message)
+      return 'NO1' // Default fallback to Eastern Norway
+    }
+
+    return data.price_zone as PriceZone
+
+  } catch (error) {
+    console.warn(`Zone lookup error for kommune ${kommunenummer}:`, error)
+    return 'NO1' // Default fallback
+  }
+}
+
+/**
  * Get current electricity spot price for a specific zone
  * @param zone - Norwegian electricity price zone (NO1-NO5)
  * @returns Current spot price in øre/kWh
@@ -75,6 +101,53 @@ export async function getCurrentPriceByZone(zone: PriceZone): Promise<number> {
   } catch (error) {
     console.warn(`Current price lookup failed for zone ${zone}:`, error)
     throw error // Re-throw to let caller handle appropriately
+  }
+}
+
+/**
+ * Get 36-month average electricity price for a specific zone
+ * @param zone - Norwegian electricity price zone (NO1-NO5)
+ * @returns 36-month average price in øre/kWh
+ */
+export async function get36MonthAverageByZone(zone: PriceZone): Promise<number> {
+  try {
+    const cacheKey = `average_36m_${zone}`
+
+    // Check cache first
+    if (priceCache.has(cacheKey)) {
+      return priceCache.get(cacheKey)!
+    }
+
+    // Get last 36 months of quarterly data for the zone
+    const { data, error } = await supabaseClient
+      .from('electricity_prices_nve')
+      .select('spot_price_ore_kwh')
+      .eq('zone', zone)
+      .order('year', { ascending: false })
+      .order('week_number', { ascending: false })
+      .limit(144) // Approximately 36 months of weekly data
+
+    if (error) {
+      throw new Error(`Failed to get historical prices for zone ${zone}: ${error.message}`)
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error(`No historical price data found for zone ${zone}`)
+    }
+
+    // Calculate average
+    const totalPrice = data.reduce((sum, week) => sum + week.spot_price_ore_kwh, 0)
+    const averagePrice = Math.round(totalPrice / data.length)
+
+    // Cache the result (longer cache for averages)
+    priceCache.set(cacheKey, averagePrice)
+    setTimeout(() => priceCache.delete(cacheKey), HISTORY_CACHE_DURATION)
+
+    return averagePrice
+
+  } catch (error) {
+    console.warn(`36-month average lookup failed for zone ${zone}:`, error)
+    throw error
   }
 }
 

@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     const data: KartverketSearchResponse = await response.json();
 
-    // Transform Kartverket data to our Address format with zone lookup
+    // Transform Kartverket data to our Address format (fast, no building data)
     const addresses = await Promise.all(
       data.adresser.map(async (addr) => {
         // Look up electricity price zone for this municipality
@@ -98,11 +98,10 @@ export async function GET(request: NextRequest) {
           houseLetter: addr.bokstav,
           municipalityNumber: addr.kommunenummer,
           priceZone: priceZone,
-          // Matrikkel data - includes gnr/bnr for Enova lookups
           matrikkel: {
             gardsnummer: addr.gardsnummer,
             bruksnummer: addr.bruksnummer,
-            // These would come from Matrikkelen/building registry API
+            bygningsnummer: undefined, // Will be set when user selects building
             buildingId: null,
             propertyId: null,
             buildingType: null,
@@ -114,8 +113,11 @@ export async function GET(request: NextRequest) {
       })
     );
 
+    // All addresses are valid now (no filtering)
+    const validAddresses = addresses;
+
     // Sort addresses to prioritize exact matches and better relevance
-    const sortedAddresses = addresses.sort((a, b) => {
+    const sortedAddresses = validAddresses.sort((a, b) => {
       const queryLower = query.toLowerCase();
       const aText = a.adressetekst.toLowerCase();
       const bText = b.adressetekst.toLowerCase();

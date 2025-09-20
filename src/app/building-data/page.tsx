@@ -11,9 +11,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Building, Zap, ArrowRight, Loader2, CheckCircle, MapPin } from "lucide-react";
-import { BuildingType, HeatingSystem, LightingSystem, VentilationSystem, HotWaterSystem } from "@/types/norwegian-energy";
+import { BuildingType, HeatingSystem, LightingSystem, VentilationSystem, HotWaterSystem, Address } from "@/types/norwegian-energy";
 import MapDataService from "@/services/map-data.service";
 import { getEnovaGrade } from "@/services/enova.service";
+import { AddressBuildingSelector } from "@/components/AddressBuildingSelector";
 
 // Form validation schema
 const buildingDataSchema = z.object({
@@ -90,6 +91,7 @@ export default function BuildingDataPage() {
   const postalCode = searchParams.get('postalCode');
   const gnr = searchParams.get('gnr');
   const bnr = searchParams.get('bnr');
+  const bygningsnummer = searchParams.get('bygningsnummer');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingBuildingData, setIsFetchingBuildingData] = useState(false);
   const [buildingDataSource, setBuildingDataSource] = useState<string | null>(null);
@@ -189,7 +191,7 @@ export default function BuildingDataPage() {
       setEnovaDataSource(null);
 
       try {
-        const result = await getEnovaGrade(address, gnr, bnr);
+        const result = await getEnovaGrade(gnr, bnr, bygningsnummer, address);
 
         if (result.found && result.certificate) {
           console.log('Found Enova certificate:', result.certificate);
@@ -469,7 +471,7 @@ export default function BuildingDataPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-foreground">Bygningstype</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Velg bygningstype" />

@@ -266,16 +266,20 @@ npm install --save-dev @testing-library/react @testing-library/jest-dom jest
 
 ## Deployment Preparation
 
-### Production Build
-```bash
-npm run build    # Test production build
-npm start        # Test production server
-```
+### Production Build Considerations
+**IMPORTANT**: Development mode is more permissive than production builds. Issues may only appear during deployment that don't show up locally.
 
 ### Deployment Platforms
 - **Recommended**: Vercel (optimal for Next.js)
 - **Alternatives**: Netlify, Railway, DigitalOcean Apps
 - **Requirements**: Node.js 18+, automatic SSL, CDN
+
+### Code Quality for Deployment
+- ESLint rules configured as warnings (not errors) for successful builds
+- TypeScript compilation must pass without errors
+- Version files excluded from build (`**/versions/**`)
+- No mock data references in compiled files
+- Proper file exclusion patterns in tsconfig.json and eslint config
 
 ### Environment Variables (Future)
 ```bash

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getEnovaGrade, type EnovaLookupResult } from '@/services/enova.service'
-import { getTotalElectricityCost, getPriceHistory, type PriceData, type PriceHistoryData } from '@/services/pricing.service'
+import { getTotalElectricityCost, getPriceHistory, get36MonthAverageByZone, type PriceData, type PriceHistoryData } from '@/services/pricing.service'
 import { getZoneDisplayName, type PriceZone } from '@/services/zone.service'
 
 export interface RealEnergyData {
@@ -14,6 +14,7 @@ export interface RealEnergyData {
   // Pricing information
   currentPricing: PriceData | null
   priceHistory: PriceHistoryData[]
+  average36MonthPrice: number | null
 
   // Loading states
   isLoadingEnova: boolean
@@ -42,6 +43,7 @@ export function useRealEnergyData(
   const [enovaResult, setEnovaResult] = useState<EnovaLookupResult | null>(null)
   const [currentPricing, setCurrentPricing] = useState<PriceData | null>(null)
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData[]>([])
+  const [average36MonthPrice, setAverage36MonthPrice] = useState<number | null>(null)
 
   const [isLoadingEnova, setIsLoadingEnova] = useState(false)
   const [isLoadingPricing, setIsLoadingPricing] = useState(false)
@@ -75,25 +77,32 @@ export function useRealEnergyData(
       })
   }, [address, gnr, bnr])
 
-  // Fetch current pricing data
+  // Fetch current pricing data and 36-month average
   useEffect(() => {
     if (!priceZone) {
       setCurrentPricing(null)
+      setAverage36MonthPrice(null)
       return
     }
 
     setIsLoadingPricing(true)
     setPricingError(null)
 
-    getTotalElectricityCost(priceZone)
-      .then(pricing => {
+    // Fetch both current pricing and 36-month average
+    Promise.all([
+      getTotalElectricityCost(priceZone),
+      get36MonthAverageByZone(priceZone)
+    ])
+      .then(([pricing, average36m]) => {
         setCurrentPricing(pricing)
+        setAverage36MonthPrice(average36m)
         setPricingError(null)
       })
       .catch(error => {
         console.warn('Failed to fetch pricing data:', error)
         setPricingError(`Prisdata utilgjengelig: ${error.message}`)
         setCurrentPricing(null)
+        setAverage36MonthPrice(null)
       })
       .finally(() => {
         setIsLoadingPricing(false)
@@ -128,6 +137,7 @@ export function useRealEnergyData(
     enovaResult,
     currentPricing,
     priceHistory,
+    average36MonthPrice,
     isLoadingEnova,
     isLoadingPricing,
     isLoadingHistory,
@@ -171,6 +181,7 @@ export function useDashboardEnergyData(
 
   const currentSpotPrice = realData.currentPricing?.spotPrice || null
   const totalElectricityPrice = realData.currentPricing?.totalPrice || null
+  const average36MonthPrice = realData.average36MonthPrice || null
 
   return {
     // Combined energy data
@@ -184,6 +195,7 @@ export function useDashboardEnergyData(
     zoneDisplayName: realData.zoneDisplayName,
     currentSpotPrice,
     totalElectricityPrice,
+    average36MonthPrice,
     priceHistory: realData.priceHistory,
 
     // Loading states

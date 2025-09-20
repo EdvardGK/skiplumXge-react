@@ -26,6 +26,75 @@ export default function LandingPage() {
     clearSearch
   } = usePropertySearch();
   const [showResults, setShowResults] = useState(false);
+  const [isCheckingBuildings, setIsCheckingBuildings] = useState(false);
+
+  // Helper function to handle address selection and building detection
+  const handleAddressSelection = async (address: any) => {
+    if (!address.matrikkel?.gardsnummer || !address.matrikkel?.bruksnummer) {
+      // No gnr/bnr - go directly to building form
+      const params = new URLSearchParams({
+        address: address.adressetekst,
+        lat: address.coordinates.lat.toString(),
+        lon: address.coordinates.lon.toString(),
+        municipality: address.municipality,
+        municipalityNumber: address.municipalityNumber || '',
+        postalCode: address.postalCode,
+      });
+      router.push(`/building-data?${params.toString()}`);
+      return;
+    }
+
+    setIsCheckingBuildings(true);
+
+    try {
+      // Check for multiple buildings using new API
+      const response = await fetch(`/api/buildings/detect?gnr=${address.matrikkel.gardsnummer}&bnr=${address.matrikkel.bruksnummer}&address=${encodeURIComponent(address.adressetekst)}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to detect buildings');
+      }
+
+      const buildingData = await response.json();
+
+      const params = new URLSearchParams({
+        address: address.adressetekst,
+        lat: address.coordinates.lat.toString(),
+        lon: address.coordinates.lon.toString(),
+        municipality: address.municipality,
+        municipalityNumber: address.municipalityNumber || '',
+        postalCode: address.postalCode,
+        gnr: address.matrikkel.gardsnummer,
+        bnr: address.matrikkel.bruksnummer,
+      });
+
+      if (buildingData.hasMultipleBuildings) {
+        // Multiple buildings - go to building selection page
+        router.push(`/select-building?${params.toString()}`);
+      } else {
+        // Single building - go directly to building form
+        if (buildingData.buildings && buildingData.buildings.length > 0) {
+          params.append('bygningsnummer', buildingData.buildings[0].bygningsnummer);
+        }
+        router.push(`/building-data?${params.toString()}`);
+      }
+    } catch (error) {
+      console.error('Failed to detect buildings:', error);
+      // Fallback to building form without building data
+      const params = new URLSearchParams({
+        address: address.adressetekst,
+        lat: address.coordinates.lat.toString(),
+        lon: address.coordinates.lon.toString(),
+        municipality: address.municipality,
+        municipalityNumber: address.municipalityNumber || '',
+        postalCode: address.postalCode,
+        ...(address.matrikkel?.gardsnummer && { gnr: address.matrikkel.gardsnummer }),
+        ...(address.matrikkel?.bruksnummer && { bnr: address.matrikkel.bruksnummer }),
+      });
+      router.push(`/building-data?${params.toString()}`);
+    } finally {
+      setIsCheckingBuildings(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -149,23 +218,27 @@ export default function LandingPage() {
                       className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-14 whitespace-nowrap shadow-xl shadow-emerald-500/25"
                       onClick={() => {
                         if (selectedAddress) {
-                          const params = new URLSearchParams({
-                            address: selectedAddress.adressetekst,
-                            lat: selectedAddress.coordinates.lat.toString(),
-                            lon: selectedAddress.coordinates.lon.toString(),
-                            municipality: selectedAddress.municipality,
-                            municipalityNumber: selectedAddress.municipalityNumber || '',
-                            postalCode: selectedAddress.postalCode,
-                            ...(selectedAddress.matrikkel?.gardsnummer && { gnr: selectedAddress.matrikkel.gardsnummer }),
-                            ...(selectedAddress.matrikkel?.bruksnummer && { bnr: selectedAddress.matrikkel.bruksnummer }),
-                          });
-                          router.push(`/building-data?${params.toString()}`);
+                          handleAddressSelection(selectedAddress);
                         }
                       }}
-                      disabled={!selectedAddress}
+                      disabled={!selectedAddress || isCheckingBuildings}
                     >
-                      <ArrowRight className="w-5 h-5 mr-2" />
-                      Start Analyse
+                      {isCheckingBuildings ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Sjekker bygninger...
+                        </>
+                      ) : selectedAddress ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Starter...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="w-5 h-5 mr-2" />
+                          Start Analyse
+                        </>
+                      )}
                     </Button>
                   </div>
 
@@ -201,6 +274,11 @@ export default function LandingPage() {
                                 onClick={() => {
                                   setSelectedAddress(address);
                                   setShowResults(false);
+
+                                  // Auto-trigger analysis when address is selected
+                                  setTimeout(() => {
+                                    handleAddressSelection(address);
+                                  }, 500); // Small delay to show selection confirmation
                                 }}
                               >
                                 <div className="text-white font-medium">
@@ -221,12 +299,15 @@ export default function LandingPage() {
                   {selectedAddress && (
                     <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                       <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-1">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Valgt adresse:
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isCheckingBuildings ? 'Sjekker bygninger:' : 'Starter energianalyse:'}
                       </div>
                       <div className="text-white font-medium">{selectedAddress.adressetekst}</div>
                       <div className="text-gray-400 text-sm mt-1">
-                        Klikk "Start Analyse" for å fortsette til energianalyse
+                        {isCheckingBuildings
+                          ? 'Søker etter bygninger registrert i Enova...'
+                          : 'Forbereder bygningsdata og Enova-oppslag...'
+                        }
                       </div>
                     </div>
                   )}

@@ -16,11 +16,59 @@ export interface Address {
   municipalityNumber: string;
   priceZone: 'NO1' | 'NO2' | 'NO3' | 'NO4' | 'NO5';
   matrikkel?: MatrikkelData;
+  // Buildings at this specific address
+  buildings?: BuildingInfo[];
+  hasMultipleBuildings?: boolean;
+}
+
+// Property is the main entity - identified by gnr/bnr
+export interface Property {
+  id: string; // Unique ID: `${gnr}-${bnr}`
+  gnr: string; // Gårdsnummer (primary key part 1)
+  bnr: string; // Bruksnummer (primary key part 2)
+  addresses: Address[]; // Multiple addresses can point to same property
+  municipality: string;
+  municipalityNumber: string;
+  priceZone: 'NO1' | 'NO2' | 'NO3' | 'NO4' | 'NO5';
+}
+
+export interface BuildingInfo {
+  bygningsnummer: string; // Building number within the property
+  gnr: string; // Links back to property
+  bnr: string; // Links back to property
+  address: string; // Specific address this building belongs to
+  buildingType?: string;
+  buildingYear?: number;
+  totalArea?: number;
+  coordinates?: {
+    lat: number;
+    lon: number;
+  };
+  enovaStatus?: {
+    isRegistered: boolean;
+    energyGrade?: EnergyGrade;
+    certificateId?: string;
+  };
+  // Map data availability
+  hasMapData?: boolean;
+}
+
+// For building selection in forms
+export interface SelectedBuilding {
+  address: string;
+  gnr: string;
+  bnr: string;
+  bygningsnummer: string;
+  coordinates?: {
+    lat: number;
+    lon: number;
+  };
 }
 
 export interface MatrikkelData {
   gardsnummer?: string;
   bruksnummer?: string;
+  bygningsnummer?: string; // Building number for Enova lookups
   buildingId?: string | null;
   propertyId?: string | null;
   buildingType?: string | null;

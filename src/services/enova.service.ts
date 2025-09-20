@@ -16,19 +16,21 @@ export interface EnovaLookupResult {
 }
 
 /**
- * Search for Enova energy certificate by property identifiers
- * @param address - Property address for fallback search
- * @param gnr - Gårdsnummer (farm number)
- * @param bnr - Bruksnummer (use number)
+ * Search for Enova energy certificate by property and building identifiers
+ * @param gnr - Gårdsnummer (property identifier part 1)
+ * @param bnr - Bruksnummer (property identifier part 2)
+ * @param bygningsnummer - Building number within the property (optional)
+ * @param address - Address context for logging and fallback (optional)
  * @returns Certificate information or null if not found
  */
 export async function getEnovaGrade(
-  address: string,
-  gnr?: string,
-  bnr?: string
+  gnr: string,
+  bnr: string,
+  bygningsnummer?: string,
+  address?: string
 ): Promise<EnovaLookupResult> {
   try {
-    // Require both gnr and bnr for lookup - no fallbacks
+    // Require both gnr and bnr for lookup
     if (!gnr || !bnr) {
       return {
         found: false,
@@ -37,7 +39,8 @@ export async function getEnovaGrade(
       }
     }
 
-    const cacheKey = `${gnr}_${bnr}`
+    // Create cache key that includes building number if provided
+    const cacheKey = bygningsnummer ? `${gnr}_${bnr}_${bygningsnummer}` : `${gnr}_${bnr}`
 
     // Check cache first
     if (certificateCache.has(cacheKey)) {
@@ -60,13 +63,19 @@ export async function getEnovaGrade(
       }
     }
 
-    // Strict gnr/bnr lookup only
-    const { data, error } = await supabaseClient
+    // Build query for gnr/bnr with optional bygningsnummer
+    let query = supabaseClient
       .from('energy_certificates')
       .select('*')
       .eq('gnr', parseInt(gnr))
       .eq('bnr', parseInt(bnr))
-      .single()
+
+    // If building number is provided, filter by it
+    if (bygningsnummer) {
+      query = query.eq('building_number', bygningsnummer)
+    }
+
+    const { data, error } = await query.single()
 
     // Cache the result (even if null)
     certificateCache.set(cacheKey, data)
@@ -81,6 +90,15 @@ export async function getEnovaGrade(
         source: 'enova_database'
       }
     } else {
+      // If specific building not found, try property-level lookup
+      if (bygningsnummer) {
+        console.log(`Building ${bygningsnummer} not found for ${address || 'unknown address'}, trying property-level lookup`)
+        return getEnovaGrade(gnr, bnr, undefined, address) // Recursive call without building number
+      }
+
+      const addressInfo = address ? ` at ${address}` : ''
+      console.log(`No Enova certificate found for gnr=${gnr}, bnr=${bnr}${addressInfo}`)
+
       return {
         found: false,
         status: 'Ikke registrert',
@@ -89,12 +107,49 @@ export async function getEnovaGrade(
     }
 
   } catch (error) {
-    console.warn(`Enova lookup failed for gnr=${gnr}, bnr=${bnr}:`, error)
+    const addressInfo = address ? ` at ${address}` : ''
+    console.warn(`Enova lookup failed for gnr=${gnr}, bnr=${bnr}, bygningsnummer=${bygningsnummer}${addressInfo}:`, error)
     return {
       found: false,
       status: 'Ikke registrert',
       source: 'not_found'
     }
+  }
+}
+
+/**
+ * Get all energy certificates for a property (all buildings)
+ * @param gnr - Gårdsnummer
+ * @param bnr - Bruksnummer
+ * @returns Array of certificates for all buildings on the property
+ */
+export async function getPropertyEnovaCertificates(
+  gnr: string,
+  bnr: string
+): Promise<EnovaLookupResult[]> {
+  try {
+    if (!gnr || !bnr) return []
+
+    const { data, error } = await supabaseClient
+      .from('energy_certificates')
+      .select('*')
+      .eq('gnr', parseInt(gnr))
+      .eq('bnr', parseInt(bnr))
+
+    if (error || !data) return []
+
+    return data.map(cert => ({
+      found: true,
+      certificate: cert,
+      energyGrade: mapEnergyClass(cert.energy_class),
+      energyConsumption: cert.energy_consumption || undefined,
+      status: 'Registrert' as const,
+      source: 'enova_database' as const
+    }))
+
+  } catch (error) {
+    console.warn(`Property Enova lookup failed for gnr=${gnr}, bnr=${bnr}:`, error)
+    return []
   }
 }
 
