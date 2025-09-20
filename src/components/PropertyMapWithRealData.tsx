@@ -116,7 +116,7 @@ export function PropertyMapWithRealData({ address, coordinates, className = '' }
           const buildingPolygon = L.polygon(building.coordinates, style).addTo(map);
 
           // Create popup content
-          const icon = BUILDING_ICONS[building.type] || '🏢';
+          const icon = BUILDING_ICONS[building.type as keyof typeof BUILDING_ICONS] || '🏢';
           const popupContent = `
             <div class="p-2 min-w-48">
               <h3 class="font-bold text-sm mb-2 ${isFocus ? 'text-fuchsia-600' : 'text-emerald-600'}">
@@ -136,11 +136,6 @@ export function PropertyMapWithRealData({ address, coordinates, className = '' }
           `;
 
           buildingPolygon.bindPopup(popupContent);
-
-          // Auto-open focus building popup
-          if (isFocus) {
-            buildingPolygon.openPopup();
-          }
         } catch (polygonError) {
           console.warn('Failed to add building polygon:', polygonError, building);
         }
