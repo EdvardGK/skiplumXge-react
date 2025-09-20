@@ -92,6 +92,23 @@ export default function BuildingDataPage() {
   const gnr = searchParams.get('gnr');
   const bnr = searchParams.get('bnr');
   const bygningsnummer = searchParams.get('bygningsnummer');
+
+  // Redirect to select-building page where form is now integrated
+  useEffect(() => {
+    if (address) {
+      const params = new URLSearchParams();
+      params.set('address', address);
+      if (lat) params.set('lat', lat);
+      if (lon) params.set('lon', lon);
+      if (municipality) params.set('municipality', municipality);
+      if (municipalityNumber) params.set('municipalityNumber', municipalityNumber);
+      if (postalCode) params.set('postalCode', postalCode);
+      if (gnr) params.set('gnr', gnr);
+      if (bnr) params.set('bnr', bnr);
+
+      router.replace(`/select-building?${params.toString()}`);
+    }
+  }, [address, lat, lon, municipality, municipalityNumber, postalCode, gnr, bnr, router]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingBuildingData, setIsFetchingBuildingData] = useState(false);
   const [buildingDataSource, setBuildingDataSource] = useState<string | null>(null);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { stormColors, getEnergyGradeColor } from '@/lib/storm-theme';
 
@@ -34,8 +34,8 @@ export default function EnergyGaugeChart({
   showLabels = true,
   className = ''
 }: EnergyGaugeChartProps) {
-  // Create gauge segments for proper semicircle
-  const createGaugeData = () => {
+  // Memoize gauge data to prevent infinite re-renders
+  const gaugeData = useMemo(() => {
     const segments = [];
 
     Object.entries(energyGradeThresholds).forEach(([grade, threshold]) => {
@@ -57,12 +57,13 @@ export default function EnergyGaugeChart({
     });
 
     return segments;
-  };
+  }, [currentGrade, maxValue]); // Only recalculate when these values change
 
-  const gaugeData = createGaugeData();
-
-  // Calculate needle angle based on current value
-  const needleAngle = (currentValue / maxValue) * 180 - 90; // -90 to start from left
+  // Memoize calculated values
+  const needleAngle = useMemo(() =>
+    (currentValue / maxValue) * 180 - 90, // -90 to start from left
+    [currentValue, maxValue]
+  );
 
   // Custom needle component
   const renderNeedle = (cx: number, cy: number, midAngle: number, innerRadius: number, outerRadius: number) => {
@@ -107,10 +108,13 @@ export default function EnergyGaugeChart({
     );
   };
 
-  // Calculate dimensions based on size prop
-  const gaugeWidth = size;
-  const gaugeHeight = size / 2; // Semicircle: height is half of width
-  const letterSize = size >= 100 ? 'text-3xl' : size >= 80 ? 'text-2xl' : size >= 60 ? 'text-xl' : 'text-lg';
+  // Memoize dimensions based on size prop
+  const gaugeWidth = useMemo(() => size, [size]);
+  const gaugeHeight = useMemo(() => size / 2, [size]); // Semicircle: height is half of width
+  const letterSize = useMemo(() =>
+    size >= 100 ? 'text-3xl' : size >= 80 ? 'text-2xl' : size >= 60 ? 'text-xl' : 'text-lg',
+    [size]
+  );
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`}>

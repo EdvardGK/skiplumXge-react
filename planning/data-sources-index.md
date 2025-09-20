@@ -1,8 +1,70 @@
 # Data Sources Index
 ## Comprehensive Overview of All Data Inputs and Sources
 
-**Last Updated**: 2025-09-18
+**Last Updated**: 2025-09-20
 **Project**: Skiplum Energianalyse React (Norwegian Energy Analysis Application)
+
+## DATA SOURCES FOLDER STRUCTURE
+
+All data sources are now organized in: `/planning/data-sources/`
+
+```
+data-sources/
+├── government-official/        # Official Norwegian government data
+├── local-projects/            # Skiplum project case studies
+├── research-publications/     # Academic and research institute data
+├── industry-articles/         # Industry publications and articles
+└── verified-claims/          # Documented claims with citations
+```
+
+---
+
+## VERIFIED CLAIMS FOR PDF REPORT
+
+### National Energy Performance Statistics
+- **"Only 3% of Norwegian buildings achieve A-grade energy performance"**
+  - Source: Statista/Enova EPC statistics 2024
+  - Data: Most EPCs in Norway are F or G grade
+  - Usage: Market context and opportunity sizing
+
+- **"Buildings account for 40% of Norway's total energy consumption"**
+  - Source: IEA Norway 2022 Energy Policy Review
+  - Usage: National context and importance
+
+- **"Mandatory energy certificates since July 2010"**
+  - Source: NVE Energy Labelling requirements
+  - Usage: Regulatory context
+
+### Municipal and Regional Comparisons
+- **"Municipality electricity consumption rankings available"**
+  - Source: SSB Tables 14489 and 14490 (2024 updates)
+  - Usage: "Your kommune ranks X of Y in regional efficiency"
+
+- **"Zone-specific electricity pricing variations"**
+  - Source: NVE spot price statistics by zone
+  - Usage: Regional investment room calculations
+
+### Local Project Success Stories
+- **"Nermo Hotel energy efficiency project"**
+  - Sources: GE article, Nermo Hotel sustainability page
+  - Usage: Commercial building case study with verified ROI
+
+- **"Ringebu Kommune energy initiatives"**
+  - Source: Local project documentation
+  - Usage: Municipal project success examples
+
+- **"SRI (Smart Readiness Indicator) implementation experience"**
+  - Source: Nemitek article featuring our BIM coordination
+  - Usage: Technical expertise and future requirements
+
+### Investment and Financial Support
+- **"Enova design phase financial support now available"**
+  - Source: Enova planning and design support programs 2024
+  - Usage: Funding opportunities for project development
+
+- **"SINTEF research validates 70/15/10/5 energy breakdown"**
+  - Source: SINTEF building energy research
+  - Usage: Technical validation of recommendations
 
 ---
 

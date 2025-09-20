@@ -40,15 +40,15 @@ function getElectricityPrice(zone: NorwegianPriceZone = 'NO1'): number {
   }
 }
 
-// Energy consumption factors by system type (kWh/m²/år)
+// Energy consumption factors by system type (kWh/m²/år) - ELECTRICAL consumption only
 const HEATING_CONSUMPTION: Record<HeatingSystem, number> = {
   'Elektrisitet': 120,
   'Varmepumpe': 40,
   'Bergvarme': 35,
   'Fjernvarme': 60,
-  'Biobrensel': 80,
-  'Olje': 100,
-  'Gass': 90,
+  'Biobrensel': 5, // Only electricity for circulation fans, etc.
+  'Olje': 15, // Only electricity for burner and circulation
+  'Gass': 20, // Only electricity for ignition and circulation
 };
 
 const LIGHTING_CONSUMPTION: Record<LightingSystem, number> = {
@@ -69,10 +69,10 @@ const VENTILATION_CONSUMPTION: Record<VentilationSystem, number> = {
 const HOT_WATER_CONSUMPTION: Record<HotWaterSystem, number> = {
   'Elektrisitet': 25,
   'Varmepumpe': 12,
-  'Solvarme': 8,
+  'Solvarme': 3, // Only electricity for circulation pumps
   'Fjernvarme': 15,
-  'Olje': 20,
-  'Gass': 18,
+  'Olje': 8, // Only electricity for burner and circulation
+  'Gass': 10, // Only electricity for ignition and circulation
 };
 
 export interface BuildingEnergyData {
@@ -150,7 +150,7 @@ export function calculateEnergyAnalysis(data: BuildingEnergyData): EnergyCalcula
   const investmentRoom = Math.round(npvOfWaste * 0.95); // Conservative 95% of NPV
   const presentValueFactor = getPresentValueFactor();
 
-  // Energy breakdown by system (percentages based on SINTEF research)
+  // Energy breakdown by system (actual percentages based on user's systems)
   const breakdown = {
     heating: Math.round((heatingConsumption / totalEnergyUse) * 100),
     lighting: Math.round((lightingConsumption / totalEnergyUse) * 100),

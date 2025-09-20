@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar, Map } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar, Map, FormInput } from "lucide-react";
 import { MapDataService } from "@/services/map-data.service";
+import { BuildingDataForm } from "@/components/BuildingDataForm";
 import dynamic from 'next/dynamic';
 
 // Dynamically import react-leaflet components to avoid SSR issues
@@ -53,6 +54,8 @@ export default function SelectBuildingPage() {
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
   const [showCertificates, setShowCertificates] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [isSubmittingForm, setIsSubmittingForm] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number]>([59.9139, 10.7522]); // Oslo fallback
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapRef, setMapRef] = useState<any>(null);
@@ -222,25 +225,60 @@ export default function SelectBuildingPage() {
 
   const proceedToForm = () => {
     if (!selectedBuildingId) return;
+    setShowForm(true);
+  };
 
-    const params = new URLSearchParams({
-      address: address || '',
-      lat: lat || '',
-      lon: lon || '',
-      municipality: municipality || '',
-      municipalityNumber: municipalityNumber || '',
-      postalCode: postalCode || '',
-      ...(gnr && { gnr }),
-      ...(bnr && { bnr }),
-      buildingId: selectedBuildingId,
-      ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
-    });
+  const handleFormSubmit = async (formData: any) => {
+    setIsSubmittingForm(true);
 
-    router.push(`/building-data?${params.toString()}`);
+    try {
+      // Simulate API call for building analysis
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Create query params with all data including property identifiers
+      const queryParams = new URLSearchParams({
+        address: address || "",
+        ...(lat && { lat }),
+        ...(lon && { lon }),
+        ...(municipality && { municipality }),
+        ...(municipalityNumber && { municipalityNumber }),
+        ...(postalCode && postalCode !== 'undefined' && { postalCode }),
+        ...(gnr && { gnr }),
+        ...(bnr && { bnr }),
+        buildingType: formData.buildingType,
+        totalArea: formData.totalArea.toString(),
+        heatedArea: formData.heatedArea.toString(),
+        annualEnergyConsumption: formData.annualEnergyConsumption.toString(),
+        heatingSystem: formData.heatingSystem,
+        lightingSystem: formData.lightingSystem,
+        ventilationSystem: formData.ventilationSystem,
+        hotWaterSystem: formData.hotWaterSystem,
+        ...(formData.buildingYear && { buildingYear: formData.buildingYear.toString() }),
+        ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
+        // Pass certificate data directly to avoid re-querying
+        ...(selectedCertificate && (() => {
+          const cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
+          return cert ? {
+            energyClass: cert.energyClass,
+            energyConsumption: cert.energyConsumption?.toString(),
+            buildingCategory: cert.buildingCategory,
+            constructionYear: cert.constructionYear?.toString()
+          } : {};
+        })()),
+      });
+
+      router.push(`/dashboard?${queryParams.toString()}`);
+    } catch (error) {
+      console.error('Failed to submit building data:', error);
+    } finally {
+      setIsSubmittingForm(false);
+    }
   };
 
   const handleBack = () => {
-    if (showCertificates) {
+    if (showForm) {
+      setShowForm(false);
+    } else if (showCertificates) {
       setShowCertificates(false);
       setSelectedCertificate(null);
     } else {
@@ -290,7 +328,7 @@ export default function SelectBuildingPage() {
             className="text-slate-400 hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
+            {showForm ? 'Tilbake til sertifikater' : showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
           </Button>
 
           <div className="flex items-center gap-3 text-white">
@@ -301,7 +339,7 @@ export default function SelectBuildingPage() {
             </div>
           </div>
 
-          {selectedBuildingId && !showCertificates && (
+          {selectedBuildingId && !showCertificates && !showForm && (
             <Button
               onClick={() => {
                 if (enovaCertificates.length > 0) {
@@ -315,12 +353,12 @@ export default function SelectBuildingPage() {
               Fortsett
             </Button>
           )}
-          {showCertificates && (
+          {showCertificates && !showForm && (
             <Button
               onClick={proceedToForm}
               className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
             >
-              Fortsett med valgt bygning
+              Fortsett til bygningsdata
             </Button>
           )}
         </div>
@@ -391,6 +429,7 @@ export default function SelectBuildingPage() {
                             isSelected={selectedBuildingId === building.id}
                             onSelect={() => handleMapBuildingSelect(building.id)}
                             showCertificates={showCertificates}
+                            showForm={showForm}
                             enovaCertificates={enovaCertificates}
                             selectedBuildingId={selectedBuildingId}
                             currentZoom={currentZoom}
@@ -405,7 +444,17 @@ export default function SelectBuildingPage() {
                 {/* Building/Certificate List - Right sidebar */}
                 <div className="w-80 border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col">
                   <div className="p-4 border-b border-white/10">
-                    {!showCertificates ? (
+                    {showForm ? (
+                      <>
+                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                          <FormInput className="w-5 h-5 text-cyan-400" />
+                          Bygningsdata
+                        </h3>
+                        <p className="text-slate-400 text-sm mt-1">
+                          Fyll ut bygningsinformasjon for analyse
+                        </p>
+                      </>
+                    ) : !showCertificates ? (
                       <>
                         <h3 className="text-white font-semibold text-lg flex items-center gap-2">
                           <Building className="w-5 h-5 text-cyan-400" />
@@ -429,7 +478,22 @@ export default function SelectBuildingPage() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {!showCertificates ? (
+                    {showForm ? (
+                      // Building Data Form
+                      <BuildingDataForm
+                        address={address || ''}
+                        lat={lat || ''}
+                        lon={lon || ''}
+                        municipality={municipality || ''}
+                        municipalityNumber={municipalityNumber || ''}
+                        postalCode={postalCode || ''}
+                        gnr={gnr || ''}
+                        bnr={bnr || ''}
+                        bygningsnummer={selectedCertificate || ''}
+                        onSubmit={handleFormSubmit}
+                        isSubmitting={isSubmittingForm}
+                      />
+                    ) : !showCertificates ? (
                       // Building List - Sort selected building to top
                       [...mapBuildings]
                         .sort((a, b) => {
@@ -597,13 +661,14 @@ interface BuildingMarkerProps {
   isSelected: boolean;
   onSelect: () => void;
   showCertificates: boolean;
+  showForm: boolean;
   enovaCertificates: EnovaCertificate[];
   selectedBuildingId: string | null;
   currentZoom: number;
   selectedCertificate: string | null;
 }
 
-function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCertificates, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate }: BuildingMarkerProps) {
+function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCertificates, showForm, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate }: BuildingMarkerProps) {
   const [centroid, setCentroid] = useState<[number, number] | null>(null);
   const [numberIcon, setNumberIcon] = useState<any>(null);
 

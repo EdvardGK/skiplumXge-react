@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { getEnovaGrade, type EnovaLookupResult } from '@/services/enova.service'
-import { getTotalElectricityCost, getPriceHistory, get36MonthAverageByZone, type PriceData, type PriceHistoryData } from '@/services/pricing.service'
+import { getTotalElectricityCost, getPriceHistory, get36MonthAverageByZone, getPriceZoneByKommune, type PriceData, type PriceHistoryData } from '@/services/pricing.service'
 import { getZoneDisplayName, type PriceZone } from '@/services/zone.service'
+import { VERIFIED_NORWEGIAN_ENERGY_DATA } from '@/lib/data/verified-sources'
 
 export interface RealEnergyData {
   // Zone information
@@ -32,14 +33,26 @@ export interface RealEnergyData {
  * @param priceZone - Electricity price zone from address search
  * @param gnr - Gårdsnummer for Enova lookup
  * @param bnr - Bruksnummer for Enova lookup
+ * @param municipalityNumber - Municipality number for price zone lookup
+ * @param bygningsnummer - Building number for specific Enova certificate lookup
+ * @param directCertificateData - Certificate data passed directly from building selector
  * @returns Real energy data and loading states
  */
 export function useRealEnergyData(
   address?: string | null,
   priceZone?: PriceZone | null,
   gnr?: string | null,
-  bnr?: string | null
+  bnr?: string | null,
+  municipalityNumber?: string | null,
+  bygningsnummer?: string | null,
+  directCertificateData?: {
+    energyClass?: string | null,
+    energyConsumption?: number | null,
+    buildingCategory?: string | null,
+    constructionYear?: number | null
+  } | null
 ): RealEnergyData {
+  const [resolvedPriceZone, setResolvedPriceZone] = useState<PriceZone | null>(priceZone || null)
   const [enovaResult, setEnovaResult] = useState<EnovaLookupResult | null>(null)
   const [currentPricing, setCurrentPricing] = useState<PriceData | null>(null)
   const [priceHistory, setPriceHistory] = useState<PriceHistoryData[]>([])
@@ -52,8 +65,62 @@ export function useRealEnergyData(
   const [enovaError, setEnovaError] = useState<string | null>(null)
   const [pricingError, setPricingError] = useState<string | null>(null)
 
-  // Fetch Enova certificate data
+  // Resolve price zone from municipality number if not provided
   useEffect(() => {
+    if (priceZone) {
+      setResolvedPriceZone(priceZone)
+      return
+    }
+
+    if (!municipalityNumber) {
+      setResolvedPriceZone(null)
+      return
+    }
+
+    getPriceZoneByKommune(municipalityNumber)
+      .then(zone => {
+        setResolvedPriceZone(zone)
+      })
+      .catch(error => {
+        console.warn('Failed to resolve price zone from municipality:', error)
+        setResolvedPriceZone('NO1') // Default fallback
+      })
+  }, [priceZone, municipalityNumber])
+
+  // Fetch Enova certificate data or use direct data
+  useEffect(() => {
+    // If we have direct certificate data, use it instead of API call
+    if (directCertificateData && directCertificateData.energyClass) {
+      setIsLoadingEnova(true)
+
+      // Map energy class to EnergyGrade format
+      const mapEnergyClass = (energyClass: string): any => {
+        const normalized = energyClass.toUpperCase().trim()
+        if (normalized.includes('A')) return 'A'
+        if (normalized.includes('B')) return 'B'
+        if (normalized.includes('C')) return 'C'
+        if (normalized.includes('D')) return 'D'
+        if (normalized.includes('E')) return 'E'
+        if (normalized.includes('F')) return 'F'
+        if (normalized.includes('G')) return 'G'
+        return undefined
+      }
+
+      const result = {
+        found: true,
+        energyGrade: mapEnergyClass(directCertificateData.energyClass),
+        energyConsumption: directCertificateData.energyConsumption || undefined,
+        status: 'Registrert' as const,
+        source: 'direct_from_selector' as const
+      }
+
+      setEnovaResult(result)
+      setEnovaError(null)
+      setIsLoadingEnova(false)
+      return
+    }
+
+    // Fallback to API lookup if no direct data
     if (!address) {
       setEnovaResult(null)
       return
@@ -62,7 +129,7 @@ export function useRealEnergyData(
     setIsLoadingEnova(true)
     setEnovaError(null)
 
-    getEnovaGrade(address, gnr || undefined, bnr || undefined)
+    getEnovaGrade(gnr || '', bnr || '', bygningsnummer || undefined, address || undefined)
       .then(result => {
         setEnovaResult(result)
         setEnovaError(null)
@@ -75,11 +142,11 @@ export function useRealEnergyData(
       .finally(() => {
         setIsLoadingEnova(false)
       })
-  }, [address, gnr, bnr])
+  }, [address, gnr, bnr, bygningsnummer, directCertificateData])
 
   // Fetch current pricing data and 36-month average
   useEffect(() => {
-    if (!priceZone) {
+    if (!resolvedPriceZone) {
       setCurrentPricing(null)
       setAverage36MonthPrice(null)
       return
@@ -90,8 +157,8 @@ export function useRealEnergyData(
 
     // Fetch both current pricing and 36-month average
     Promise.all([
-      getTotalElectricityCost(priceZone),
-      get36MonthAverageByZone(priceZone)
+      getTotalElectricityCost(resolvedPriceZone),
+      get36MonthAverageByZone(resolvedPriceZone)
     ])
       .then(([pricing, average36m]) => {
         setCurrentPricing(pricing)
@@ -107,18 +174,18 @@ export function useRealEnergyData(
       .finally(() => {
         setIsLoadingPricing(false)
       })
-  }, [priceZone])
+  }, [resolvedPriceZone])
 
   // Fetch price history for charts
   useEffect(() => {
-    if (!priceZone) {
+    if (!resolvedPriceZone) {
       setPriceHistory([])
       return
     }
 
     setIsLoadingHistory(true)
 
-    getPriceHistory(priceZone, 36) // 36 weeks of history
+    getPriceHistory(resolvedPriceZone, 36) // 36 weeks of history
       .then(history => {
         setPriceHistory(history)
       })
@@ -129,11 +196,11 @@ export function useRealEnergyData(
       .finally(() => {
         setIsLoadingHistory(false)
       })
-  }, [priceZone])
+  }, [resolvedPriceZone])
 
   return {
-    priceZone,
-    zoneDisplayName: priceZone ? getZoneDisplayName(priceZone) : null,
+    priceZone: resolvedPriceZone,
+    zoneDisplayName: resolvedPriceZone ? getZoneDisplayName(resolvedPriceZone) : null,
     enovaResult,
     currentPricing,
     priceHistory,
@@ -153,6 +220,9 @@ export function useRealEnergyData(
  * @param gnr - Gårdsnummer
  * @param bnr - Bruksnummer
  * @param calculatedEnergyData - Calculated energy data from building inputs
+ * @param municipalityNumber - Municipality number for price zone lookup
+ * @param bygningsnummer - Building number for specific Enova certificate lookup
+ * @param directCertificateData - Certificate data passed directly from building selector
  * @returns Combined real and calculated data for dashboard display
  */
 export function useDashboardEnergyData(
@@ -160,9 +230,17 @@ export function useDashboardEnergyData(
   priceZone?: PriceZone | null,
   gnr?: string | null,
   bnr?: string | null,
-  calculatedEnergyData?: any // From existing energy calculations
+  calculatedEnergyData?: any, // From existing energy calculations
+  municipalityNumber?: string | null,
+  bygningsnummer?: string | null,
+  directCertificateData?: {
+    energyClass?: string | null,
+    energyConsumption?: number | null,
+    buildingCategory?: string | null,
+    constructionYear?: number | null
+  } | null
 ) {
-  const realData = useRealEnergyData(address, priceZone, gnr, bnr)
+  const realData = useRealEnergyData(address, priceZone, gnr, bnr, municipalityNumber, bygningsnummer, directCertificateData)
 
   // Only show real Enova data - no fallback to calculated data
   const energyGrade = realData.enovaResult?.found
@@ -210,5 +288,58 @@ export function useDashboardEnergyData(
     // Raw data for advanced use
     rawEnovaResult: realData.enovaResult,
     rawPricingData: realData.currentPricing
+  }
+}
+
+/**
+ * Get verified energy benchmarks for building type comparison
+ * @param buildingType - Type of building for benchmark lookup
+ * @returns Verified benchmark data with credibility information
+ */
+export function getVerifiedEnergyBenchmarks(buildingType?: string) {
+  const benchmarks = VERIFIED_NORWEGIAN_ENERGY_DATA.energyBenchmarks
+  const caseStudy = VERIFIED_NORWEGIAN_ENERGY_DATA.caseStudies.ringebuUngdomsskole
+
+  // Map common building types to our verified benchmarks
+  const typeMappings = {
+    'residential': benchmarks.buildingTypes.residentialHouse,
+    'apartment': benchmarks.buildingTypes.residentialApartment,
+    'office': benchmarks.buildingTypes.office,
+    'retail': benchmarks.buildingTypes.retail,
+    'school': benchmarks.buildingTypes.school,
+    'hospital': benchmarks.buildingTypes.hospital,
+    'hotel': benchmarks.buildingTypes.hotel,
+    'warehouse': benchmarks.buildingTypes.warehouse,
+    'restaurant': benchmarks.buildingTypes.restaurant
+  }
+
+  const currentBenchmark = buildingType
+    ? typeMappings[buildingType.toLowerCase() as keyof typeof typeMappings]
+    : undefined
+
+  return {
+    // Current building type benchmark
+    currentBuildingBenchmark: currentBenchmark,
+
+    // All building type benchmarks
+    allBenchmarks: benchmarks.buildingTypes,
+
+    // TEK17 legal requirements
+    tek17Requirements: benchmarks.tek17Requirements,
+
+    // Case study for credibility
+    verifiedCaseStudy: {
+      name: caseStudy.name,
+      energyReduction: caseStudy.energyMetrics.energyReduction,
+      roi: caseStudy.financialMetrics.internalRateOfReturn,
+      payback: caseStudy.financialMetrics.paybackPeriod,
+      municipality: caseStudy.municipality
+    },
+
+    // Investment formulas
+    investmentCalculation: VERIFIED_NORWEGIAN_ENERGY_DATA.investmentFormulas,
+
+    // Credibility statements for reports
+    credibilityStatements: VERIFIED_NORWEGIAN_ENERGY_DATA.credibilityStatements
   }
 }
