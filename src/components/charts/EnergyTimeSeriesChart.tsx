@@ -243,7 +243,7 @@ export default function EnergyTimeSeriesChart({
             strokeWidth={2}
             label={{
               value: "TEK17 Grense",
-              position: "topRight",
+              position: "top",
               fill: stormColors.lightning.thunder
             }}
           />
