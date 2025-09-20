@@ -9,9 +9,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   pageExtensions: ['js', 'jsx', 'ts', 'tsx'],
-  experimental: {
-    typedRoutes: true,
-  },
+  typedRoutes: true,
 };
 
 export default nextConfig;

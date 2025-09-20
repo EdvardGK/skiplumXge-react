@@ -158,22 +158,23 @@ const loadNorwegianBuildingData = async (
     });
 
     // Add municipality and climate zone info overlay
-    const infoOverlay = L.control({ position: 'topleft' });
-    infoOverlay.onAdd = () => {
-      const div = L.DomUtil.create('div', 'leaflet-control-custom');
-      div.innerHTML = `
-        <div class="bg-white/10 backdrop-blur-lg border border-white/20 text-white p-2 rounded text-xs mt-2" style="margin-top: 60px;">
-          <div class="font-medium text-blue-400 mb-1">📊 Områdedata</div>
-          <div class="text-slate-300 space-y-1">
-            <div><strong>Kommune:</strong> Oslo</div>
-            <div><strong>Klimasone:</strong> Sone 1</div>
-            <div><strong>Bygninger:</strong> ${mockBuildings.length} innen 100m</div>
+    const InfoControl = L.Control.extend({
+      onAdd: function() {
+        const div = L.DomUtil.create('div', 'leaflet-control-custom');
+        div.innerHTML = `
+          <div class="bg-white/10 backdrop-blur-lg border border-white/20 text-white p-2 rounded text-xs mt-2" style="margin-top: 60px;">
+            <div class="font-medium text-blue-400 mb-1">📊 Områdedata</div>
+            <div class="text-slate-300 space-y-1">
+              <div><strong>Kommune:</strong> Oslo</div>
+              <div><strong>Klimasone:</strong> Sone 1</div>
+              <div><strong>Bygninger:</strong> ${mockBuildings.length} innen 100m</div>
+            </div>
           </div>
-        </div>
-      `;
-      return div;
-    };
-    infoOverlay.addTo(map);
+        `;
+        return div;
+      }
+    });
+    new InfoControl({ position: 'topleft' }).addTo(map);
 
   } catch (error) {
     console.error('Failed to load Norwegian building data:', error);
