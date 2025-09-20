@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Building, Zap, Target, MapPin, Loader2, ArrowRight, CheckCircle2, X } from "lucide-react";
 import { usePropertySearch } from "@/hooks/use-property-search";
-import { ValuePropositionSection } from "@/components/landing/ValuePropositionSection";
 import { TrustBadges } from "@/components/landing/TrustBadges";
 import { ContextualTooltip } from "@/components/ui/ContextualTooltip";
 
@@ -119,19 +118,19 @@ export default function LandingPage() {
 
       {/* Header */}
       <header className="relative z-10 border-b border-gray-800/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-2">
           <nav className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <Zap className="w-8 h-8 text-emerald-400" />
-                <div className="absolute inset-0 w-8 h-8 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
+                <Zap className="w-6 h-6 text-emerald-400" />
+                <div className="absolute inset-0 w-6 h-6 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
               </div>
-              <span className="text-2xl font-bold text-white">SkiplumXGE</span>
+              <span className="text-xl font-bold text-white">SkiplumXGE</span>
             </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors">Funksjoner</a>
-              <a href="https://www.skiplum.no/om-oss/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors">Om oss</a>
-              <Button variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400">
+            <div className="hidden md:flex items-center space-x-6">
+              <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors text-sm">Funksjoner</a>
+              <a href="https://www.skiplum.no/om-oss/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors text-sm">Om oss</a>
+              <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400 h-8">
                 Kontakt
               </Button>
             </div>
@@ -141,30 +140,25 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-16 md:py-24">
+        <section className="container mx-auto px-4 py-6 md:py-8">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-4 py-2 mb-6">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span className="text-emerald-400 text-sm font-medium">Offisielle norske energidata</span>
-            </div>
-
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 tracking-tight leading-normal">
               Spar tusenvis på
-              <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent pb-2">
                 energikostnadene
               </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed max-w-3xl mx-auto">
-              Få profesjonell energianalyse av din eiendom basert på offisielle norske data.
-              <strong className="text-white"> Oppdag besparingsmuligheter og TEK17-etterlevelse på minutter.</strong>
+            <p className="text-base md:text-lg text-gray-300 mb-6 leading-relaxed max-w-3xl mx-auto">
+              Oppdag besparingsmuligheter og TEK17-etterlevelse på minutter
             </p>
 
+
             {/* Primary Search CTA */}
-            <div className="max-w-2xl mx-auto mb-8" ref={searchRef}>
+            <div className="max-w-2xl mx-auto mb-4" ref={searchRef}>
               <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl text-center text-white flex items-center justify-center gap-3">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl text-center text-white flex items-center justify-center gap-3">
                     <Search className="w-6 h-6 text-emerald-400" />
                     Start din energianalyse
                   </CardTitle>
@@ -177,13 +171,13 @@ export default function LandingPage() {
                     </ContextualTooltip>
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 pb-6">
+                <CardContent className="space-y-4 pb-4">
                   <div className="flex gap-3">
                     <div className="relative flex-1">
                       <Input
                         type="text"
                         placeholder="F.eks. 'Karl Johans gate 1, Oslo' eller 'Storgata 10, Bergen'"
-                        className="h-14 text-base bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-emerald-400/50 focus:ring-emerald-400/20 pr-10"
+                        className="h-12 text-base bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-emerald-400/50 focus:ring-emerald-400/20 pr-10"
                         value={query}
                         onChange={(e) => {
                           setQuery(e.target.value);
@@ -215,7 +209,7 @@ export default function LandingPage() {
                     </div>
                     <Button
                       size="lg"
-                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-14 whitespace-nowrap shadow-xl shadow-emerald-500/25"
+                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-12 whitespace-nowrap shadow-xl shadow-emerald-500/25"
                       onClick={() => {
                         if (selectedAddress) {
                           handleAddressSelection(selectedAddress);
@@ -316,36 +310,23 @@ export default function LandingPage() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+            <div className="grid grid-cols-2 gap-8 max-w-lg mx-auto">
               <div className="text-center">
-                <div className="text-3xl font-bold text-emerald-400">1.000+</div>
-                <div className="text-gray-400 text-sm">Analyserte eiendommer</div>
+                <div className="text-xl font-bold text-cyan-400">Mer enn 78%</div>
+                <div className="text-gray-400 text-xs">Har besparingsmuligheter</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-cyan-400">92%</div>
-                <div className="text-gray-400 text-sm">Fant besparelser</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-violet-400">2 min</div>
-                <div className="text-gray-400 text-sm">Analysetid</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-400">100%</div>
-                <div className="text-gray-400 text-sm">Norske data</div>
+                <div className="text-xl font-bold text-violet-400">2 min</div>
+                <div className="text-gray-400 text-xs">Analysetid</div>
               </div>
             </div>
+
           </div>
         </section>
 
-        {/* Value Proposition Section */}
-        <ValuePropositionSection className="py-16" />
 
         {/* Features Grid */}
-        <section className="container mx-auto px-4 py-16" id="features">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Kraftige energianalyser</h2>
-            <p className="text-xl text-gray-300">Alt du trenger for å optimalisere din eiendoms energiforbruk</p>
-          </div>
+        <section className="container mx-auto px-4 pb-16" id="features">
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
@@ -402,35 +383,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Trust Badges */}
-        <TrustBadges className="py-16" />
-
-        {/* Final CTA */}
-        <section className="container mx-auto px-4 py-16">
-          <Card className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 border-gray-700/50 backdrop-blur-sm max-w-3xl mx-auto">
-            <CardContent className="p-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Klar for energianalyse?
-              </h2>
-              <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-                Start med å søke etter din eiendom og få umiddelbar tilgang til
-                profesjonell energianalyse basert på offisielle norske data.
-              </p>
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-12 py-4 text-lg shadow-xl shadow-emerald-500/25"
-                onClick={() => document.querySelector('input')?.focus()}
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                Kom i gang nå
-              </Button>
-            </CardContent>
-          </Card>
-        </section>
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-gray-800/50 mt-20">
+      <footer className="relative z-10 border-t border-gray-800/50 mt-8">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center text-gray-400">
             <p>SkiplumXGE - Drevet av Skiplum | Data fra Kartverket, SSB, SINTEF og Enova</p>

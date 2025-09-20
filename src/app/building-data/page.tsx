@@ -745,7 +745,7 @@ function BuildingDataContent() {
       </main>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-20 border-t border-border">
+      <footer className="container mx-auto px-4 py-8 mt-8 border-t border-border">
         <div className="text-center text-muted-foreground">
           <p>SkiplumXGE - Drevet av Skiplum | Data fra Kartverket, SSB, SINTEF og Enova</p>
         </div>
