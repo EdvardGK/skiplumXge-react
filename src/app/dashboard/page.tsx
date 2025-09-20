@@ -366,16 +366,17 @@ export default function Dashboard() {
               ) : dashboardData.priceHistory.length > 0 ? (
                 <EnergyTimeSeriesChart
                   data={dashboardData.priceHistory.map(p => ({
-                    period: `${p.weekNumber}/${p.year}`,
-                    value: Math.round(p.spotPrice),
-                    week: p.week,
-                    date: p.date
+                    month: `${p.weekNumber}/${p.year}`,
+                    consumption: Math.round(p.spotPrice),
+                    cost: Math.round(p.spotPrice),
+                    temperature: 10,
+                    tek17Limit: 115
                   }))}
                   type="bar"
+                  chartMode="price"
                   showSavings={false}
                   height={80}
                   showTitle={false}
-                  chartMode="price"
                   energyZone={dashboardData.priceZone || "NO1"}
                 />
               ) : (
