@@ -169,12 +169,22 @@ export default function EnergyTimeSeriesChart({
 }: EnergyTimeSeriesChartProps) {
   // Use appropriate data based on chart mode
   const energyData = data.length > 0 ? data : generateSampleData();
-  const priceData = generateElectricityPriceData(energyZone);
+  const priceData = data.length > 0 ? data : generateElectricityPriceData(energyZone); // Use real data if available
   const chartData = chartMode === 'price' ? priceData : energyData;
 
   // Calculate average for price mode
   const averagePrice = chartMode === 'price'
-    ? Math.round(priceData.reduce((sum, item) => sum + item.price, 0) / priceData.length)
+    ? Math.round(priceData.reduce((sum, item) => {
+        // For price mode, use the price property from ElectricityPriceDataPoint
+        if ('price' in item) {
+          return sum + item.price;
+        }
+        // For energy mode, use consumption from EnergyDataPoint
+        if ('consumption' in item) {
+          return sum + item.consumption;
+        }
+        return sum;
+      }, 0) / priceData.length)
     : 0;
 
   const ChartComponent = type === 'bar' ? BarChart : (type === 'area' ? AreaChart : LineChart);
@@ -184,11 +194,11 @@ export default function EnergyTimeSeriesChart({
       {showTitle && (
         <div className="mb-4">
           <h3 className="text-lg font-bold text-white mb-1">
-            {chartMode === 'price' ? 'Strømpriser per kvartal' : 'Energiforbruk over tid'}
+            {chartMode === 'price' ? 'Strømpriser per uke' : 'Energiforbruk over tid'}
           </h3>
           <p className="text-slate-400 text-sm">
             {chartMode === 'price'
-              ? `Kvartalspriser for prisområde ${energyZone} (øre/kWh)`
+              ? `Ukespriser for prisområde ${energyZone} (øre/kWh)`
               : 'Månedlig forbruk vs TEK17-krav med temperaturkorrelasjon'
             }
           </p>
@@ -224,7 +234,7 @@ export default function EnergyTimeSeriesChart({
           />
 
           <XAxis
-            dataKey={chartMode === 'price' ? 'quarter' : 'month'}
+            dataKey={chartMode === 'price' ? 'month' : 'month'}
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#94a3b8', fontSize: 12 }}
@@ -244,46 +254,15 @@ export default function EnergyTimeSeriesChart({
 
           <Tooltip content={<CustomTooltip />} />
 
-          {/* Average price line for price mode */}
-          {chartMode === 'price' && averagePrice > 0 && (
-            <ReferenceLine
-              y={averagePrice}
-              stroke="#d946ef"
-              strokeDasharray="8 4"
-              strokeWidth={2}
-              label={{
-                value: `Snitt: ${averagePrice} øre/kWh`,
-                position: "top",
-                fill: "#d946ef",
-                fontSize: 12
-              }}
-            />
-          )}
-
-          {/* TEK17 Reference Line for energy mode */}
-          {chartMode === 'energy' && (
-            <ReferenceLine
-              y={1100}
-              stroke={stormColors.lightning.thunder}
-              strokeDasharray="8 8"
-              strokeWidth={2}
-              label={{
-                value: "TEK17 Grense",
-                position: "top",
-                fill: stormColors.lightning.thunder
-              }}
-            />
-          )}
-
           {type === 'bar' ? (
             <>
               {/* Main bars - consumption or price */}
               <Bar
-                dataKey={chartMode === 'price' ? 'price' : 'consumption'}
+                dataKey={chartMode === 'price' ? 'consumption' : 'consumption'}
                 fill="url(#consumptionGradient)"
                 stroke={stormColors.lightning.cyan}
                 strokeWidth={1}
-                name={chartMode === 'price' ? `Pris per kvartal (${energyZone})` : 'Forbruk'}
+                name={chartMode === 'price' ? `Pris per uke (${energyZone})` : 'Forbruk'}
                 radius={[2, 2, 0, 0]}
               />
             </>
@@ -336,17 +315,45 @@ export default function EnergyTimeSeriesChart({
               />
             </>
           )}
+
+          {/* Reference lines rendered after all chart elements to appear on top */}
+          {/* Average price line for price mode */}
+          {chartMode === 'price' && averagePrice > 0 && (
+            <ReferenceLine
+              y={averagePrice}
+              stroke="#d946ef"
+              strokeDasharray="8 4"
+              strokeWidth={3}
+            />
+          )}
+
+          {/* TEK17 Reference Line for energy mode */}
+          {chartMode === 'energy' && (
+            <ReferenceLine
+              y={1100}
+              stroke={stormColors.lightning.thunder}
+              strokeDasharray="8 8"
+              strokeWidth={2}
+            />
+          )}
         </ChartComponent>
           </ResponsiveContainer>
         </div>
 
         {/* Sidebar Legend */}
-        <div className="w-[10%] min-w-[90px] flex flex-col justify-center space-y-2">
+        <div className="w-[10%] min-w-[90px] flex flex-col space-y-2 py-3 pr-3">
           {chartMode === 'price' ? (
             <>
+              {/* Chart Label - positioned like top row cards */}
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-4 h-4"></div> {/* Spacer for alignment */}
+                <span className="text-xs px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400">
+                  Strømpriser
+                </span>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-3 bg-gradient-to-r from-cyan-500/80 to-cyan-500/10 border border-cyan-500 rounded-sm"></div>
-                <span className="text-xs text-slate-300">Pris pr. kvartal</span>
+                <span className="text-xs text-slate-300">Pris pr. uke</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-0.5 bg-fuchsia-500" style={{ borderTop: '2px dashed #d946ef' }}></div>

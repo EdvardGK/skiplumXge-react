@@ -634,21 +634,4 @@ svg .recharts-rectangle:hover {
     }
   }
 
-  /* Puppeteer-specific styles (applied via JavaScript) */
-  .puppeteer-capture {
-    /* Hide interactive elements during screenshot */
-    .hover\:scale-105,
-    .transition-all,
-    .cursor-pointer {
-      transform: none !important;
-      transition: none !important;
-      cursor: default !important;
-    }
-
-    /* Ensure all text is rendered clearly */
-    * {
-      -webkit-font-smoothing: antialiased !important;
-      -moz-osx-font-smoothing: grayscale !important;
-    }
-  }
 }

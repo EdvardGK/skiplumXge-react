@@ -187,10 +187,13 @@ export function useRealEnergyData(
 
     getPriceHistory(resolvedPriceZone, 36) // 36 weeks of history
       .then(history => {
+        console.log('✅ Real NVE price history loaded:', history.length, 'weeks')
+        console.log('Sample prices:', history.slice(0, 3).map(h => `${h.week}: ${h.spotPrice} øre/kWh`))
         setPriceHistory(history)
       })
       .catch(error => {
-        console.warn('Failed to fetch price history:', error)
+        console.error('❌ Failed to fetch price history from NVE:', error)
+        console.log('Using empty price history - chart should show "no data"')
         setPriceHistory([]) // Empty array indicates no data available
       })
       .finally(() => {

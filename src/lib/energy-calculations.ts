@@ -11,7 +11,7 @@ import {
   InvestmentGuidance,
   InvestmentRecommendation
 } from '@/types/norwegian-energy';
-import { getCurrentElectricityPrice, FALLBACK_ELECTRICITY_PRICE, type NorwegianPriceZone } from '@/lib/electricity-pricing';
+import { getCurrentElectricityPriceSync, FALLBACK_ELECTRICITY_PRICE, type NorwegianPriceZone } from '@/lib/electricity-pricing';
 
 // Norwegian investment analysis constants
 const NORWEGIAN_DISCOUNT_RATE = 0.06; // 6% conservative discount rate for energy investments
@@ -34,10 +34,11 @@ function getPresentValueFactor(discountRate: number = NORWEGIAN_DISCOUNT_RATE, y
   return (1 - Math.pow(1 + discountRate, -years)) / discountRate;
 }
 
-// Dynamic electricity pricing based on SSB quarterly data (36-month average)
+// Dynamic electricity pricing based on real NVE data
 function getElectricityPrice(zone: NorwegianPriceZone = 'NO1'): number {
   try {
-    return getCurrentElectricityPrice(zone);
+    // Use synchronous version for immediate calculations
+    return getCurrentElectricityPriceSync(zone);
   } catch (error) {
     console.warn('Failed to get dynamic electricity price, using fallback:', error);
     return FALLBACK_ELECTRICITY_PRICE;

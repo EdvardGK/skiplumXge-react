@@ -32,6 +32,7 @@ interface EnergyBreakdownChartProps {
   investmentRoom: number;
   className?: string;
   height?: number;
+  isEfficientBuilding?: boolean;
 }
 
 // Energy consumption factors by system type (kWh/m²/år) - from energy-calculations.ts
@@ -58,7 +59,8 @@ export default function EnergyBreakdownChart({
   heatingSystem,
   investmentRoom,
   className = '',
-  height = 200
+  height = 200,
+  isEfficientBuilding = false
 }: EnergyBreakdownChartProps) {
 
   // Calculate actual kWh/m²/år consumption for each system based on breakdown percentages

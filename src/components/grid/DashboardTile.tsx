@@ -11,6 +11,7 @@ interface DashboardTileProps {
   style?: React.CSSProperties;
   variant?: 'default' | 'highlight' | 'accent';
   'data-grid-position'?: string;
+  onClick?: () => void;
 }
 
 const DashboardTile: React.FC<DashboardTileProps> = ({
@@ -19,6 +20,7 @@ const DashboardTile: React.FC<DashboardTileProps> = ({
   className = '',
   style,
   variant = 'default',
+  onClick,
   ...props
 }) => {
   const variantClasses = {
@@ -39,6 +41,7 @@ const DashboardTile: React.FC<DashboardTileProps> = ({
       `}
       style={style}
       data-tile-id={id}
+      onClick={onClick}
       {...props}
     >
       {children}

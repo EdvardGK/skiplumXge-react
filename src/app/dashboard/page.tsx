@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, Suspense } from "react";
+import { useMemo, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,6 +32,8 @@ import NPVInvestmentChart from "@/components/charts/NPVInvestmentChart";
 import DashboardGrid, { DashboardLayoutDefinition } from "@/components/grid/DashboardGrid";
 import DashboardTile from "@/components/grid/DashboardTile";
 import { usePdfReport, extractBuildingDataFromParams, buildAnalysisData } from "@/hooks/use-pdf-report";
+import { getZoneMessaging, getUrgencyColor, getInvestmentMessage, getHeatPumpRecommendation } from "@/lib/zone-messaging";
+import DataEditingOverlay from "@/components/DataEditingOverlay";
 
 // Toggle between mock and real data maps
 const USE_REAL_MAP_DATA = true; // Set to false to use mock data
@@ -58,7 +60,7 @@ const DASHBOARD_LAYOUT: DashboardLayoutDefinition = {
     ['investment-sankey', 'investment-sankey', 'map', 'map'],
     ['investment-sankey', 'investment-sankey', 'map', 'map'],
     // Row 5: Action cards
-    ['action-report', 'action-consultation', 'action-share', 'action-placeholder']
+    ['action-analysis', 'action-share', 'action-consultation', 'action-report']
   ]
 };
 
@@ -134,6 +136,9 @@ function DashboardContent() {
   const selectedBuildingOsmId = searchParams.get('selectedBuildingOsmId');
 
   const municipalityNumber = searchParams.get('municipalityNumber');
+  const postalCode = searchParams.get('postalCode');
+  const fnr = searchParams.get('fnr');
+  const snr = searchParams.get('snr');
 
   // Certificate data passed directly from building selector
   const energyClass = searchParams.get('energyClass');
@@ -160,6 +165,9 @@ function DashboardContent() {
   // PDF Report generation hook
   const { isGenerating, progress, error, generateReport } = usePdfReport();
 
+  // Data editing overlay state
+  const [isEditingOverlayOpen, setIsEditingOverlayOpen] = useState(false);
+
   const directCertificateData = useMemo(() => {
     if (!energyClass && !energyConsumptionParam) return null;
 
@@ -182,6 +190,17 @@ function DashboardContent() {
     bygningsnummer || undefined,
     directCertificateData
   );
+
+  // Zone-specific messaging based on real price data
+  const zoneMessaging = getZoneMessaging(dashboardData.priceZone);
+  const urgencyColors = getUrgencyColor(zoneMessaging.urgencyLevel);
+  const heatPumpRec = getHeatPumpRecommendation(dashboardData.priceZone);
+
+  // Calculate zone-specific investment message
+  const annualSavings = hasRealBuildingData ? realEnergyData.annualWasteCost : 0;
+  const investmentMessage = annualSavings > 0
+    ? getInvestmentMessage(dashboardData.priceZone, annualSavings)
+    : zoneMessaging.investmentFocus;
 
   // PDF Report generation handler
   const handleGenerateReport = async () => {
@@ -216,6 +235,13 @@ function DashboardContent() {
     } catch (error) {
       console.error('Failed to generate PDF report:', error);
     }
+  };
+
+  // Handle data editing save
+  const handleDataEditingSave = (data: any) => {
+    console.log('Saving energy assessment data:', data);
+    // Here you would typically send the data to your backend
+    // and potentially refresh the dashboard with updated calculations
   };
 
   return (
@@ -305,7 +331,7 @@ function DashboardContent() {
                     ? 'bg-cyan-500/20 text-cyan-400'
                     : 'bg-slate-500/20 text-slate-400'
                 }`}>
-                  TEK17 • Oppvarmet BRA
+                  TEK17 § 14-2
                 </span>
               </div>
               <div className="text-center">
@@ -327,17 +353,10 @@ function DashboardContent() {
                     const buildingAge = buildingYear ? (new Date().getFullYear() - parseInt(buildingYear)) : null;
                     const isExistingBuilding = buildingAge && buildingAge > 5; // Built more than 5 years ago
 
-                    // Different messaging for existing vs new buildings
-                    let comparisonText;
-                    if (isExistingBuilding) {
-                      comparisonText = percentageDeviation > 0
-                        ? `høyere enn krav til nybygg (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`
-                        : `lavere enn krav til nybygg (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`;
-                    } else {
-                      comparisonText = percentageDeviation > 0
-                        ? `over kravet (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`
-                        : `under kravet (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`;
-                    }
+                    // Simple comparison text
+                    const comparisonText = percentageDeviation > 0
+                      ? "Dårligere enn krav til nybygg"
+                      : "Bedre enn krav til nybygg";
 
                     return (
                       <div>
@@ -415,36 +434,24 @@ function DashboardContent() {
             </CardContent>
           </DashboardTile>
 
-          {/* 3. Energy Zone & Price */}
+          {/* 3. Recommended First Step */}
           <DashboardTile id="energy-zone">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <MapPin className="w-5 h-5 text-cyan-400" />
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  dashboardData.priceZone
-                    ? 'bg-cyan-500/20 text-cyan-400'
-                    : 'bg-slate-500/20 text-slate-400'
-                }`}>
-                  {dashboardData.isLoadingPricing ? 'LASTER...' : `Strømregion: ${dashboardData.priceZone || 'NO1'}`}
+                <Target className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                  Anbefalt første steg
                 </span>
               </div>
               <div className="text-center">
-                <div>
-                  {dashboardData.average36MonthPrice ? (
-                    <>
-                      <span className="text-2xl font-bold text-cyan-400">{Math.round(dashboardData.average36MonthPrice)}</span>
-                      <span className="text-sm font-normal text-cyan-400"> øre/kWh</span>
-                    </>
-                  ) : (
-                    <span className="text-2xl font-bold text-slate-400">–</span>
-                  )}
+                <div className="text-2xl font-bold text-emerald-400 mb-2">
+                  {hasRealBuildingData && realEnergyData.annualWaste === 0 ? 'Optimalisering' : 'Varmepumpe'}
                 </div>
-                <div className="text-xs text-slate-300 mt-1">
-                  {dashboardData.priceZone ? (
-                    `36 måneders snitt • SSB ${dashboardData.priceZone || 'NO1'}`
-                  ) : (
-                    'Ukjent sone'
-                  )}
+                <div className="text-xs text-slate-300">
+                  {hasRealBuildingData && realEnergyData.annualWaste === 0
+                    ? ''
+                    : heatPumpRec.reasoning
+                  }
                 </div>
               </div>
             </CardContent>
@@ -459,13 +466,26 @@ function DashboardContent() {
               </div>
               <div className="text-center">
                 <div>
-                  <span className="text-2xl font-bold text-fuchsia-400">
+                  <span className={hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                    "text-lg font-bold text-fuchsia-400" :
+                    "text-2xl font-bold text-fuchsia-400"}>
                     {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
-                      `${realEnergyData.investmentRoom.toLocaleString()} kr` : "–"
+                      `${realEnergyData.investmentRoom.toLocaleString()} kr` :
+                      hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                      "Ingen øyeblikkelige investeringsbehov" : "–"
                     }
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-1">Estimert budsjett for tilbakebetaling over 10 år</div>
+                <div className="text-xs text-slate-300 mt-1">
+                  {hasRealBuildingData && realEnergyData.annualWaste === 0
+                    ? ''
+                    : dashboardData.priceZone === 'NO4' && annualSavings < 30000
+                    ? 'Miljø og komfort viktigere enn økonomi i NO4'
+                    : dashboardData.priceZone === 'NO2' && annualSavings > 50000
+                    ? 'Høye strømpriser gir rask tilbakebetaling'
+                    : 'Estimert budsjett for tilbakebetaling over 10 år'
+                  }
+                </div>
               </div>
             </CardContent>
           </DashboardTile>
@@ -479,21 +499,28 @@ function DashboardContent() {
                     <div className="text-sm text-slate-400">Laster prisdata...</div>
                   </div>
                 ) : dashboardData.priceHistory.length > 0 ? (
-                  <EnergyTimeSeriesChart
-                    data={dashboardData.priceHistory.map(p => ({
+                  (() => {
+                    const chartData = dashboardData.priceHistory.map(p => ({
                       month: `${p.weekNumber}/${p.year}`,
                       consumption: Math.round(p.spotPrice),
                       cost: Math.round(p.spotPrice),
                       temperature: 10,
                       tek17Limit: 115
-                    }))}
-                    type="bar"
-                    chartMode="price"
-                    showSavings={false}
-                    height={140}
-                    showTitle={false}
-                    energyZone={dashboardData.priceZone || "NO1"}
-                  />
+                    }));
+                    console.log('📊 Chart data being passed:', chartData.length, 'points');
+                    console.log('Sample chart data:', chartData.slice(0, 3));
+                    return (
+                      <EnergyTimeSeriesChart
+                        data={chartData}
+                        type="bar"
+                        chartMode="price"
+                        showSavings={false}
+                        height={140}
+                        showTitle={false}
+                        energyZone={dashboardData.priceZone || "NO1"}
+                      />
+                    );
+                  })()
                 ) : (
                   <div className="flex items-center justify-center h-20">
                     <div className="text-sm text-red-400">Prishistorikk ikke tilgjengelig</div>
@@ -520,62 +547,86 @@ function DashboardContent() {
                       totalEnergyUse={hasRealBuildingData ? realEnergyData.totalEnergyUse : 165}
                       heatingSystem={heatingSystem || 'Elektrisitet'}
                       investmentRoom={hasRealBuildingData ? realEnergyData.investmentRoom : 450000}
+                      isEfficientBuilding={hasRealBuildingData && realEnergyData.annualWaste === 0}
                     />
                   </div>
                 </div>
 
                 {/* Investment & Data Summary */}
-                <div className="w-48 space-y-1.5 flex flex-col h-full overflow-y-auto overflow-x-hidden max-h-full">
-                  {/* Annual Savings */}
-                  <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <div className="text-xs text-cyan-400 mb-1">Rom for årlig besparelse</div>
-                    <div className="text-sm font-bold text-white">
-                      {hasRealBuildingData && realEnergyData.annualWaste > 0 ?
-                        `${realEnergyData.annualWasteCost.toLocaleString()} kr` : "–"
-                      }
-                    </div>
-                    <div className="text-xs text-slate-400">Ved optimalisering</div>
-                  </div>
-
+                <div className="w-48 space-y-1.5 flex flex-col h-full">
                   {/* Energy Analysis Insights - Expanded */}
-                  <div className="p-1.5 rounded-lg bg-accent/10 border border-accent/20">
-                    <div className="text-xs text-fuchsia-400 mb-1">Estimert fordeling</div>
-                    <div className="space-y-0.5 text-xs">
+                  <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+                    <div className="text-sm text-fuchsia-400 mb-2 font-semibold">Energifordeling</div>
+                    <div className="space-y-1 text-sm mb-3">
                       <div className="flex justify-between">
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-fuchsia-400"></span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-fuchsia-400"></span>
                           <span className="text-slate-300">Oppvarming</span>
                         </span>
-                        <span className="text-fuchsia-400 font-semibold">
-                          {hasRealBuildingData ? `${realEnergyData.breakdown.heating}%` : '70%'}
+                        <span className="text-fuchsia-400 font-bold">
+                          {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                            `${realEnergyData.breakdown.heating}%` :
+                            hasRealBuildingData ?
+                            `${Math.round(realEnergyData.investmentRoom * (realEnergyData.breakdown.heating / 100)).toLocaleString()} kr` :
+                            '315.000 kr'
+                          }
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-amber-400"></span>
                           <span className="text-slate-300">Belysning</span>
                         </span>
-                        <span className="text-amber-400 font-semibold">
-                          {hasRealBuildingData ? `${realEnergyData.breakdown.lighting}%` : '15%'}
+                        <span className="text-amber-400 font-bold">
+                          {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                            `${realEnergyData.breakdown.lighting}%` :
+                            hasRealBuildingData ?
+                            `${Math.round(realEnergyData.investmentRoom * (realEnergyData.breakdown.lighting / 100)).toLocaleString()} kr` :
+                            '67.500 kr'
+                          }
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-teal-500"></span>
                           <span className="text-slate-300">Ventilasjon</span>
                         </span>
-                        <span className="text-teal-500 font-semibold">
-                          {hasRealBuildingData ? `${realEnergyData.breakdown.ventilation}%` : '10%'}
+                        <span className="text-teal-500 font-bold">
+                          {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                            `${realEnergyData.breakdown.ventilation}%` :
+                            hasRealBuildingData ?
+                            `${Math.round(realEnergyData.investmentRoom * (realEnergyData.breakdown.ventilation / 100)).toLocaleString()} kr` :
+                            '45.000 kr'
+                          }
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
                           <span className="text-slate-300">Varmtvann</span>
                         </span>
-                        <span className="text-green-500 font-semibold">
-                          {hasRealBuildingData ? `${realEnergyData.breakdown.hotWater}%` : '5%'}
+                        <span className="text-green-500 font-bold">
+                          {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                            `${realEnergyData.breakdown.hotWater}%` :
+                            hasRealBuildingData ?
+                            `${Math.round(realEnergyData.investmentRoom * (realEnergyData.breakdown.hotWater / 100)).toLocaleString()} kr` :
+                            '22.500 kr'
+                          }
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Zone-specific Lead Domino Action */}
+                    <div className={`p-2 rounded border-l-4 ${urgencyColors.background} ${urgencyColors.border}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-2 h-2 rounded-full bg-fuchsia-400"></span>
+                        <span className="text-xs font-semibold text-white">Anbefalt første steg</span>
+                      </div>
+                      <div className="text-xs text-slate-300">
+                        {heatPumpRec.recommendation}
+                      </div>
+                      <div className="text-xs text-slate-400 mt-1">
+                        {heatPumpRec.reasoning}
                       </div>
                     </div>
                   </div>
@@ -605,13 +656,20 @@ function DashboardContent() {
           </DashboardTile>
 
           {/* ROW 5: Action Cards */}
+          <DashboardTile id="action-analysis">
+            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
+              <TrendingUp className="w-12 h-12 text-cyan-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-3">Energianalyse</h3>
+              <Button variant="outline" size="sm" className="w-full" disabled>
+                Kommer snart
+              </Button>
+            </CardContent>
+          </DashboardTile>
+
           <DashboardTile id="action-report">
             <CardContent className="p-4 text-center h-full flex flex-col justify-center">
               <FileText className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Detaljert rapport</h3>
-              <p className="text-slate-400 text-xs mb-3">
-                {progress || (error ? 'Feil oppstod' : 'PDF med komplett analyse')}
-              </p>
+              <h3 className="text-sm font-bold text-white mb-3">Detaljert rapport</h3>
               <Button
                 size="sm"
                 className="w-full bg-primary hover:bg-primary/90"
@@ -636,44 +694,96 @@ function DashboardContent() {
             </CardContent>
           </DashboardTile>
 
-          <DashboardTile id="action-consultation">
+          <DashboardTile id="action-consultation" variant="default">
             <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <Target className="w-8 h-8 text-cyan-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Book konsultasjon</h3>
-              <p className="text-slate-400 text-xs mb-3">Book konsultasjon</p>
-              <Button variant="outline" size="sm" className="w-full">
-                <Award className="w-3 h-3 mr-1" />
-                Book møte
+              <Settings className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-white mb-3">Avansert analyse</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => setIsEditingOverlayOpen(true)}
+              >
+                {hasRealBuildingData ? "Rediger data" : "Legg til data"}
               </Button>
             </CardContent>
           </DashboardTile>
 
-          <DashboardTile id="action-share">
-            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <Share className="w-8 h-8 text-fuchsia-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Del analyse</h3>
-              <p className="text-slate-400 text-xs mb-3">Send til leverandører</p>
-              <Button variant="outline" size="sm" className="w-full">
-                <Share className="w-3 h-3 mr-1" />
-                Del resultater
+          <DashboardTile id="action-share" variant="default">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
+                  Sløsing
+                </span>
+              </div>
+              <div className="text-center">
+                <div>
+                  <span className="text-2xl font-bold text-orange-400">
+                    {hasRealBuildingData && realEnergyData.annualWaste > 0 ?
+                      `${realEnergyData.annualWaste.toLocaleString()} kWh` :
+                      hasRealBuildingData && realEnergyData.annualWaste === 0 ?
+                      "God effektivitet" : "–"
+                    }
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 mt-1">
+                  {hasRealBuildingData && realEnergyData.annualWaste === 0
+                    ? ''
+                    : hasRealBuildingData && realEnergyData.annualWasteCost > 0
+                    ? `${realEnergyData.annualWasteCost.toLocaleString()} kr/år`
+                    : "Legg inn bygningsdata"
+                  }
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="w-full mt-2" disabled>
+                Artikkel <span className="text-xs">(kommer snart)</span>
               </Button>
             </CardContent>
           </DashboardTile>
 
-          <DashboardTile id="action-placeholder">
-            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <Settings className="w-8 h-8 text-slate-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-1">Endre data</h3>
-              <p className="text-slate-400 text-xs mb-3">Oppdater bygningsinfo</p>
-              <Button variant="outline" size="sm" className="w-full">
-                <Settings className="w-3 h-3 mr-1" />
-                Rediger
-              </Button>
-            </CardContent>
-          </DashboardTile>
         </DashboardGrid>
 
       </main>
+
+      {/* Data Editing Overlay */}
+      <DataEditingOverlay
+        isOpen={isEditingOverlayOpen}
+        onClose={() => setIsEditingOverlayOpen(false)}
+        onSave={handleDataEditingSave}
+        buildingData={{
+          buildingType: buildingType || '',
+          totalArea: totalArea ? parseInt(totalArea) : undefined,
+          heatedArea: heatedArea ? parseInt(heatedArea) : undefined,
+          buildingYear: buildingYear ? parseInt(buildingYear) : undefined,
+          numberOfFloors: undefined, // Not available in URL params yet
+          annualEnergyConsumption: annualEnergyConsumption ? parseInt(annualEnergyConsumption) : undefined,
+          heatingSystem: heatingSystem || '',
+          lightingSystem: lightingSystem || '',
+          ventilationSystem: ventilationSystem || '',
+          hotWaterSystem: hotWaterSystem || '',
+          address: addressParam || '',
+          gnr: gnr || '',
+          bnr: bnr || '',
+          fnr: fnr || '',
+          snr: snr || '',
+          municipalityNumber: municipalityNumber || '',
+          bygningsnummer: bygningsnummer || '',
+          postalCode: postalCode || '',
+          energyClass: energyClass || 'Ikke sertifisert',
+        }}
+        initialData={{
+          bygningstype: buildingType || '',
+          bruksareal: totalArea || '',
+          oppforingsaar: buildingYear || '',
+          oppvarmingsType: heatingSystem || '',
+          belysningType: lightingSystem || '',
+          ventilasjonsType: ventilationSystem || '',
+          varmtvannsType: hotWaterSystem || '',
+          energimerking: energyClass || 'Ikke sertifisert',
+          totalEnergibruk: energyConsumptionParam || '',
+        }}
+      />
 
       {/* Dashboard ready indicator for screenshot capture */}
       <div data-dashboard-ready="true" className="hidden" />
