@@ -32,13 +32,25 @@ export async function getEnovaGrade(
   address?: string
 ): Promise<EnovaLookupResult> {
   try {
-    // Require knr, gnr and bnr for lookup
-    if (!knr || !gnr || !bnr) {
+    // Log the parameters being passed
+    console.log(`🔍 Enova lookup called with: knr="${knr}", gnr="${gnr}", bnr="${bnr}", bygningsnummer="${bygningsnummer}", address="${address}"`);
+
+    // Require gnr and bnr for lookup, knr is optional but preferred
+    if (!gnr || !bnr) {
+      console.log(`❌ Missing required parameters - gnr: ${gnr}, bnr: ${bnr}`);
       return {
         found: false,
         status: 'Ikke registrert',
         source: 'not_found'
       }
+    }
+
+    // Check if knr is provided and valid (4-digit municipality number from Kartverket)
+    const hasValidKnr = knr && knr.trim() && knr !== '' && !isNaN(parseInt(knr)) && parseInt(knr) > 0;
+    if (!hasValidKnr) {
+      console.log(`⚠️ Warning: No valid municipalityNumber (knr="${knr}") provided - this may result in ambiguous matches for gnr=${gnr}, bnr=${bnr}`);
+    } else {
+      console.log(`✅ Using municipalityNumber filter: knr="${knr}" → ${parseInt(knr)}`);
     }
 
     // Create cache key that includes municipality and building number if provided
@@ -65,20 +77,44 @@ export async function getEnovaGrade(
       }
     }
 
-    // Build query for knr/gnr/bnr with optional bygningsnummer
+    // Build query for gnr/bnr with conditional knr filter
     let query = supabaseClient
       .from('energy_certificates')
       .select('*')
-      .eq('knr', parseInt(knr))
       .eq('gnr', parseInt(gnr))
       .eq('bnr', parseInt(bnr))
+
+    // Only add knr filter if we have a valid municipality number
+    if (hasValidKnr) {
+      query = query.eq('knr', parseInt(knr))
+      console.log(`🗄️ Building Supabase query with knr filter: knr=${parseInt(knr)}, gnr=${parseInt(gnr)}, bnr=${parseInt(bnr)}`);
+    } else {
+      console.log(`🗄️ Building Supabase query without knr filter: gnr=${parseInt(gnr)}, bnr=${parseInt(bnr)}`);
+    }
 
     // If building number is provided, filter by it
     if (bygningsnummer) {
       query = query.eq('building_number', bygningsnummer)
+      console.log(`🏢 Adding building_number filter: ${bygningsnummer}`);
     }
 
-    const { data, error } = await query.single()
+    // Execute query - use single() if we have knr filter, otherwise handle multiple results
+    let data, error;
+    if (hasValidKnr) {
+      const result = await query.single()
+      data = result.data
+      error = result.error
+    } else {
+      // Without knr filter, we might get multiple results - take the first one
+      const result = await query.limit(1)
+      data = result.data?.[0] || null
+      error = result.error
+      if (result.data && result.data.length > 1) {
+        console.log(`⚠️ Multiple certificates found for gnr=${gnr}, bnr=${bnr} without knr filter. Using first result.`);
+      }
+    }
+
+    console.log(`📊 Supabase query result:`, { data: data ? 'found' : 'null', error: error?.message || 'none' });
 
     // Cache the result (even if null)
     certificateCache.set(cacheKey, data)

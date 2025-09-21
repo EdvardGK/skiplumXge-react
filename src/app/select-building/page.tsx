@@ -570,7 +570,6 @@ function SelectBuildingContent() {
       router.push(`/dashboard?${queryParams.toString()}`);
     } catch (error) {
       console.error('Failed to submit building data:', error);
-    } finally {
       setIsSubmittingForm(false);
     }
   };

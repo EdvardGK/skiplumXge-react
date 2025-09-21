@@ -28,21 +28,32 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const gnr = searchParams.get('gnr');
     const bnr = searchParams.get('bnr');
+    const kommunenummer = searchParams.get('kommunenummer');
     const address = searchParams.get('address');
 
     if (!gnr || !bnr) {
       return createSecureErrorResponse('gnr and bnr are required', 400);
     }
 
-    console.log(`Detecting buildings for gnr=${gnr}, bnr=${bnr}, address=${address}`);
+    console.log(`Detecting buildings for gnr=${gnr}, bnr=${bnr}, kommunenummer=${kommunenummer}, address=${address}`);
 
     // Query Enova database for all certificates at this property
     // Note: Using select('*') to avoid column name issues during build
-    const { data: certificates, error } = await supabaseClient
+    let query = supabaseClient
       .from('energy_certificates')
       .select('*')
       .eq('gnr', parseInt(gnr))
       .eq('bnr', parseInt(bnr));
+
+    // Add municipality filter if provided to prevent cross-municipality duplicates
+    if (kommunenummer && kommunenummer.trim() && !isNaN(parseInt(kommunenummer))) {
+      query = query.eq('knr', parseInt(kommunenummer));
+      console.log(`Adding municipality filter: knr=${parseInt(kommunenummer)}`);
+    } else {
+      console.log(`⚠️ Warning: No valid kommunenummer provided - may get cross-municipality duplicates`);
+    }
+
+    const { data: certificates, error } = await query;
 
     if (error) {
       console.error('Enova database error:', error);

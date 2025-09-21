@@ -309,31 +309,17 @@ export function BuildingDataForm({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Data Source Status */}
       {(isFetchingBuildingData || isFetchingEnovaData) && (
-        <div className="flex items-center gap-2 text-xs text-slate-400 p-3 bg-white/5 rounded border border-white/10">
+        <div className="flex items-center gap-2 text-xs text-slate-400 p-2 bg-white/5 rounded border border-white/10">
           <Loader2 className="w-3 h-3 animate-spin" />
           {isFetchingEnovaData ? 'Henter Enova-data...' : 'Henter bygningsdata...'}
         </div>
       )}
 
-      {enovaDataSource && !isFetchingEnovaData && (
-        <div className="flex items-center gap-2 text-xs text-emerald-400 p-3 bg-emerald-400/10 rounded border border-emerald-400/20">
-          <CheckCircle className="w-3 h-3" />
-          {enovaDataSource}
-        </div>
-      )}
-
-      {buildingDataSource && !isFetchingBuildingData && !enovaDataSource && (
-        <div className="flex items-center gap-2 text-xs text-emerald-400 p-3 bg-emerald-400/10 rounded border border-emerald-400/20">
-          <CheckCircle className="w-3 h-3" />
-          {buildingDataSource}
-        </div>
-      )}
-
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
           {/* Building Type */}
           <FormField
             control={form.control}
@@ -355,9 +341,6 @@ export function BuildingDataForm({
                     ))}
                   </SelectContent>
                 </Select>
-                <FormDescription className="text-slate-400 text-xs">
-                  Påvirker TEK17-krav og energiberegninger
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -380,9 +363,6 @@ export function BuildingDataForm({
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
-                  <FormDescription className="text-slate-400 text-xs">
-                    m² {buildingDataSource && "• Auto-utfylt"}
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -403,124 +383,111 @@ export function BuildingDataForm({
                       onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
-                  <FormDescription className="text-slate-400 text-xs">
-                    m² (90% av BRA)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
 
-          {/* Building Year */}
-          <FormField
-            control={form.control}
-            name="buildingYear"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-white text-sm">Byggeår (valgfritt)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="2000"
-                    className="bg-white/5 border-white/20 text-white"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription className="text-slate-400 text-xs">
-                  Påvirker energikrav og isolasjonsstandard
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Building Year and Number of Floors */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="buildingYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white text-sm">Byggeår (valgfritt)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="2000"
+                      className="bg-white/5 border-white/20 text-white"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* Number of Floors */}
-          <FormField
-            control={form.control}
-            name="numberOfFloors"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-white text-sm">Antall etasjer (valgfritt)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="2"
-                    className="bg-white/5 border-white/20 text-white"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription className="text-slate-400 text-xs">
-                  Antall etasjer i bygningen
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="numberOfFloors"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white text-sm">Antall etasjer (valgfritt)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="2"
+                      className="bg-white/5 border-white/20 text-white"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          {/* SD-anlegg (Sprinkler) */}
-          <FormField
-            control={form.control}
-            name="sdInstallation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-white text-sm">SD-anlegg (valgfritt)</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
-                      <SelectValue placeholder="Velg om bygningen har SD-anlegg" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
-                      <SelectItem value="ja" className="text-white hover:bg-slate-700">
-                        Ja - Bygningen har SD-anlegg
-                      </SelectItem>
-                      <SelectItem value="nei" className="text-white hover:bg-slate-700">
-                        Nei - Bygningen har ikke SD-anlegg
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormDescription className="text-slate-400 text-xs">
-                  Sprinkleranlegg påvirker brannsikkerhet og energikrav
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* SD-anlegg and Annual Energy Consumption */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="sdInstallation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white text-sm">SD-anlegg (valgfritt)</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger className="bg-white/5 border-white/20 text-white h-9">
+                        <SelectValue placeholder="SD-anlegg" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="ja" className="text-white hover:bg-slate-700">
+                          Ja
+                        </SelectItem>
+                        <SelectItem value="nei" className="text-white hover:bg-slate-700">
+                          Nei
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* Annual Energy Consumption */}
-          <FormField
-            control={form.control}
-            name="annualEnergyConsumption"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-white text-sm">Årlig energiforbruk</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="15000"
-                    className="bg-white/5 border-white/20 text-white"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription className="text-slate-400 text-xs">
-                  kWh/år fra strømregning
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="annualEnergyConsumption"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-white text-sm">Årlig energiforbruk</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="15000"
+                      className="bg-white/5 border-white/20 text-white"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Energy Systems */}
-          <div className="space-y-4">
-            <h4 className="text-white font-medium text-sm border-b border-white/20 pb-2">
+          <div className="space-y-2">
+            <h4 className="text-white font-medium text-sm border-b border-white/20 pb-1">
               Energisystemer
             </h4>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
                 name="heatingSystem"
@@ -624,10 +591,11 @@ export function BuildingDataForm({
           </div>
 
           {/* Submit Button */}
-          <div className="pt-4">
+          <div className="pt-2">
             <Button
               type="submit"
               disabled={isSubmitting}
+              size="sm"
               className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
             >
               {isSubmitting ? (

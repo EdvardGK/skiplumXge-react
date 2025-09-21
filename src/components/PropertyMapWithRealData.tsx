@@ -126,9 +126,13 @@ export function PropertyMapWithRealData({
       const renderBuilding = (building: BuildingData) => {
         if (!building.coordinates || building.coordinates.length === 0) return;
 
+        // Check if this building should be selected based on external selectedBuildingId
+        const isExternallySelected = selectedBuildingId &&
+          (building.id === selectedBuildingId || building.bygningsnummer === selectedBuildingId);
+
         // Determine building style based on category and selection
         let style;
-        if (building.isSelected) {
+        if (building.isSelected || isExternallySelected) {
           style = BUILDING_COLORS.selected;
         } else if (building.category === 'target') {
           style = BUILDING_COLORS.target;
@@ -146,12 +150,12 @@ export function PropertyMapWithRealData({
           // Create popup content
           const icon = BUILDING_ICONS[building.type as keyof typeof BUILDING_ICONS] || '🏢';
           const categoryText = building.category === 'target' ? 'Fra adressen' : 'Nabobygning';
-          const categoryColor = building.isSelected ? 'text-fuchsia-600' : (building.category === 'target' ? 'text-teal-600' : 'text-green-600');
+          const categoryColor = (building.isSelected || isExternallySelected) ? 'text-fuchsia-600' : (building.category === 'target' ? 'text-teal-600' : 'text-green-600');
 
           const popupContent = `
             <div class="p-2 min-w-48">
               <h3 class="font-bold text-sm mb-2 ${categoryColor}">
-                ${icon} ${building.isSelected ? 'Valgt bygning' : categoryText}
+                ${icon} ${(building.isSelected || isExternallySelected) ? 'Valgt bygning' : categoryText}
               </h3>
               <div class="space-y-1 text-xs">
                 <div><strong>Type:</strong> ${building.type}</div>
@@ -308,7 +312,15 @@ export function PropertyMapWithRealData({
       );
 
       if (building && !building.isSelected) {
+        console.log('External building selection:', { selectedBuildingId, building });
         handleBuildingSelection(building);
+      } else if (building && building.isSelected) {
+        // Building is already selected, but ensure it has the correct color
+        const map = mapInstanceRef.current;
+        const layer = buildingLayersRef.current.get(building.id);
+        if (map && layer) {
+          layer.setStyle(BUILDING_COLORS.selected);
+        }
       }
     }
   }, [selectedBuildingId, targetBuildings, handleBuildingSelection]);
