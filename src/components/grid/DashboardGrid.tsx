@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-// Simple equal-width columns - no complexity
-const EQUAL_COLUMNS = 4;
+// Responsive column system
+const EQUAL_COLUMNS = 4;  // Desktop
+const TABLET_COLUMNS = 2; // Tablet
+const MOBILE_COLUMNS = 1; // Mobile
 const COLUMN_PERCENTAGE = 100 / EQUAL_COLUMNS;
 
 export interface DashboardLayoutDefinition {
@@ -107,6 +109,23 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
   debug = false,
   children
 }) => {
+  const [viewportWidth, setViewportWidth] = useState(1024);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setViewportWidth(width);
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const positions = generateGridPositions(layout.layout);
   const errors = validateLayout(layout.layout);
 
@@ -115,9 +134,66 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
     console.warn('Dashboard Layout Validation Errors:', errors);
   }
 
-  // Create CSS Grid template with equal columns and viewport-based row heights
+  // Mobile: Stack vertically with scrolling
+  if (isMobile) {
+    return (
+      <div className={`dashboard-grid-mobile ${className}`}>
+        <div className="flex flex-col gap-4 w-full">
+          {children}
+        </div>
+        {debug && (
+          <div className="mt-4 p-4 bg-slate-800/50 rounded-lg text-xs text-slate-300">
+            <div className="font-semibold mb-2">Mobile Layout Debug:</div>
+            <div>Viewport: {viewportWidth}px (Mobile)</div>
+            <div>Layout: Vertical Stack</div>
+            <div>Scrolling: Enabled</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Tablet: 2-column grid (no scroll)
+  if (isTablet) {
+    const gridTemplateColumns = `repeat(${TABLET_COLUMNS}, 1fr)`;
+    const gridTemplateRows = `repeat(${Math.ceil(layout.rows * 2)}, minmax(0, 1fr))`;
+
+    return (
+      <div className={`dashboard-grid dashboard-grid-tablet ${className}`}>
+        <div
+          className="grid gap-2 w-full h-full overflow-hidden"
+          style={{
+            gridTemplateColumns,
+            gridTemplateRows,
+          }}
+        >
+          {React.Children.map(children, (child) => {
+            if (React.isValidElement(child) && (child.props as any)?.id) {
+              return React.cloneElement(child as any, {
+                style: {
+                  ...(child.props as any)?.style,
+                },
+                className: `${(child.props as any)?.className || ''} tablet-tile`,
+              });
+            }
+            return child;
+          })}
+        </div>
+        {debug && (
+          <div className="mt-4 p-4 bg-slate-800/50 rounded-lg text-xs text-slate-300">
+            <div className="font-semibold mb-2">Tablet Layout Debug:</div>
+            <div>Viewport: {viewportWidth}px (Tablet)</div>
+            <div>Columns: {TABLET_COLUMNS}</div>
+            <div>Scrolling: Disabled</div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop: Original 4-column grid (no scroll)
   const gridTemplateColumns = `repeat(${EQUAL_COLUMNS}, 1fr)`;
-  const gridTemplateRows = `repeat(${layout.rows}, calc((100vh - 180px) / ${layout.rows}))`;
+  const gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
 
   return (
     <div className={`dashboard-grid ${className}`}>
@@ -156,9 +232,11 @@ const DashboardGrid: React.FC<DashboardGridProps> = ({
 
       {debug && (
         <div className="mt-4 p-4 bg-slate-800/50 rounded-lg text-xs text-slate-300">
-          <div className="font-semibold mb-2">Equal Grid Debug:</div>
+          <div className="font-semibold mb-2">Desktop Grid Debug:</div>
+          <div>Viewport: {viewportWidth}px (Desktop)</div>
           <div>Columns: {EQUAL_COLUMNS} equal columns ({COLUMN_PERCENTAGE}% each)</div>
-          <div>Rows: {layout.rows} (240px each)</div>
+          <div>Rows: {layout.rows} (flexible height)</div>
+          <div>Scrolling: Disabled</div>
           {errors.length > 0 && (
             <div className="mt-2 text-red-400">
               Errors: {errors.join(', ')}
@@ -182,7 +260,7 @@ const GridDebugOverlay: React.FC<GridDebugOverlayProps> = ({ layout, positions, 
       {/* Grid lines */}
       <div className="absolute inset-0 grid gap-2" style={{
         gridTemplateColumns: `repeat(${EQUAL_COLUMNS}, 1fr)`,
-        gridTemplateRows: `repeat(${layout.rows}, calc((100vh - 180px) / ${layout.rows}))`,
+        gridTemplateRows: `repeat(${layout.rows}, minmax(0, 1fr))`,
       }}>
         {Array.from({ length: layout.cols * layout.rows }).map((_, i) => (
           <div key={i} className="border border-cyan-400/30 bg-cyan-400/5 flex items-center justify-center text-xs text-cyan-400">

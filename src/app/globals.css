@@ -204,20 +204,56 @@ svg .recharts-rectangle:hover {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Prevent body scrolling on desktop/tablet */
+  @media (min-width: 768px) {
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      max-height: 100vh;
+    }
+
+    /* Ensure the app root fills viewport correctly */
+    #__next, main {
+      height: 100%;
+      max-height: 100vh;
+    }
+  }
 }
 
 /* BI-Style Dashboard Grid Layout */
 @layer components {
-  .dashboard-container {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: calc(100vh - 120px); /* Fixed height based on viewport minus actual header height */
-    gap: 0.5rem; /* Compact gaps */
-    padding: 0.5rem; /* Minimal padding */
-    width: 100%;
-    max-width: 1400px; /* Slightly smaller max width */
-    margin: 0 auto;
-    overflow: hidden; /* Prevent any overflow */
+  /* Desktop & Tablet - No scrolling needed */
+  @media (min-width: 768px) {
+    .dashboard-container {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      height: 100dvh; /* Dynamic viewport height for mobile browsers */
+      max-height: calc(100vh - 3rem); /* More space for taskbar */
+      gap: 0.25rem; /* Reduced gap between header and grid */
+      padding: 0.25rem 0.5rem 2rem 0.5rem; /* Less top, more bottom padding */
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+  }
+
+  /* Mobile - Allow scrolling */
+  @media (max-width: 767px) {
+    .dashboard-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      width: 100%;
+      margin: 0 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
   }
 
   .dashboard-header {
@@ -227,9 +263,54 @@ svg .recharts-rectangle:hover {
     min-height: 0; /* Allow flexbox to shrink */
   }
 
-  /* Fibonacci Grid System - Automatic positioning via DashboardGrid component */
-  .dashboard-grid {
-    /* Container managed by DashboardGrid component */
+  /* Desktop Grid - No scroll */
+  @media (min-width: 1024px) {
+    .dashboard-grid {
+      height: 100%;
+      overflow: hidden;
+    }
+  }
+
+  /* Tablet Grid - No scroll, compressed layout */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .dashboard-grid-tablet {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* Compress tile content on tablet */
+    .tablet-tile {
+      font-size: 0.875rem;
+    }
+
+    .tablet-tile h3 {
+      font-size: 1rem;
+    }
+
+    .tablet-tile .text-2xl {
+      font-size: 1.5rem;
+    }
+
+    .tablet-tile .text-xl {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* Mobile Stack - Allow scroll */
+  @media (max-width: 767px) {
+    .dashboard-grid-mobile {
+      min-height: 100%;
+      padding-bottom: 2rem;
+    }
+
+    .dashboard-grid-mobile > div {
+      max-width: 100%;
+    }
+
+    /* Mobile card styling */
+    .dashboard-grid-mobile .aurora-card {
+      min-height: 120px;
+    }
   }
 
   .action-grid {
@@ -243,7 +324,6 @@ svg .recharts-rectangle:hover {
   /* Large Desktop: 1440px+ - Full dashboard with optimal spacing */
   @media (min-width: 1440px) {
     .dashboard-container {
-      height: calc(100vh - 80px);
       padding: 1rem;
       gap: 1rem;
     }
@@ -252,16 +332,14 @@ svg .recharts-rectangle:hover {
   /* Standard Desktop: 1024px-1439px - Slightly compressed */
   @media (max-width: 1439px) and (min-width: 1024px) {
     .dashboard-container {
-      height: calc(100vh - 80px);
       padding: 0.75rem;
       gap: 0.75rem;
     }
   }
 
-  /* Tablet Landscape: 768px-1023px - Adaptive 2x2 grid */
+  /* Tablet: 768px-1023px - Compressed but no scroll */
   @media (max-width: 1023px) and (min-width: 768px) {
     .dashboard-container {
-      height: calc(100vh - 70px);
       padding: 0.5rem;
       gap: 0.5rem;
     }
@@ -279,12 +357,10 @@ svg .recharts-rectangle:hover {
     }
   }
 
-  /* Tablet Portrait & Small Laptop: 480px-767px - Single column with scroll */
+  /* Tablet Portrait: 480px-767px - Single column with scroll */
   @media (max-width: 767px) and (min-width: 480px) {
     .dashboard-container {
-      height: auto; /* Allow natural height on small screens */
-      min-height: calc(100vh - 60px);
-      padding: 0.5rem;
+      padding: 0.75rem;
       gap: 0.75rem;
     }
 
@@ -310,9 +386,7 @@ svg .recharts-rectangle:hover {
   /* Mobile: <480px - Minimal compact layout */
   @media (max-width: 479px) {
     .dashboard-container {
-      height: auto; /* Natural height on mobile */
-      min-height: calc(100vh - 60px);
-      padding: 0.25rem;
+      padding: 0.5rem;
       gap: 0.5rem;
     }
 

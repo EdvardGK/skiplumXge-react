@@ -257,9 +257,9 @@ function DashboardContent() {
 
       <main className="dashboard-container px-2 md:px-4 lg:px-6">
         {/* Dashboard Header */}
-        <div className="dashboard-header pt-4 pb-2">
-          <div className="text-xs text-slate-400 mb-3">
-            Hjem → Bygningsdata → <span className="text-cyan-400">Dashboard</span>
+        <div className="dashboard-header pt-1 pb-1">
+          <div className="text-xs text-slate-400">
+            Hjem → Velg bygg → <span className="text-cyan-400">Dashboard</span>
           </div>
           <div className="flex items-center justify-end">
             {/* Header actions removed - TEK17 info now only in main tile */}

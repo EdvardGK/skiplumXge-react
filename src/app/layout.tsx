@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "SkiplumXGE - Norsk Energianalyse",
   description: "Profesjonell energianalyse og TEK17-etterlevelse for norske eiendommer",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
 };
 
 export default function RootLayout({

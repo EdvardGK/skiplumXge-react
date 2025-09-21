@@ -39,7 +39,7 @@ export default function LandingPage() {
         municipalityNumber: address.municipalityNumber || '',
         postalCode: address.postalCode,
       });
-      router.push(`/building-data?${params.toString()}`);
+      router.push(`/select-building?${params.toString()}`);
       return;
     }
 
@@ -74,7 +74,7 @@ export default function LandingPage() {
         if (buildingData.buildings && buildingData.buildings.length > 0) {
           params.append('bygningsnummer', buildingData.buildings[0].bygningsnummer);
         }
-        router.push(`/building-data?${params.toString()}`);
+        router.push(`/select-building?${params.toString()}`);
       }
     } catch (error) {
       console.error('Failed to detect buildings:', error);
@@ -89,7 +89,7 @@ export default function LandingPage() {
         ...(address.matrikkel?.gardsnummer && { gnr: address.matrikkel.gardsnummer }),
         ...(address.matrikkel?.bruksnummer && { bnr: address.matrikkel.bruksnummer }),
       });
-      router.push(`/building-data?${params.toString()}`);
+      router.push(`/select-building?${params.toString()}`);
     } finally {
       setIsCheckingBuildings(false);
     }
@@ -155,7 +155,7 @@ export default function LandingPage() {
 
 
             {/* Primary Search CTA */}
-            <div className="max-w-2xl mx-auto mb-4" ref={searchRef}>
+            <div className="max-w-2xl mx-auto mb-4 relative z-50" ref={searchRef}>
               <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xl text-center text-white flex items-center justify-center gap-3">
@@ -239,7 +239,7 @@ export default function LandingPage() {
                   {/* Search Results Dropdown - only show when searching, not when selected */}
                   {showResults && query.length >= 3 && !hasSelection && (
                     <div className="relative">
-                      <div className="absolute w-full mt-1 bg-gray-800/95 border border-gray-700/50 rounded-lg shadow-2xl max-h-60 overflow-auto backdrop-blur-sm z-50">
+                      <div className="absolute w-full mt-1 bg-gray-800/95 border border-gray-700/50 rounded-lg shadow-2xl max-h-60 overflow-auto backdrop-blur-sm z-[9999]">
                         {isLoading && (
                           <div className="p-4 text-center text-gray-400">
                             <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
@@ -326,7 +326,7 @@ export default function LandingPage() {
 
 
         {/* Features Grid */}
-        <section className="container mx-auto px-4 pb-16" id="features">
+        <section className="container mx-auto px-4 pb-16 relative z-10" id="features">
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">

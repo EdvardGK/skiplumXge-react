@@ -33,6 +33,8 @@ const DashboardTile: React.FC<DashboardTileProps> = ({
         ${variantClasses[variant]}
         transition-all duration-300
         overflow-hidden
+        h-full w-full
+        flex flex-col
         ${className}
       `}
       style={style}
