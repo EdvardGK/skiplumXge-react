@@ -39,7 +39,7 @@ export default function LandingPage() {
         municipalityNumber: address.municipalityNumber || '',
         postalCode: address.postalCode,
       });
-      router.push(`/select-building?${params.toString()}`);
+      window.location.href = `/select-building?${params.toString()}`;
       return;
     }
 
@@ -68,13 +68,13 @@ export default function LandingPage() {
 
       if (buildingData.hasMultipleBuildings) {
         // Multiple buildings - go to building selection page
-        router.push(`/select-building?${params.toString()}`);
+        window.location.href = `/select-building?${params.toString()}`;
       } else {
         // Single building - go directly to building form
         if (buildingData.buildings && buildingData.buildings.length > 0) {
           params.append('bygningsnummer', buildingData.buildings[0].bygningsnummer);
         }
-        router.push(`/select-building?${params.toString()}`);
+        window.location.href = `/select-building?${params.toString()}`;
       }
     } catch (error) {
       console.error('Failed to detect buildings:', error);
@@ -89,7 +89,7 @@ export default function LandingPage() {
         ...(address.matrikkel?.gardsnummer && { gnr: address.matrikkel.gardsnummer }),
         ...(address.matrikkel?.bruksnummer && { bnr: address.matrikkel.bruksnummer }),
       });
-      router.push(`/select-building?${params.toString()}`);
+      window.location.href = `/select-building?${params.toString()}`;
     } finally {
       setIsCheckingBuildings(false);
     }

@@ -70,12 +70,18 @@ function SelectBuildingContent() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapRef, setMapRef] = useState<any>(null);
   const [currentZoom, setCurrentZoom] = useState(19);
+  const [hasParameterError, setHasParameterError] = useState(false);
 
   // Fetch map buildings and Enova certificates in parallel
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Select building page params:', { address, lat, lon, gnr, bnr });
+
       if (!address || !lat || !lon) {
-        router.push('/');
+        console.error('Missing required parameters:', { address, lat, lon });
+        setHasParameterError(true);
+        setIsLoadingMap(false);
+        setIsLoadingEnova(false);
         return;
       }
 
@@ -566,8 +572,8 @@ function SelectBuildingContent() {
         }
       }
 
-      // Use replace instead of push to prevent back button issues
-      router.replace(`/dashboard?${queryParams.toString()}`);
+      // Use window.location to prevent Next.js router issues
+      window.location.href = `/dashboard?${queryParams.toString()}`;
     } catch (error) {
       console.error('Failed to submit building data:', error);
       setIsSubmittingForm(false);
@@ -581,9 +587,38 @@ function SelectBuildingContent() {
       setShowCertificates(false);
       setSelectedCertificate(null);
     } else {
-      router.push('/');
+      // Use window.location to avoid Next.js router issues
+      window.location.href = '/';
     }
   };
+
+  if (hasParameterError) {
+    return (
+      <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+        </div>
+
+        <div className="relative z-10 h-full flex items-center justify-center">
+          <div className="text-center">
+            <Building className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-white mb-2">Mangler adresseinformasjon</h1>
+            <p className="text-slate-400 mb-4">Gå tilbake til søket for å velge en adresse.</p>
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Tilbake til søk
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoadingMap || isLoadingEnova) {
     return (
