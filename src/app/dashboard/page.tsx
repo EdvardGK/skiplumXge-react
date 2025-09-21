@@ -106,6 +106,25 @@ function DashboardContent() {
   const hotWaterSystem = searchParams.get('hotWaterSystem');
   const buildingYear = searchParams.get('buildingYear');
 
+  // Prevent infinite redirects - if no address, show error instead of redirecting
+  if (!addressParam) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center text-slate-400">
+          <h1 className="text-2xl font-bold text-white mb-2">Mangler adresseinformasjon</h1>
+          <p className="mb-4">Gå tilbake til søket for å starte energianalysen.</p>
+          <Button
+            variant="outline"
+            onClick={() => window.location.href = '/'}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Tilbake til søk
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Additional parameters for real data integration
   const priceZoneParam = searchParams.get('priceZone') as PriceZone | null;
   const gnr = searchParams.get('gnr');

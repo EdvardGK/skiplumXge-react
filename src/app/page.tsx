@@ -269,10 +269,10 @@ export default function LandingPage() {
                                   setSelectedAddress(address);
                                   setShowResults(false);
 
-                                  // Auto-trigger analysis when address is selected
+                                  // Auto-trigger analysis when address is selected (reduced delay)
                                   setTimeout(() => {
                                     handleAddressSelection(address);
-                                  }, 500); // Small delay to show selection confirmation
+                                  }, 200); // Shorter delay to reduce redirect timing issues
                                 }}
                               >
                                 <div className="text-white font-medium">

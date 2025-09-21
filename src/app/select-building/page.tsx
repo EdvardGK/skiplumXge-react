@@ -530,7 +530,7 @@ function SelectBuildingContent() {
       // Get selected building data
       const selectedBuilding = mapBuildings.find(b => b.id === selectedBuildingId);
 
-      // Create query params with all data including property identifiers
+      // Create query params with essential data only
       const queryParams = new URLSearchParams({
         address: address || "",
         ...(lat && { lat }),
@@ -540,9 +540,6 @@ function SelectBuildingContent() {
         ...(postalCode && postalCode !== 'undefined' && { postalCode }),
         ...(gnr && { gnr }),
         ...(bnr && { bnr }),
-        // Pass selected building's ID and bygningsnummer for map highlighting
-        ...(selectedBuilding?.id && { selectedBuildingOsmId: selectedBuilding.id }),
-        ...(selectedBuilding?.bygningsnummer && { selectedBygningsnummer: selectedBuilding.bygningsnummer }),
         buildingType: formData.buildingType,
         totalArea: formData.totalArea.toString(),
         heatedArea: formData.heatedArea.toString(),
@@ -553,21 +550,24 @@ function SelectBuildingContent() {
         hotWaterSystem: formData.hotWaterSystem,
         ...(formData.buildingYear && { buildingYear: formData.buildingYear.toString() }),
         ...(formData.numberOfFloors && { numberOfFloors: formData.numberOfFloors.toString() }),
-        ...(formData.sdInstallation && { sdInstallation: formData.sdInstallation }),
         ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
-        // Pass certificate data directly to avoid re-querying
-        ...(selectedCertificate && (() => {
-          const cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
-          return cert ? {
-            energyClass: cert.energyClass,
-            energyConsumption: cert.energyConsumption?.toString(),
-            buildingCategory: cert.buildingCategory,
-            constructionYear: cert.constructionYear?.toString()
-          } : {};
-        })()),
+        // Add selected building data for map highlighting
+        ...(selectedBuilding?.id && { selectedBuildingOsmId: selectedBuilding.id }),
       });
 
-      router.push(`/dashboard?${queryParams.toString()}`);
+      // Add certificate data if available
+      if (selectedCertificate) {
+        const cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
+        if (cert) {
+          if (cert.energyClass) queryParams.set('energyClass', cert.energyClass);
+          if (cert.energyConsumption) queryParams.set('energyConsumption', cert.energyConsumption.toString());
+          if (cert.buildingCategory) queryParams.set('buildingCategory', cert.buildingCategory);
+          if (cert.constructionYear) queryParams.set('constructionYear', cert.constructionYear.toString());
+        }
+      }
+
+      // Use replace instead of push to prevent back button issues
+      router.replace(`/dashboard?${queryParams.toString()}`);
     } catch (error) {
       console.error('Failed to submit building data:', error);
       setIsSubmittingForm(false);
