@@ -13,7 +13,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Legend
 } from 'recharts';
 import { stormColors, stormEffects } from '@/lib/storm-theme';
 
@@ -171,6 +172,11 @@ export default function EnergyTimeSeriesChart({
   const priceData = generateElectricityPriceData(energyZone);
   const chartData = chartMode === 'price' ? priceData : energyData;
 
+  // Calculate average for price mode
+  const averagePrice = chartMode === 'price'
+    ? Math.round(priceData.reduce((sum, item) => sum + item.price, 0) / priceData.length)
+    : 0;
+
   const ChartComponent = type === 'bar' ? BarChart : (type === 'area' ? AreaChart : LineChart);
 
   return (
@@ -189,7 +195,10 @@ export default function EnergyTimeSeriesChart({
         </div>
       )}
 
-      <ResponsiveContainer width="100%" height={height}>
+      <div className="flex gap-2">
+        {/* Chart Container */}
+        <div className="flex-1" style={{ width: '90%' }}>
+          <ResponsiveContainer width="100%" height={height}>
         <ChartComponent data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <defs>
             {/* Gradient definitions for storm theme */}
@@ -235,18 +244,36 @@ export default function EnergyTimeSeriesChart({
 
           <Tooltip content={<CustomTooltip />} />
 
-          {/* TEK17 Reference Line */}
-          <ReferenceLine
-            y={1100}
-            stroke={stormColors.lightning.thunder}
-            strokeDasharray="8 8"
-            strokeWidth={2}
-            label={{
-              value: "TEK17 Grense",
-              position: "top",
-              fill: stormColors.lightning.thunder
-            }}
-          />
+          {/* Average price line for price mode */}
+          {chartMode === 'price' && averagePrice > 0 && (
+            <ReferenceLine
+              y={averagePrice}
+              stroke="#d946ef"
+              strokeDasharray="8 4"
+              strokeWidth={2}
+              label={{
+                value: `Snitt: ${averagePrice} øre/kWh`,
+                position: "top",
+                fill: "#d946ef",
+                fontSize: 12
+              }}
+            />
+          )}
+
+          {/* TEK17 Reference Line for energy mode */}
+          {chartMode === 'energy' && (
+            <ReferenceLine
+              y={1100}
+              stroke={stormColors.lightning.thunder}
+              strokeDasharray="8 8"
+              strokeWidth={2}
+              label={{
+                value: "TEK17 Grense",
+                position: "top",
+                fill: stormColors.lightning.thunder
+              }}
+            />
+          )}
 
           {type === 'bar' ? (
             <>
@@ -256,7 +283,7 @@ export default function EnergyTimeSeriesChart({
                 fill="url(#consumptionGradient)"
                 stroke={stormColors.lightning.cyan}
                 strokeWidth={1}
-                name={chartMode === 'price' ? 'Strømpris' : 'Forbruk'}
+                name={chartMode === 'price' ? `Pris per kvartal (${energyZone})` : 'Forbruk'}
                 radius={[2, 2, 0, 0]}
               />
             </>
@@ -310,7 +337,36 @@ export default function EnergyTimeSeriesChart({
             </>
           )}
         </ChartComponent>
-      </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Sidebar Legend */}
+        <div className="w-[10%] min-w-[90px] flex flex-col justify-center space-y-2">
+          {chartMode === 'price' ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-3 bg-gradient-to-r from-cyan-500/80 to-cyan-500/10 border border-cyan-500 rounded-sm"></div>
+                <span className="text-xs text-slate-300">Pris pr. kvartal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-fuchsia-500" style={{ borderTop: '2px dashed #d946ef' }}></div>
+                <span className="text-xs text-slate-300">{energyZone} snitt</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-3 bg-gradient-to-r from-cyan-500/80 to-cyan-500/10 border border-cyan-500 rounded-sm"></div>
+                <span className="text-xs text-slate-300">Forbruk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-0.5 bg-red-500" style={{ borderTop: '2px dashed #ef4444' }}></div>
+                <span className="text-xs text-slate-300">TEK17 grense</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
 
     </div>
   );

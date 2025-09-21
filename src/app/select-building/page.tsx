@@ -525,6 +525,9 @@ function SelectBuildingContent() {
       // Simulate API call for building analysis
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      // Get selected building data
+      const selectedBuilding = mapBuildings.find(b => b.id === selectedBuildingId);
+
       // Create query params with all data including property identifiers
       const queryParams = new URLSearchParams({
         address: address || "",
@@ -535,6 +538,9 @@ function SelectBuildingContent() {
         ...(postalCode && postalCode !== 'undefined' && { postalCode }),
         ...(gnr && { gnr }),
         ...(bnr && { bnr }),
+        // Pass selected building's ID and bygningsnummer for map highlighting
+        ...(selectedBuilding?.id && { selectedBuildingOsmId: selectedBuilding.id }),
+        ...(selectedBuilding?.bygningsnummer && { selectedBygningsnummer: selectedBuilding.bygningsnummer }),
         buildingType: formData.buildingType,
         totalArea: formData.totalArea.toString(),
         heatedArea: formData.heatedArea.toString(),

@@ -111,6 +111,9 @@ function DashboardContent() {
   const gnr = searchParams.get('gnr');
   const bnr = searchParams.get('bnr');
   const bygningsnummer = searchParams.get('bygningsnummer');
+  const selectedBygningsnummer = searchParams.get('selectedBygningsnummer');
+  const selectedBuildingOsmId = searchParams.get('selectedBuildingOsmId');
+
   const municipalityNumber = searchParams.get('municipalityNumber');
 
   // Certificate data passed directly from building selector
@@ -283,7 +286,7 @@ function DashboardContent() {
                     ? 'bg-cyan-500/20 text-cyan-400'
                     : 'bg-slate-500/20 text-slate-400'
                 }`}>
-                  TEK17
+                  TEK17 • Oppvarmet BRA
                 </span>
               </div>
               <div className="text-center">
@@ -308,17 +311,28 @@ function DashboardContent() {
                     // Different messaging for existing vs new buildings
                     let comparisonText;
                     if (isExistingBuilding) {
-                      comparisonText = percentageDeviation > 0 ? 'høyere enn krav til nybygg' : 'lavere enn krav til nybygg';
+                      comparisonText = percentageDeviation > 0
+                        ? `høyere enn krav til nybygg (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`
+                        : `lavere enn krav til nybygg (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`;
                     } else {
-                      comparisonText = percentageDeviation > 0 ? 'over kravet' : 'under kravet';
+                      comparisonText = percentageDeviation > 0
+                        ? `over kravet (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`
+                        : `under kravet (${Math.round(realEnergyData.tek17Requirement)} kWh/m²/år)`;
                     }
 
                     return (
                       <div>
-                        <div className={`text-4xl font-bold ${colorClass}`}>
-                          {Math.abs(percentageDeviation)}%
+                        <div>
+                          <span className="text-2xl font-bold text-cyan-400">
+                            {Math.round(realEnergyData.totalEnergyUse)}
+                          </span>
+                          <span className="text-sm font-normal text-cyan-400"> kWh/m²/år</span>
+                          <span className="text-2xl font-bold text-slate-400 mx-1">|</span>
+                          <span className={`text-2xl font-bold ${colorClass}`}>
+                            {percentageDeviation > 0 ? '+' : ''}{percentageDeviation}%
+                          </span>
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-xs text-slate-300 mt-1">
                           {comparisonText}
                         </div>
                       </div>
@@ -392,24 +406,27 @@ function DashboardContent() {
                     ? 'bg-cyan-500/20 text-cyan-400'
                     : 'bg-slate-500/20 text-slate-400'
                 }`}>
-                  {dashboardData.isLoadingPricing ? 'LASTER...' : dashboardData.priceZone || 'NO1'}
+                  {dashboardData.isLoadingPricing ? 'LASTER...' : `Strømregion: ${dashboardData.priceZone || 'NO1'}`}
                 </span>
               </div>
               <div className="text-center">
-                {dashboardData.average36MonthPrice ? (
-                  <div className="text-4xl font-bold text-cyan-400">
-                    {Math.round(dashboardData.average36MonthPrice)} øre
-                  </div>
-                ) : (
-                  <div className="text-4xl font-bold text-slate-400">–</div>
-                )}
-              </div>
-              <div className="text-slate-400 text-xs">
-                {dashboardData.priceZone ? (
-                  `36 måneders snitt • SSB ${dashboardData.priceZone || 'NO1'}`
-                ) : (
-                  'Ukjent sone'
-                )}
+                <div>
+                  {dashboardData.average36MonthPrice ? (
+                    <>
+                      <span className="text-2xl font-bold text-cyan-400">{Math.round(dashboardData.average36MonthPrice)}</span>
+                      <span className="text-sm font-normal text-cyan-400"> øre/kWh</span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-bold text-slate-400">–</span>
+                  )}
+                </div>
+                <div className="text-xs text-slate-300 mt-1">
+                  {dashboardData.priceZone ? (
+                    `36 måneders snitt • SSB ${dashboardData.priceZone || 'NO1'}`
+                  ) : (
+                    'Ukjent sone'
+                  )}
+                </div>
               </div>
             </CardContent>
           </DashboardTile>
@@ -419,14 +436,18 @@ function DashboardContent() {
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Target className="w-5 h-5 text-fuchsia-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">ROI</span>
+                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">Budsjett</span>
               </div>
-              <div className="text-xl font-bold text-white">
-                {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
-                  `${realEnergyData.investmentRoom.toLocaleString()} kr` : "–"
-                }
+              <div className="text-center">
+                <div>
+                  <span className="text-2xl font-bold text-fuchsia-400">
+                    {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
+                      `${realEnergyData.investmentRoom.toLocaleString()} kr` : "–"
+                    }
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 mt-1">Estimert budsjett for tilbakebetaling over 10 år</div>
               </div>
-              <div className="text-slate-400 text-xs">Estimert budsjett for ROI over 10 år</div>
             </CardContent>
           </DashboardTile>
 
@@ -466,9 +487,9 @@ function DashboardContent() {
           {/* ROW 3-4: Large Investment & Energy Flow Sankey (2x2 tile) */}
           <DashboardTile id="investment-sankey" variant="default">
             <CardContent className="p-3 flex flex-col h-full">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0 max-h-full">
+              <div className="flex gap-4 flex-1 min-h-0 max-h-full">
                 {/* Energy Breakdown Chart */}
-                <div className="lg:col-span-2 flex items-center justify-center overflow-hidden">
+                <div className="flex-1 flex items-center justify-center overflow-hidden">
                   <div className="w-full h-full max-w-full max-h-full">
                     <EnergyBreakdownChart
                       breakdown={hasRealBuildingData ? realEnergyData.breakdown : {
@@ -485,10 +506,10 @@ function DashboardContent() {
                 </div>
 
                 {/* Investment & Data Summary */}
-                <div className="space-y-1.5 flex flex-col h-full overflow-y-auto overflow-x-hidden max-h-full">
+                <div className="w-48 space-y-1.5 flex flex-col h-full overflow-y-auto overflow-x-hidden max-h-full">
                   {/* Annual Savings */}
                   <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <div className="text-xs text-cyan-400 mb-1">Årlig besparelse</div>
+                    <div className="text-xs text-cyan-400 mb-1">Rom for årlig besparelse</div>
                     <div className="text-sm font-bold text-white">
                       {hasRealBuildingData && realEnergyData.annualWaste > 0 ?
                         `${realEnergyData.annualWasteCost.toLocaleString()} kr` : "–"
@@ -497,42 +518,45 @@ function DashboardContent() {
                     <div className="text-xs text-slate-400">Ved optimalisering</div>
                   </div>
 
-                  {/* SINTEF Breakdown */}
-                  <div className="p-1.5 rounded-lg bg-secondary/10 border border-secondary/20">
-                    <div className="text-xs text-blue-400 mb-1">SINTEF Fordeling</div>
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-300">Oppvarming</span>
-                        <span className="text-white font-semibold">70%</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-300">Belysning</span>
-                        <span className="text-white font-semibold">15%</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-300">Øvrig</span>
-                        <span className="text-white font-semibold">15%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Energy Analysis Insights */}
+                  {/* Energy Analysis Insights - Expanded */}
                   <div className="p-1.5 rounded-lg bg-accent/10 border border-accent/20">
-                    <div className="text-xs text-fuchsia-400 mb-1">Analyse</div>
+                    <div className="text-xs text-fuchsia-400 mb-1">Estimert fordeling</div>
                     <div className="space-y-0.5 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-slate-300">Høyest forbruk:</span>
-                        <span className="text-white font-semibold">Oppvarming</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-300">Beste potensial:</span>
-                        <span className="text-yellow-400 font-semibold">
-                          {heatingSystem === 'Elektrisitet' ? 'Varmepumpe' : 'LED-oppgradering'}
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-fuchsia-400"></span>
+                          <span className="text-slate-300">Oppvarming</span>
+                        </span>
+                        <span className="text-fuchsia-400 font-semibold">
+                          {hasRealBuildingData ? `${realEnergyData.breakdown.heating}%` : '70%'}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-300">System:</span>
-                        <span className="text-cyan-400 font-semibold">{heatingSystem}</span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                          <span className="text-slate-300">Belysning</span>
+                        </span>
+                        <span className="text-amber-400 font-semibold">
+                          {hasRealBuildingData ? `${realEnergyData.breakdown.lighting}%` : '15%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                          <span className="text-slate-300">Ventilasjon</span>
+                        </span>
+                        <span className="text-teal-500 font-semibold">
+                          {hasRealBuildingData ? `${realEnergyData.breakdown.ventilation}%` : '10%'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          <span className="text-slate-300">Varmtvann</span>
+                        </span>
+                        <span className="text-green-500 font-semibold">
+                          {hasRealBuildingData ? `${realEnergyData.breakdown.hotWater}%` : '5%'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -548,6 +572,7 @@ function DashboardContent() {
                 <PropertyMapWithRealData
                   address={addressParam}
                   coordinates={lat && lon ? { lat: parseFloat(lat), lon: parseFloat(lon) } : null}
+                  selectedBuildingId={selectedBuildingOsmId || selectedBygningsnummer}
                   className="w-full h-full rounded-md overflow-hidden"
                 />
               ) : (

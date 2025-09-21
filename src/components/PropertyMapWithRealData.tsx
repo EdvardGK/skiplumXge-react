@@ -302,7 +302,11 @@ export function PropertyMapWithRealData({
   // Handle external building selection changes
   useEffect(() => {
     if (selectedBuildingId && targetBuildings.length > 0) {
-      const building = targetBuildings.find(b => b.id === selectedBuildingId);
+      // Match by OSM ID first, then bygningsnummer
+      const building = targetBuildings.find(b =>
+        b.id === selectedBuildingId || b.bygningsnummer === selectedBuildingId
+      );
+
       if (building && !building.isSelected) {
         handleBuildingSelection(building);
       }

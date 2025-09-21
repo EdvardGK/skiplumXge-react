@@ -2,11 +2,8 @@
 
 import React from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  PieChart,
+  Pie,
   Tooltip,
   ResponsiveContainer,
   Cell
@@ -20,6 +17,7 @@ interface EnergyBreakdownData {
   color: string;
   kwhPerM2: number;
   investmentPotential: number;
+  [key: string]: any; // Add index signature for Recharts compatibility
 }
 
 interface EnergyBreakdownChartProps {
@@ -69,13 +67,13 @@ export default function EnergyBreakdownChart({
   const ventilationConsumption = Math.round((breakdown.ventilation / 100) * totalEnergyUse);
   const hotWaterConsumption = Math.round((breakdown.hotWater / 100) * totalEnergyUse);
 
-  // Prepare data for horizontal bar chart
+  // Prepare data for pie chart with northern lights theme colors
   const chartData: EnergyBreakdownData[] = [
     {
       system: 'Oppvarming',
       consumption: heatingConsumption,
       percentage: breakdown.heating,
-      color: stormColors.lightning.thunder,
+      color: '#e879f9', // Fuchsia-400 - magenta aurora for heating (highest energy use)
       kwhPerM2: heatingConsumption,
       investmentPotential: Math.round(investmentRoom * 0.7) // 70% of investment goes to heating
     },
@@ -83,7 +81,7 @@ export default function EnergyBreakdownChart({
       system: 'Belysning',
       consumption: lightingConsumption,
       percentage: breakdown.lighting,
-      color: stormColors.lightning.gold,
+      color: '#fbbf24', // Amber-400 - golden aurora for lighting
       kwhPerM2: lightingConsumption,
       investmentPotential: Math.round(investmentRoom * 0.15) // 15% to lighting
     },
@@ -91,7 +89,7 @@ export default function EnergyBreakdownChart({
       system: 'Ventilasjon',
       consumption: ventilationConsumption,
       percentage: breakdown.ventilation,
-      color: stormColors.lightning.electric,
+      color: '#14b8a6', // Teal-500 - teal aurora for ventilation
       kwhPerM2: ventilationConsumption,
       investmentPotential: Math.round(investmentRoom * 0.10) // 10% to ventilation
     },
@@ -99,7 +97,7 @@ export default function EnergyBreakdownChart({
       system: 'Varmtvann',
       consumption: hotWaterConsumption,
       percentage: breakdown.hotWater,
-      color: stormColors.lightning.aurora,
+      color: '#22c55e', // Green-500 - green aurora for hot water
       kwhPerM2: hotWaterConsumption,
       investmentPotential: Math.round(investmentRoom * 0.05) // 5% to hot water
     }
@@ -127,6 +125,9 @@ export default function EnergyBreakdownChart({
           <p className="text-slate-300 text-sm">
             <span className="text-emerald-400">{data.percentage}%</span> av total energibruk
           </p>
+          <p className="text-slate-300 text-sm">
+            <span style={{ color: data.color }}>●</span> {data.system}
+          </p>
           {data.investmentPotential > 0 && (
             <p className="text-slate-300 text-sm">
               Investeringsrom: <span className="text-yellow-400">{data.investmentPotential.toLocaleString()} kr</span>
@@ -147,46 +148,57 @@ export default function EnergyBreakdownChart({
   return (
     <div className={`w-full h-full ${className}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
-          layout="horizontal"
-          margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="rgba(255,255,255,0.1)"
-            horizontal={true}
-            vertical={false}
-          />
-          <XAxis
-            type="number"
-            stroke="#94a3b8"
-            fontSize={11}
-            tickFormatter={(value) => `${value} kWh`}
-          />
-          <YAxis
-            type="category"
-            dataKey="system"
-            stroke="#94a3b8"
-            fontSize={11}
-            width={65}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar
+        <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+          <defs>
+            {/* Northern lights gradient definitions */}
+            <linearGradient id="heatingGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#e879f9" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#e879f9" stopOpacity={0.3}/>
+            </linearGradient>
+            <linearGradient id="lightingGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.3}/>
+            </linearGradient>
+            <linearGradient id="ventilationGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#14b8a6" stopOpacity={0.3}/>
+            </linearGradient>
+            <linearGradient id="hotWaterGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#22c55e" stopOpacity={0.9}/>
+              <stop offset="95%" stopColor="#22c55e" stopOpacity={0.3}/>
+            </linearGradient>
+          </defs>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            innerRadius={40}
             dataKey="consumption"
-            radius={[0, 4, 4, 0]}
-            stroke="rgba(255,255,255,0.2)"
-            strokeWidth={1}
+            startAngle={90}
+            endAngle={450}
           >
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={entry.color}
-                opacity={0.8}
-              />
-            ))}
-          </Bar>
-        </BarChart>
+            {chartData.map((entry, index) => {
+              // Map each system to its gradient and stroke color
+              const gradientMap: { [key: string]: string } = {
+                'Oppvarming': 'url(#heatingGradient)',
+                'Belysning': 'url(#lightingGradient)',
+                'Ventilasjon': 'url(#ventilationGradient)',
+                'Varmtvann': 'url(#hotWaterGradient)'
+              };
+
+              return (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={gradientMap[entry.system] || entry.color}
+                  stroke={entry.color}
+                  strokeWidth={3}
+                />
+              );
+            })}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+        </PieChart>
       </ResponsiveContainer>
     </div>
   );
