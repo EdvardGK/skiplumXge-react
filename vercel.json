@@ -58,19 +58,6 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/dashboard",
-      "has": [
-        {
-          "type": "query",
-          "key": "address"
-        }
-      ],
-      "destination": "/dashboard?:query",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/health",

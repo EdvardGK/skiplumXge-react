@@ -30,7 +30,8 @@
       "WebFetch(domain:www.regjeringen.no)",
       "WebFetch(domain:www.ieabioenergy.com)",
       "WebFetch(domain:www.enova.no)",
-      "Read(//mnt/host/c/Users/edkjo/DC/ACCDocs/Skiplum AS/Skiplum Backup/Project Files/00000 - Gudbrandsdall Energi/6. Prosjektdokumentasjon/04_Grunnlagsfiler/**)"
+      "Read(//mnt/host/c/Users/edkjo/DC/ACCDocs/Skiplum AS/Skiplum Backup/Project Files/00000 - Gudbrandsdall Energi/6. Prosjektdokumentasjon/04_Grunnlagsfiler/**)",
+      "WebFetch(domain:vercel.com)"
     ],
     "deny": [],
     "ask": []
