@@ -13,6 +13,7 @@ interface OSMElement {
     name?: string;
     'addr:street'?: string;
     'addr:housenumber'?: string;
+    'ref:bygningsnr'?: string;
     [key: string]: string | undefined;
   };
 }
@@ -30,6 +31,10 @@ interface BuildingData {
   height?: number;
   name?: string;
   address?: string;
+  bygningsnummer?: string;
+  addressLabel?: string; // Short label like "S32" or "KJG32"
+  category: 'target' | 'neighbor'; // target = from searched address, neighbor = nearby
+  isSelected?: boolean; // Currently selected building
 }
 
 export class MapDataService {
@@ -102,11 +107,73 @@ export class MapDataService {
     try {
       // Try primary endpoint first
       const response = await this.executeOverpassQuery(query);
-      return this.processBuildingData(response);
+      return this.processBuildingData(response, lat, lon);
     } catch (error) {
       console.error('Failed to fetch building data:', error);
       return [];
     }
+  }
+
+  /**
+   * Fetch buildings categorized by searched address vs neighbors
+   * @param lat Latitude of searched address
+   * @param lon Longitude of searched address
+   * @param searchedAddress The address that was searched for
+   * @param radius Radius in meters (default 100m)
+   */
+  static async fetchCategorizedBuildings(
+    lat: number,
+    lon: number,
+    searchedAddress: string,
+    radius: number = 100
+  ): Promise<{ targetBuildings: BuildingData[], neighborBuildings: BuildingData[], selectedBuilding: BuildingData | null }> {
+    const allBuildings = await this.fetchNearbyBuildings(lat, lon, radius);
+
+    // Extract street name from searched address for matching
+    const searchedStreet = this.extractStreetName(searchedAddress);
+    const searchedHouseNumber = this.extractHouseNumber(searchedAddress);
+
+    const targetBuildings: BuildingData[] = [];
+    const neighborBuildings: BuildingData[] = [];
+    let selectedBuilding: BuildingData | null = null;
+    let closestTargetBuilding: BuildingData | null = null;
+    let minDistance = Number.MAX_VALUE;
+
+    allBuildings.forEach(building => {
+      // Check if building matches the searched address
+      const isFromSearchedAddress = this.isBuildingFromSearchedAddress(
+        building,
+        searchedStreet,
+        searchedHouseNumber
+      );
+
+      if (isFromSearchedAddress) {
+        building.category = 'target';
+        targetBuildings.push(building);
+
+        // Find closest target building as default selection
+        const distance = this.calculateDistance(lat, lon, building.coordinates[0][0], building.coordinates[0][1]);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestTargetBuilding = building;
+        }
+      } else {
+        building.category = 'neighbor';
+        neighborBuildings.push(building);
+      }
+    });
+
+    // Set the closest target building as selected
+    if (closestTargetBuilding) {
+      (closestTargetBuilding as BuildingData).isSelected = true;
+      selectedBuilding = closestTargetBuilding;
+    }
+
+    return {
+      targetBuildings,
+      neighborBuildings,
+      selectedBuilding
+    };
   }
 
   /**
@@ -143,7 +210,7 @@ export class MapDataService {
   /**
    * Process raw OSM data into building polygons
    */
-  private static processBuildingData(response: OSMResponse): BuildingData[] {
+  private static processBuildingData(response: OSMResponse, centerLat?: number, centerLon?: number): BuildingData[] {
     const buildings: BuildingData[] = [];
     const nodes = new Map<number, { lat: number; lon: number }>();
 
@@ -184,6 +251,10 @@ export class MapDataService {
               parseFloat(element.tags.height) : undefined,
             name: element.tags.name,
             address: this.formatAddress(element.tags),
+            bygningsnummer: element.tags['ref:bygningsnr'],
+            addressLabel: this.createAddressLabel(element.tags),
+            category: 'neighbor', // Default category, will be updated by fetchCategorizedBuildings
+            isSelected: false,
           };
 
           // Estimate area from polygon (simplified)
@@ -243,6 +314,28 @@ export class MapDataService {
   }
 
   /**
+   * Create short address label from street and house number
+   * Examples: "Storgata 32" -> "S32", "Karl Johans gate 1" -> "KJG1"
+   */
+  private static createAddressLabel(tags: any): string | undefined {
+    if (!tags || !tags['addr:street'] || !tags['addr:housenumber']) {
+      return undefined;
+    }
+
+    const street = tags['addr:street'];
+    const houseNumber = tags['addr:housenumber'];
+
+    // Split street name into words and extract initials
+    const words = street
+      .split(' ')
+      .filter((word: string) => word.length > 0)
+      .map((word: string) => word.charAt(0).toUpperCase());
+
+    // Join initials with house number
+    return words.join('') + houseNumber;
+  }
+
+  /**
    * Estimate polygon area using shoelace formula (simplified)
    * Returns approximate area in square meters
    */
@@ -298,6 +391,67 @@ export class MapDataService {
       console.warn('Could not fetch property boundaries:', error);
       return null;
     }
+  }
+
+  /**
+   * Helper methods for building categorization
+   */
+  private static extractStreetName(address: string): string {
+    // Extract street name from address (before house number)
+    const parts = address.split(/\s+/);
+    const streetParts = [];
+
+    for (const part of parts) {
+      if (/^\d+/.test(part)) {
+        // Stop when we hit a number (house number)
+        break;
+      }
+      streetParts.push(part);
+    }
+
+    return streetParts.join(' ').toLowerCase();
+  }
+
+  private static extractHouseNumber(address: string): string {
+    // Extract house number from address
+    const match = address.match(/\b(\d+\w?)\b/);
+    return match ? match[1].toLowerCase() : '';
+  }
+
+  private static isBuildingFromSearchedAddress(
+    building: BuildingData,
+    searchedStreet: string,
+    searchedHouseNumber: string
+  ): boolean {
+    if (!building.address) return false;
+
+    const buildingStreet = this.extractStreetName(building.address);
+    const buildingHouseNumber = this.extractHouseNumber(building.address);
+
+    // Match street name (allowing for minor variations)
+    const streetMatch = buildingStreet.includes(searchedStreet) ||
+                       searchedStreet.includes(buildingStreet) ||
+                       this.normalizeStreetName(buildingStreet) === this.normalizeStreetName(searchedStreet);
+
+    // Match house number
+    const houseNumberMatch = buildingHouseNumber === searchedHouseNumber;
+
+    return streetMatch && (houseNumberMatch || !searchedHouseNumber);
+  }
+
+  private static normalizeStreetName(street: string): string {
+    // Normalize Norwegian street names for better matching
+    return street
+      .toLowerCase()
+      .replace(/gate$/, 'gt')
+      .replace(/vei$/, 'v')
+      .replace(/plass$/, 'pl')
+      .replace(/\s+/g, '');
+  }
+
+  private static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    // Simple Euclidean distance for small areas
+    return Math.sqrt(Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2));
   }
 
   /**

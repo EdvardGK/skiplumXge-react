@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +23,18 @@ interface MapBuilding {
   area?: number;
   levels?: number;
   name?: string;
+  address?: string;
+  bygningsnummer?: string;
+  addressLabel?: string;
+  matchesSearchedAddress?: boolean;
+  calculatedLabel?: string; // Store the calculated label to prevent changes during sorting
 }
 
 interface EnovaCertificate {
   bygningsnummer: string;
+  kommunenummer?: string;
+  gnr?: string;
+  bnr?: string;
   energyClass?: string;
   buildingCategory?: string;
   energyConsumption?: number;
@@ -69,6 +77,13 @@ function SelectBuildingContent() {
         return;
       }
 
+      // Reset state for new property search
+      setEnovaCertificates([]);
+      setSelectedBuildingId(null);
+      setSelectedCertificate(null);
+      setShowCertificates(false);
+      setShowForm(false);
+
       // Fetch map buildings
       setIsLoadingMap(true);
       let fetchedBuildings: MapBuilding[] = [];
@@ -78,8 +93,10 @@ function SelectBuildingContent() {
           parseFloat(lon),
           100 // 100m radius for building selection
         );
-        fetchedBuildings = buildings;
-        setMapBuildings(buildings);
+        // Calculate labels for all buildings before setting them
+        const buildingsWithLabels = calculateBuildingLabels(buildings, address, lat, lon);
+        fetchedBuildings = buildingsWithLabels;
+        setMapBuildings(buildingsWithLabels);
 
         // Simple: just center on address coordinates
         setMapCenter([parseFloat(lat), parseFloat(lon)]);
@@ -90,16 +107,33 @@ function SelectBuildingContent() {
         setIsLoadingMap(false);
       }
 
-      // Fetch Enova certificates if we have gnr/bnr
+      // Fetch Enova certificates if we have the full cadastral identifiers
       let fetchedCertificates: EnovaCertificate[] = [];
-      if (gnr && bnr) {
+      if (gnr && bnr && municipalityNumber) {
         setIsLoadingEnova(true);
         try {
-          const response = await fetch(`/api/buildings/detect?gnr=${gnr}&bnr=${bnr}&address=${encodeURIComponent(address)}`);
+          const response = await fetch(`/api/buildings/detect?kommunenummer=${municipalityNumber}&gnr=${gnr}&bnr=${bnr}&address=${encodeURIComponent(address)}`);
           if (response.ok) {
             const data = await response.json();
-            fetchedCertificates = data.buildings || [];
+            const rawCertificates = data.buildings || [];
+
+            // Filter out empty/incomplete certificates that have no meaningful data
+            fetchedCertificates = rawCertificates.filter((cert: any) => {
+              if (!cert || !cert.bygningsnummer || cert.bygningsnummer.trim() === '') {
+                return false;
+              }
+
+              // Must have at least one meaningful property beyond just bygningsnummer
+              const hasEnergyData = cert.energyClass && cert.energyClass.trim() !== '';
+              const hasConsumptionData = cert.energyConsumption && cert.energyConsumption > 0;
+              const hasCategoryData = cert.buildingCategory && cert.buildingCategory.trim() !== '';
+
+              return hasEnergyData || hasConsumptionData || hasCategoryData;
+            });
+
             setEnovaCertificates(fetchedCertificates);
+          } else {
+            setEnovaCertificates([]);
           }
         } catch (error) {
           console.error('Failed to fetch Enova certificates:', error);
@@ -108,33 +142,271 @@ function SelectBuildingContent() {
           setIsLoadingEnova(false);
         }
       } else {
+        // No cadastral data available - clear any previous certificates
+        setEnovaCertificates([]);
         setIsLoadingEnova(false);
       }
 
-      // Auto-select if only one building
-      if (fetchedBuildings.length === 1) {
-        const singleBuilding = fetchedBuildings[0];
-        setSelectedBuildingId(singleBuilding.id);
+      // Smart auto-selection logic with 10m→25m fallback
+      if (fetchedBuildings.length > 0 && address && lat && lon) {
+        // Find the closest building using 10m→25m fallback proximity
+        const closestBuilding = findClosestBuildingWithFallback(
+          fetchedBuildings,
+          parseFloat(lat),
+          parseFloat(lon),
+          address
+        );
 
-        // If no Enova certificates exist, skip certificate selection entirely
-        if (fetchedCertificates.length === 0) {
-          // Wait a moment for UI to render, then auto-proceed
-          setTimeout(() => {
-            setShowForm(true);
-          }, 1000);
+        if (closestBuilding) {
+          // Auto-select the closest building
+          setSelectedBuildingId(closestBuilding.id);
+
+          // Update the building objects with address matching info and recalculate labels
+          const updatedBuildings = fetchedBuildings.map(building => {
+            if (building.id === closestBuilding.id) {
+              return { ...building, matchesSearchedAddress: closestBuilding.matchesSearchedAddress };
+            }
+            return building;
+          });
+
+          // Recalculate labels with the updated address matching information
+          const buildingsWithUpdatedLabels = calculateBuildingLabels(updatedBuildings, address, lat, lon);
+          setMapBuildings(buildingsWithUpdatedLabels);
+
+          // Certificate selection will be handled by the "Fortsett" button
+        } else if (fetchedBuildings.length === 1) {
+          // No building found within proximity but only one building nearby - probably the right one
+          const singleBuilding = fetchedBuildings[0];
+          setSelectedBuildingId(singleBuilding.id);
+
+          // Certificate selection will be handled by the "Fortsett" button
         }
+        // If multiple buildings exist, let user choose
       }
     };
 
     fetchData();
   }, [address, lat, lon, gnr, bnr, router]);
 
-  // Helper function to get building number for display
+  // Helper function to check if building matches the searched address
+  const isBuildingRelevantToAddress = (building: MapBuilding, searchedAddress: string, searchedLat: number, searchedLon: number) => {
+    if (!searchedAddress || !building.coordinates || building.coordinates.length === 0) return false;
+
+    // Primary logic: Use coordinate proximity (reliable with Kartverket + OSM data)
+    const buildingCenter = getPolygonCenter(building.coordinates);
+    const distanceInMeters = calculateDistanceInMeters(searchedLat, searchedLon, buildingCenter.lat, buildingCenter.lon);
+
+    // Building is relevant if within 25 meters of the searched address
+    const isWithinProximity = distanceInMeters <= 25;
+
+    // Secondary logic: Address matching (fallback for buildings with address data)
+    let hasAddressMatch = false;
+    if (building.address && searchedAddress) {
+      // Extract street and number from searched address
+      const searchedParts = searchedAddress.toLowerCase().split(' ');
+      const searchedStreet = searchedParts.slice(0, -1).join(' '); // All but last part
+      const searchedNumber = searchedParts[searchedParts.length - 1]; // Last part
+
+      // Extract street and number from building address
+      const buildingParts = building.address.toLowerCase().split(' ');
+      const buildingStreet = buildingParts.slice(0, -1).join(' '); // All but last part
+      const buildingNumber = buildingParts[buildingParts.length - 1]; // Last part
+
+      // Check if street names match (fuzzy match for Norwegian variations)
+      const streetMatch = searchedStreet === buildingStreet ||
+                         searchedStreet.includes(buildingStreet) ||
+                         buildingStreet.includes(searchedStreet);
+
+      // Check if numbers match
+      const numberMatch = searchedNumber === buildingNumber;
+      hasAddressMatch = streetMatch && numberMatch;
+    }
+
+    // Return true if either proximity OR address matching succeeds
+    // This handles cases where OSM has good address data (use both) or missing address data (use proximity)
+    return isWithinProximity || hasAddressMatch;
+  };
+
+  // Helper function to create address-based label (e.g., "Hesthagen 16" -> "H16")
+  const createAddressLabel = (address: string): string => {
+    if (!address) return '';
+
+    const parts = address.split(' ');
+    if (parts.length < 2) return '';
+
+    // Get street name (all parts except the last one which should be the number)
+    const streetParts = parts.slice(0, -1);
+    const houseNumber = parts[parts.length - 1];
+
+    // Extract first letter of each word in street name
+    const initials = streetParts
+      .map(word => word.charAt(0).toUpperCase())
+      .join('');
+
+    return initials + houseNumber;
+  };
+
+  // Helper function to generate alphabetic labels: A, B, C... Z, AA, AB, AC... AZ, BA, BB, etc.
+  const generateAlphabeticLabel = (index: number): string => {
+    let result = '';
+    let num = index;
+
+    do {
+      result = String.fromCharCode(65 + (num % 26)) + result;
+      num = Math.floor(num / 26) - 1;
+    } while (num >= 0);
+
+    return result;
+  };
+
+  // Helper function to pre-calculate labels for all buildings (called once when buildings are loaded)
+  const calculateBuildingLabels = (buildings: MapBuilding[], searchedAddress: string, searchedLat?: string, searchedLon?: string): MapBuilding[] => {
+    // First, sort buildings by distance from Kartverket coordinates for ABC enumeration
+    const distanceSorted = searchedLat && searchedLon ? [...buildings].sort((a, b) => {
+      const aCenter = getPolygonCenter(a.coordinates);
+      const bCenter = getPolygonCenter(b.coordinates);
+      const aDistance = calculateDistanceInMeters(parseFloat(searchedLat), parseFloat(searchedLon), aCenter.lat, aCenter.lon);
+      const bDistance = calculateDistanceInMeters(parseFloat(searchedLat), parseFloat(searchedLon), bCenter.lat, bCenter.lon);
+      return aDistance - bDistance;
+    }) : buildings;
+
+    return buildings.map(building => {
+      let calculatedLabel = '';
+
+      // Priority 1: Use existing addressLabel if available
+      if (building.addressLabel) {
+        calculatedLabel = building.addressLabel;
+      }
+      // Priority 2: If building matches searched address, create label from address
+      else if (building.matchesSearchedAddress && searchedAddress) {
+        const addressLabel = createAddressLabel(searchedAddress);
+        calculatedLabel = addressLabel || '';
+      }
+      // Priority 3: If building has its own address, create label from it
+      else if (building.address) {
+        const addressLabel = createAddressLabel(building.address);
+        calculatedLabel = addressLabel || '';
+      }
+
+      // Fallback: ABC enumeration based on distance from Kartverket coordinates
+      if (!calculatedLabel) {
+        const distanceIndex = distanceSorted.findIndex(b => b.id === building.id);
+        calculatedLabel = generateAlphabeticLabel(distanceIndex);
+      }
+
+      return {
+        ...building,
+        calculatedLabel
+      };
+    });
+  };
+
+  // Helper function to get building label for display (uses pre-calculated label)
+  const getBuildingLabel = (building: MapBuilding) => {
+    return building.calculatedLabel || 'X'; // Fallback to 'X' if no label calculated
+  };
+
+  // Helper function to get building number for display (deprecated, use getBuildingLabel)
   const getBuildingNumber = (building: MapBuilding) => {
     const index = mapBuildings.findIndex(b => b.id === building.id);
     return index + 1;
   };
 
+  // Helper function to calculate the center point of a polygon
+  const getPolygonCenter = (coordinates: [number, number][]): { lat: number; lon: number } => {
+    if (coordinates.length === 0) {
+      return { lat: 0, lon: 0 };
+    }
+
+    // Calculate centroid using average of all points
+    const totalPoints = coordinates.length;
+    const sumLat = coordinates.reduce((sum, [lat]) => sum + lat, 0);
+    const sumLon = coordinates.reduce((sum, [, lon]) => sum + lon, 0);
+
+    return {
+      lat: sumLat / totalPoints,
+      lon: sumLon / totalPoints
+    };
+  };
+
+  // Helper function to calculate distance between two coordinates in meters
+  const calculateDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    // Haversine formula for accurate distance calculation
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
+  };
+
+  // Helper function to find the closest building with fallback proximity (10m → 25m)
+  const findClosestBuildingWithFallback = (buildings: MapBuilding[], searchedLat: number, searchedLon: number, searchedAddress: string) => {
+    if (buildings.length === 0) return null;
+
+    // Try 10m radius first (very precise)
+    let closest = findClosestWithinRadius(buildings, searchedLat, searchedLon, 10);
+
+    if (!closest) {
+      // Fallback to 25m radius
+      closest = findClosestWithinRadius(buildings, searchedLat, searchedLon, 25);
+    }
+
+    // If we found a building, check if it matches the searched address for display purposes
+    if (closest) {
+      closest.matchesSearchedAddress = hasAddressMatch(closest, searchedAddress);
+    }
+
+    return closest;
+  };
+
+  // Helper function to find closest building within a specific radius
+  const findClosestWithinRadius = (buildings: MapBuilding[], lat: number, lon: number, radiusMeters: number): MapBuilding | null => {
+    let closestBuilding: MapBuilding | null = null;
+    let minDistance = Number.MAX_VALUE;
+
+    buildings.forEach(building => {
+      if (building.coordinates.length > 0) {
+        const buildingCenter = getPolygonCenter(building.coordinates);
+        const distance = calculateDistanceInMeters(lat, lon, buildingCenter.lat, buildingCenter.lon);
+
+        if (distance <= radiusMeters && distance < minDistance) {
+          minDistance = distance;
+          closestBuilding = building;
+        }
+      }
+    });
+
+    return closestBuilding;
+  };
+
+  // Helper function to check if building address matches searched address
+  const hasAddressMatch = (building: MapBuilding, searchedAddress: string): boolean => {
+    if (!building.address || !searchedAddress) return false;
+
+    // Extract street and number from searched address
+    const searchedParts = searchedAddress.toLowerCase().split(' ');
+    const searchedStreet = searchedParts.slice(0, -1).join(' '); // All but last part
+    const searchedNumber = searchedParts[searchedParts.length - 1]; // Last part
+
+    // Extract street and number from building address
+    const buildingParts = building.address.toLowerCase().split(' ');
+    const buildingStreet = buildingParts.slice(0, -1).join(' '); // All but last part
+    const buildingNumber = buildingParts[buildingParts.length - 1]; // Last part
+
+    // Check if street names match (fuzzy match for Norwegian variations)
+    const streetMatch = searchedStreet === buildingStreet ||
+                       searchedStreet.includes(buildingStreet) ||
+                       buildingStreet.includes(searchedStreet);
+
+    // Check if numbers match
+    const numberMatch = searchedNumber === buildingNumber;
+
+    return streetMatch && numberMatch;
+  };
 
   // Helper function to create numbered building markers
   const createBuildingIcon = async (buildingNumber: number, isSelected: boolean = false) => {
@@ -360,10 +632,35 @@ function SelectBuildingContent() {
           {selectedBuildingId && !showCertificates && !showForm && (
             <Button
               onClick={() => {
-                if (enovaCertificates.length > 0) {
-                  setShowCertificates(true);
-                } else {
+                // Check if there are any certificates for this address
+                if (enovaCertificates.length === 0) {
+                  // No certificates at all → skip directly to form
                   proceedToForm();
+                  return;
+                }
+
+                // Find certificates that are already auto-matched to buildings via bygningsnummer
+                const matchedCertificates = enovaCertificates.filter(cert =>
+                  mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                );
+
+                // Check if all certificates are accounted for
+                if (matchedCertificates.length === enovaCertificates.length) {
+                  // All certificates are auto-matched → skip to form
+                  proceedToForm();
+                } else {
+                  // Check if there are actually any unmatched certificates to map
+                  const unmatchedCertificates = enovaCertificates.filter(cert =>
+                    !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                  );
+
+                  if (unmatchedCertificates.length > 0) {
+                    // Some certificates need manual mapping → show mapping step
+                    setShowCertificates(true);
+                  } else {
+                    // No certificates to map → skip to form
+                    proceedToForm();
+                  }
                 }
               }}
               className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
@@ -439,6 +736,7 @@ function SelectBuildingContent() {
                             key={building.id}
                             building={building}
                             buildingNumber={getBuildingNumber(building)}
+                            buildingLabel={getBuildingLabel(building)}
                             isSelected={selectedBuildingId === building.id}
                             onSelect={() => handleMapBuildingSelect(building.id)}
                             showCertificates={showCertificates}
@@ -447,6 +745,7 @@ function SelectBuildingContent() {
                             selectedBuildingId={selectedBuildingId}
                             currentZoom={currentZoom}
                             selectedCertificate={selectedCertificate}
+                            address={address || ''}
                           />
                         ))}
                       </MapContainer>
@@ -481,10 +780,12 @@ function SelectBuildingContent() {
                       <>
                         <h3 className="text-white font-semibold text-lg flex items-center gap-2">
                           <Zap className="w-5 h-5 text-cyan-400" />
-                          Energisertifikater ({enovaCertificates.length})
+                          Tilleggssertifikater ({enovaCertificates.filter(cert =>
+                            !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                          ).length})
                         </h3>
                         <p className="text-slate-400 text-sm mt-1">
-                          Velg sertifikat eller fortsett uten
+                          Koble sertifikater til bygninger eller fortsett uten
                         </p>
                       </>
                     )}
@@ -507,62 +808,109 @@ function SelectBuildingContent() {
                         isSubmitting={isSubmittingForm}
                       />
                     ) : !showCertificates ? (
-                      // Building List - Sort selected building to top
-                      [...mapBuildings]
-                        .sort((a, b) => {
-                          if (selectedBuildingId === a.id) return -1;
-                          if (selectedBuildingId === b.id) return 1;
-                          return 0;
-                        })
-                        .map((building) => {
-                        const isSelected = selectedBuildingId === building.id;
-                        const originalIndex = mapBuildings.findIndex(b => b.id === building.id);
-                        const buildingNumber = originalIndex + 1;
+                      // Building List - Show all buildings, selected first
+                      <>
+                        {(() => {
+                          // Sort by alphabetical order (based on distance-sorted labels), but selected first
+                          const sortedBuildings = [...mapBuildings].sort((a, b) => {
+                            // Selected building always goes first
+                            if (selectedBuildingId === a.id) return -1;
+                            if (selectedBuildingId === b.id) return 1;
 
-                        return (
-                          <Card
-                            key={building.id}
-                            className={`cursor-pointer transition-all duration-300 ${
-                              isSelected
-                                ? 'bg-fuchsia-500/20 border-fuchsia-400/50 scale-[1.02]'
-                                : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                            }`}
-                            onClick={() => handleMapBuildingSelect(building.id)}
-                          >
-                            <CardContent className="p-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 ${
-                                  isSelected
-                                    ? 'bg-fuchsia-500 border-fuchsia-400 text-white'
-                                    : 'bg-slate-700 border-slate-600 text-white'
-                                }`}>
-                                  {buildingNumber}
-                                </div>
+                            // For all others, sort alphabetically by their labels (A, B, C, etc.)
+                            const aLabel = getBuildingLabel(a);
+                            const bLabel = getBuildingLabel(b);
+                            return aLabel.localeCompare(bLabel);
+                          });
 
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-white font-medium text-sm truncate">
-                                      {building.name || `Bygning ${buildingNumber}`}
-                                    </h4>
-                                    {isSelected && (
-                                      <CheckCircle className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
-                                    )}
+                          const allBuildings = sortedBuildings;
+
+                          return allBuildings.map((building, index) => {
+                            const isSelected = selectedBuildingId === building.id;
+                            const originalIndex = mapBuildings.findIndex(b => b.id === building.id);
+                            const buildingNumber = originalIndex + 1;
+                            const buildingLabel = getBuildingLabel(building);
+
+                            // Find matching Enova certificate for this building using bygningsnummer
+                            const matchingCertificate = building.bygningsnummer ?
+                              enovaCertificates.find(cert => cert.bygningsnummer === building.bygningsnummer) :
+                              null;
+
+                            // Show header for first building
+                            const showAddressHeader = index === 0;
+
+                            return (
+                              <Fragment key={building.id}>
+                                {showAddressHeader && (
+                                  <div className="text-xs font-semibold text-cyan-400 mb-2 px-1">
+                                    📍 {address}
                                   </div>
+                                )}
+                                <Card
+                                  className={`cursor-pointer transition-all duration-300 ${
+                                    isSelected
+                                      ? 'bg-fuchsia-500/20 border-fuchsia-400/50 scale-[1.02]'
+                                      : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                  }`}
+                                  onClick={() => handleMapBuildingSelect(building.id)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 ${
+                                        isSelected
+                                          ? 'bg-fuchsia-500 border-fuchsia-400 text-white'
+                                          : 'bg-slate-700 border-slate-600 text-white'
+                                      }`}>
+                                        {buildingLabel}
+                                      </div>
 
-                                  <div className="text-xs text-slate-300 space-y-1">
-                                    {building.area && (
-                                      <div>{Math.round(building.area)} m²</div>
-                                    )}
-                                    {building.type && (
-                                      <div className="capitalize">{building.type}</div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <h4 className="text-white font-medium text-sm truncate">
+                                            {building.name || (building.addressLabel ? `Adresse ${buildingLabel}` : `Bygning ${building.bygningsnummer || buildingLabel}`)}
+                                          </h4>
+                                          {isSelected && (
+                                            <CheckCircle className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
+                                          )}
+                                        </div>
+
+                                        <div className="text-xs text-slate-300 space-y-1">
+                                          {building.area && (
+                                            <div>{Math.round(building.area)} m²</div>
+                                          )}
+                                          {building.type && (
+                                            <div className="capitalize">{building.type}</div>
+                                          )}
+                                          {building.matchesSearchedAddress && (
+                                            <div className="text-cyan-400 font-medium">
+                                              ✓ Matcher søkt adresse
+                                            </div>
+                                          )}
+                                          {matchingCertificate && (
+                                            <div className="bg-emerald-500/20 border border-emerald-400/30 rounded px-2 py-1 mt-1">
+                                              <div className="flex items-center gap-1">
+                                                <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                                                <span className="text-emerald-400 font-medium text-xs">
+                                                  Energimerke {matchingCertificate.energyClass}
+                                                </span>
+                                              </div>
+                                              {matchingCertificate.energyConsumption && (
+                                                <div className="text-xs text-emerald-300 mt-0.5">
+                                                  {Math.round(matchingCertificate.energyConsumption)} kWh/m²
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </Fragment>
+                            );
+                          });
+                        })()}
+                      </>
                     ) : (
                       // Certificate List
                       <>
@@ -595,8 +943,13 @@ function SelectBuildingContent() {
                           </CardContent>
                         </Card>
 
-                        {/* Available certificates */}
-                        {enovaCertificates.map((cert) => {
+                        {/* Available certificates - only show unmatched certificates for manual mapping */}
+                        {enovaCertificates
+                          .filter(cert =>
+                            // Show certificates that are NOT automatically matched to any building
+                            !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                          )
+                          .map((cert) => {
                           const isSelected = selectedCertificate === cert.bygningsnummer;
                           const badgeColor = getEnergyClassBadgeColor(cert.energyClass);
 
@@ -701,6 +1054,7 @@ export default function SelectBuildingPage() {
 interface BuildingMarkerProps {
   building: MapBuilding;
   buildingNumber: number;
+  buildingLabel: string;
   isSelected: boolean;
   onSelect: () => void;
   showCertificates: boolean;
@@ -709,9 +1063,10 @@ interface BuildingMarkerProps {
   selectedBuildingId: string | null;
   currentZoom: number;
   selectedCertificate: string | null;
+  address: string;
 }
 
-function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCertificates, showForm, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate }: BuildingMarkerProps) {
+function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, onSelect, showCertificates, showForm, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate, address }: BuildingMarkerProps) {
   const [centroid, setCentroid] = useState<[number, number] | null>(null);
   const [numberIcon, setNumberIcon] = useState<any>(null);
 
@@ -740,8 +1095,8 @@ function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCe
 
       const L = await import('leaflet');
 
-      // Determine what to display: number or energy grade
-      let displayText = buildingNumber.toString();
+      // Determine what to display: address label or energy grade
+      let displayText = buildingLabel;
       let bgColor = 'bg-slate-700 text-white';
 
       if (showCertificates && enovaCertificates.length > 0 && building.id === selectedBuildingId) {
@@ -800,7 +1155,7 @@ function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCe
     };
 
     createNumberIcon();
-  }, [buildingNumber, isSelected, showCertificates, enovaCertificates, selectedBuildingId, building.id, currentZoom, selectedCertificate]);
+  }, [buildingLabel, isSelected, showCertificates, enovaCertificates, selectedBuildingId, building.id, currentZoom, selectedCertificate]);
 
   if (!building.coordinates || building.coordinates.length === 0 || !centroid || !numberIcon) {
     return null;
@@ -809,13 +1164,14 @@ function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCe
   // Convert coordinates to Leaflet format [lat, lon]
   const polygonCoords = building.coordinates.map(([lat, lon]) => [lat, lon] as [number, number]);
 
-  // Dashboard color palette - completely remove stroke
+  // Building color scheme: magenta for selected, neutral gray for unselected (like dashboard)
   const polygonStyle = {
-    fillColor: isSelected ? '#e879f9' : '#22c55e', // Magenta for selected, Green for others
-    weight: 0, // No stroke/border
-    opacity: 0, // No stroke opacity
-    stroke: false, // Disable stroke entirely
-    fillOpacity: isSelected ? 0.8 : 0.6,
+    fillColor: isSelected ? '#d946ef' : '#475569', // Magenta for selected, neutral gray for unselected
+    color: isSelected ? '#e879f9' : '#64748b', // Border colors
+    weight: isSelected ? 3 : 2, // Thicker border for selected
+    opacity: 1,
+    stroke: true,
+    fillOpacity: isSelected ? 0.6 : 0.3,
   };
 
   return (
@@ -833,42 +1189,31 @@ function BuildingMarker({ building, buildingNumber, isSelected, onSelect, showCe
             // Call our selection handler
             onSelect();
           },
-          mouseover: (e) => {
-            const target = e.target;
-            target.setStyle({
-              fillOpacity: isSelected ? 0.9 : 0.7,
-              stroke: false,
-              weight: 0,
-            });
-          },
-          mouseout: (e) => {
-            const target = e.target;
-            target.setStyle({
-              fillOpacity: isSelected ? 0.8 : 0.6,
-              stroke: false,
-              weight: 0,
-            });
-          },
         }}
       >
         <Tooltip direction="top" offset={[0, -10]} className="custom-tooltip">
           <div className="p-2 min-w-48">
-            <h3 className={`font-bold text-sm mb-2 ${isSelected ? 'text-fuchsia-400' : 'text-emerald-400'}`}>
+            <h3 className={`font-bold text-sm mb-2 ${isSelected ? 'text-fuchsia-400' : 'text-slate-400'}`}>
               🏢 {isSelected ? 'Valgt bygning' : 'Klikk for å velge'}
             </h3>
             <div className="space-y-1 text-xs text-slate-300">
-              <div><strong>Bygning:</strong> {buildingNumber}</div>
+              <div><strong>Label:</strong> {buildingLabel}</div>
+              {building.address && <div><strong>Adresse:</strong> {building.address}</div>}
+              {building.bygningsnummer && <div><strong>Bygningsnummer:</strong> {building.bygningsnummer}</div>}
               {building.name && <div><strong>Navn:</strong> {building.name}</div>}
               {building.type && <div><strong>Type:</strong> {building.type}</div>}
               {building.area && <div><strong>Areal:</strong> ~{Math.round(building.area)} m²</div>}
               {building.levels && <div><strong>Etasjer:</strong> {building.levels}</div>}
+              {building.matchesSearchedAddress && (
+                <div className="text-cyan-400 mt-2 text-xs">✓ Matcher søkt adresse</div>
+              )}
               <div className="text-slate-400 mt-2 text-xs">Kilde: OpenStreetMap</div>
             </div>
           </div>
         </Tooltip>
       </Polygon>
 
-      {/* Number Label at Centroid */}
+      {/* Number Label at Centroid - Show for all buildings */}
       <Marker
         position={centroid}
         icon={numberIcon}
