@@ -19,6 +19,8 @@ const buildingDataSchema = z.object({
   totalArea: z.number().min(20, "Minimum 20 m²").max(50000, "Maksimum 50,000 m²"),
   heatedArea: z.number().min(10, "Minimum 10 m²").max(50000, "Maksimum 50,000 m²"),
   buildingYear: z.number().min(1800, "Minimum 1800").max(new Date().getFullYear(), "Kan ikke være i fremtiden").optional(),
+  numberOfFloors: z.number().min(1, "Minimum 1 etasje").max(100, "Maksimum 100 etasjer").optional(),
+  sdInstallation: z.enum(["ja", "nei"]).optional(),
   annualEnergyConsumption: z.number().min(1000, "Minimum 1000 kWh/år").max(1000000, "Maksimum 1,000,000 kWh/år"),
   heatingSystem: z.string().min(1, "Oppvarmingssystem er påkrevd"),
   lightingSystem: z.string().min(1, "Belysningssystem er påkrevd"),
@@ -202,7 +204,7 @@ export function BuildingDataForm({
       setEnovaDataSource(null);
 
       try {
-        const result = await getEnovaGrade(gnr, bnr, bygningsnummer, address);
+        const result = await getEnovaGrade(municipalityNumber || '', gnr, bnr, bygningsnummer, address);
 
         if (result.found && result.certificate) {
           console.log('Found Enova certificate:', result.certificate);
@@ -428,6 +430,60 @@ export function BuildingDataForm({
                 </FormControl>
                 <FormDescription className="text-slate-400 text-xs">
                   Påvirker energikrav og isolasjonsstandard
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Number of Floors */}
+          <FormField
+            control={form.control}
+            name="numberOfFloors"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white text-sm">Antall etasjer (valgfritt)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="2"
+                    className="bg-white/5 border-white/20 text-white"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription className="text-slate-400 text-xs">
+                  Antall etasjer i bygningen
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* SD-anlegg (Sprinkler) */}
+          <FormField
+            control={form.control}
+            name="sdInstallation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-white text-sm">SD-anlegg (valgfritt)</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                      <SelectValue placeholder="Velg om bygningen har SD-anlegg" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600">
+                      <SelectItem value="ja" className="text-white hover:bg-slate-700">
+                        Ja - Bygningen har SD-anlegg
+                      </SelectItem>
+                      <SelectItem value="nei" className="text-white hover:bg-slate-700">
+                        Nei - Bygningen har ikke SD-anlegg
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormDescription className="text-slate-400 text-xs">
+                  Sprinkleranlegg påvirker brannsikkerhet og energikrav
                 </FormDescription>
                 <FormMessage />
               </FormItem>

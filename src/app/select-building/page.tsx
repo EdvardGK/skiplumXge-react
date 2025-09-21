@@ -35,6 +35,8 @@ interface EnovaCertificate {
   kommunenummer?: string;
   gnr?: string;
   bnr?: string;
+  address?: string;
+  city?: string;
   energyClass?: string;
   buildingCategory?: string;
   energyConsumption?: number;
@@ -550,6 +552,8 @@ function SelectBuildingContent() {
         ventilationSystem: formData.ventilationSystem,
         hotWaterSystem: formData.hotWaterSystem,
         ...(formData.buildingYear && { buildingYear: formData.buildingYear.toString() }),
+        ...(formData.numberOfFloors && { numberOfFloors: formData.numberOfFloors.toString() }),
+        ...(formData.sdInstallation && { sdInstallation: formData.sdInstallation }),
         ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
         // Pass certificate data directly to avoid re-querying
         ...(selectedCertificate && (() => {
@@ -760,7 +764,7 @@ function SelectBuildingContent() {
                 </div>
 
                 {/* Building/Certificate List - Right sidebar */}
-                <div className="w-80 border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col">
+                <div className={`${showForm ? 'w-[480px]' : 'w-80'} border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col`}>
                   <div className="p-4 border-b border-white/10">
                     {showForm ? (
                       <>
@@ -893,18 +897,40 @@ function SelectBuildingContent() {
                                             </div>
                                           )}
                                           {matchingCertificate && (
-                                            <div className="bg-emerald-500/20 border border-emerald-400/30 rounded px-2 py-1 mt-1">
-                                              <div className="flex items-center gap-1">
+                                            <div className="bg-emerald-500/20 border border-emerald-400/30 rounded px-3 py-2 mt-1">
+                                              <div className="flex items-center gap-2 mb-1">
                                                 <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
                                                 <span className="text-emerald-400 font-medium text-xs">
                                                   Energimerke {matchingCertificate.energyClass}
                                                 </span>
                                               </div>
-                                              {matchingCertificate.energyConsumption && (
-                                                <div className="text-xs text-emerald-300 mt-0.5">
-                                                  {Math.round(matchingCertificate.energyConsumption)} kWh/m²
-                                                </div>
-                                              )}
+                                              <div className="space-y-1">
+                                                {matchingCertificate.energyConsumption && (
+                                                  <div className="text-xs text-emerald-300">
+                                                    ⚡ {Math.round(matchingCertificate.energyConsumption)} kWh/m²
+                                                  </div>
+                                                )}
+                                                {matchingCertificate.address && (
+                                                  <div className="text-xs text-emerald-300">
+                                                    📍 {matchingCertificate.address}
+                                                  </div>
+                                                )}
+                                                {matchingCertificate.city && (
+                                                  <div className="text-xs text-emerald-300">
+                                                    🏛️ {matchingCertificate.city}
+                                                  </div>
+                                                )}
+                                                {matchingCertificate.buildingCategory && (
+                                                  <div className="text-xs text-emerald-300">
+                                                    🏢 {matchingCertificate.buildingCategory}
+                                                  </div>
+                                                )}
+                                                {matchingCertificate.constructionYear && (
+                                                  <div className="text-xs text-emerald-300">
+                                                    📅 Byggeår {matchingCertificate.constructionYear}
+                                                  </div>
+                                                )}
+                                              </div>
                                             </div>
                                           )}
                                         </div>

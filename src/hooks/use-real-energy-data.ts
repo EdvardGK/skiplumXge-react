@@ -129,7 +129,7 @@ export function useRealEnergyData(
     setIsLoadingEnova(true)
     setEnovaError(null)
 
-    getEnovaGrade(gnr || '', bnr || '', bygningsnummer || undefined, address || undefined)
+    getEnovaGrade(municipalityNumber || '', gnr || '', bnr || '', bygningsnummer || undefined, address || undefined)
       .then(result => {
         setEnovaResult(result)
         setEnovaError(null)

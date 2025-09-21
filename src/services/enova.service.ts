@@ -17,6 +17,7 @@ export interface EnovaLookupResult {
 
 /**
  * Search for Enova energy certificate by property and building identifiers
+ * @param knr - Kommunenummer (municipality identifier)
  * @param gnr - Gårdsnummer (property identifier part 1)
  * @param bnr - Bruksnummer (property identifier part 2)
  * @param bygningsnummer - Building number within the property (optional)
@@ -24,14 +25,15 @@ export interface EnovaLookupResult {
  * @returns Certificate information or null if not found
  */
 export async function getEnovaGrade(
+  knr: string,
   gnr: string,
   bnr: string,
   bygningsnummer?: string,
   address?: string
 ): Promise<EnovaLookupResult> {
   try {
-    // Require both gnr and bnr for lookup
-    if (!gnr || !bnr) {
+    // Require knr, gnr and bnr for lookup
+    if (!knr || !gnr || !bnr) {
       return {
         found: false,
         status: 'Ikke registrert',
@@ -39,8 +41,8 @@ export async function getEnovaGrade(
       }
     }
 
-    // Create cache key that includes building number if provided
-    const cacheKey = bygningsnummer ? `${gnr}_${bnr}_${bygningsnummer}` : `${gnr}_${bnr}`
+    // Create cache key that includes municipality and building number if provided
+    const cacheKey = bygningsnummer ? `${knr}_${gnr}_${bnr}_${bygningsnummer}` : `${knr}_${gnr}_${bnr}`
 
     // Check cache first
     if (certificateCache.has(cacheKey)) {
@@ -63,10 +65,11 @@ export async function getEnovaGrade(
       }
     }
 
-    // Build query for gnr/bnr with optional bygningsnummer
+    // Build query for knr/gnr/bnr with optional bygningsnummer
     let query = supabaseClient
       .from('energy_certificates')
       .select('*')
+      .eq('knr', parseInt(knr))
       .eq('gnr', parseInt(gnr))
       .eq('bnr', parseInt(bnr))
 
@@ -93,11 +96,11 @@ export async function getEnovaGrade(
       // If specific building not found, try property-level lookup
       if (bygningsnummer) {
         console.log(`Building ${bygningsnummer} not found for ${address || 'unknown address'}, trying property-level lookup`)
-        return getEnovaGrade(gnr, bnr, undefined, address) // Recursive call without building number
+        return getEnovaGrade(knr, gnr, bnr, undefined, address) // Recursive call without building number
       }
 
       const addressInfo = address ? ` at ${address}` : ''
-      console.log(`No Enova certificate found for gnr=${gnr}, bnr=${bnr}${addressInfo}`)
+      console.log(`No Enova certificate found for knr=${knr}, gnr=${gnr}, bnr=${bnr}${addressInfo}`)
 
       return {
         found: false,
@@ -108,7 +111,7 @@ export async function getEnovaGrade(
 
   } catch (error) {
     const addressInfo = address ? ` at ${address}` : ''
-    console.warn(`Enova lookup failed for gnr=${gnr}, bnr=${bnr}, bygningsnummer=${bygningsnummer}${addressInfo}:`, error)
+    console.warn(`Enova lookup failed for knr=${knr}, gnr=${gnr}, bnr=${bnr}, bygningsnummer=${bygningsnummer}${addressInfo}:`, error)
     return {
       found: false,
       status: 'Ikke registrert',
@@ -119,20 +122,23 @@ export async function getEnovaGrade(
 
 /**
  * Get all energy certificates for a property (all buildings)
+ * @param knr - Kommunenummer
  * @param gnr - Gårdsnummer
  * @param bnr - Bruksnummer
  * @returns Array of certificates for all buildings on the property
  */
 export async function getPropertyEnovaCertificates(
+  knr: string,
   gnr: string,
   bnr: string
 ): Promise<EnovaLookupResult[]> {
   try {
-    if (!gnr || !bnr) return []
+    if (!knr || !gnr || !bnr) return []
 
     const { data, error } = await supabaseClient
       .from('energy_certificates')
       .select('*')
+      .eq('knr', parseInt(knr))
       .eq('gnr', parseInt(gnr))
       .eq('bnr', parseInt(bnr))
 
@@ -148,7 +154,7 @@ export async function getPropertyEnovaCertificates(
     }))
 
   } catch (error) {
-    console.warn(`Property Enova lookup failed for gnr=${gnr}, bnr=${bnr}:`, error)
+    console.warn(`Property Enova lookup failed for knr=${knr}, gnr=${gnr}, bnr=${bnr}:`, error)
     return []
   }
 }
