@@ -119,6 +119,7 @@ export function BuildingDataForm({
       totalArea: 120,
       heatedArea: 110,
       buildingYear: 2000,
+      numberOfFloors: undefined,
       annualEnergyConsumption: 15000,
       heatingSystem: "",
       lightingSystem: "",
@@ -423,7 +424,20 @@ export function BuildingDataForm({
                       placeholder="2"
                       className="bg-white/5 border-white/20 text-white"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => {
+                        const floors = Number(e.target.value);
+                        field.onChange(floors);
+
+                        // Update BRA and heated BRA based on floors
+                        if (floors && floors > 0) {
+                          // Typical floor area for Norwegian buildings: 120-150 m² per floor
+                          const estimatedTotalArea = floors * 130; // Use 130 m² as average
+                          const estimatedHeatedArea = Math.round(estimatedTotalArea * 0.92); // 92% heated
+
+                          form.setValue("totalArea", estimatedTotalArea);
+                          form.setValue("heatedArea", estimatedHeatedArea);
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />

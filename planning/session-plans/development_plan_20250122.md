@@ -52,7 +52,13 @@
 - Create mockups for future implementations
 - Document in planning/future-features.md
 
-### 8. Advanced Efficient Building Features (1 hour)
+### 8. Advanced Efficient Building Features & Dynamic Recommendations (1.5 hours)
+- **Dynamic "Første steg" Logic**:
+  - Check current heating system before recommending varmepumpe
+  - If already has varmepumpe: Suggest "Solceller" or "Batterilager"
+  - If has bergvarme: Suggest "Smart styring" or "Bedre isolasjon"
+  - If electric heating: Keep "Varmepumpe" recommendation
+  - Create recommendation hierarchy based on existing systems
 - Add optimization suggestions for efficient buildings
 - Create smart home integration recommendations
 - Design sustainability scoring system
@@ -120,6 +126,26 @@ hasRealBuildingData && realEnergyData.annualWaste === 0
 // - Første steg: "Optimalisering" instead of "Varmepumpe"
 // - Sløsing: "God effektivitet" instead of waste amounts
 // - Pie legend: Percentages instead of NOK amounts
+```
+
+### Logic to Implement Tomorrow:
+```javascript
+// Dynamic first step recommendations based on existing systems
+const getFirstStepRecommendation = (heatingSystem: string, isEfficient: boolean) => {
+  if (isEfficient) return { title: 'Optimalisering', reason: '' };
+
+  switch(heatingSystem) {
+    case 'Varmepumpe':
+      return { title: 'Solceller', reason: 'Du har allerede varmepumpe' };
+    case 'Bergvarme':
+      return { title: 'Smart styring', reason: 'Optimaliser eksisterende system' };
+    case 'Fjernvarme':
+      return { title: 'Bedre isolasjon', reason: 'Reduser varmetap' };
+    case 'Elektrisitet':
+    default:
+      return { title: 'Varmepumpe', reason: heatPumpRec.reasoning };
+  }
+}
 ```
 
 ### Current State:

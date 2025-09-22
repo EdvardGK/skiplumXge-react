@@ -730,8 +730,6 @@ function DashboardContent() {
                 <div className="text-xs text-slate-300 mt-1">
                   {hasRealBuildingData && realEnergyData.annualWaste === 0
                     ? ''
-                    : hasRealBuildingData && realEnergyData.annualWasteCost > 0
-                    ? `${realEnergyData.annualWasteCost.toLocaleString()} kr/år`
                     : "Legg inn bygningsdata"
                   }
                 </div>
