@@ -22,7 +22,10 @@ const buildingDataSchema = z.object({
   totalArea: z.number().min(20, "Minimum 20 m²").max(50000, "Maksimum 50,000 m²"),
   heatedArea: z.number().min(10, "Minimum 10 m²").max(50000, "Maksimum 50,000 m²"),
   buildingYear: z.string().optional(),
-  numberOfFloors: z.number().min(1, "Minimum 1 etasje").max(100, "Maksimum 100 etasjer").optional(),
+  numberOfFloors: z.union([
+    z.string().min(0),
+    z.number().min(1, "Minimum 1 etasje").max(100, "Maksimum 100 etasjer")
+  ]).optional(),
   sdInstallation: z.enum(["ja", "nei"]).optional(),
   annualEnergyConsumption: z.number().min(1000, "Minimum 1000 kWh/år").max(1000000, "Maksimum 1,000,000 kWh/år"),
   heatingSystems: z.array(z.object({
@@ -41,6 +44,9 @@ const buildingDataSchema = z.object({
     percentage: z.number().min(0).max(100),
     ranking: z.enum(['primary', 'secondary', 'tertiary'])
   })).min(1, "Minst ett varmtvannssystem er påkrevd"),
+}).refine((data) => data.heatedArea <= data.totalArea, {
+  message: "Oppvarmet areal kan ikke være større enn total BRA",
+  path: ["heatedArea"],
 });
 
 type FormData = z.infer<typeof buildingDataSchema>;
@@ -157,6 +163,29 @@ const SystemInfoTooltip = ({ title, descriptions }: { title: string; description
   </TooltipProvider>
 );
 
+// Helper component for data source indicator - only shows "Egendefinert" for manual entries
+const DataSourceIndicator = ({ source, hasValue }: { source: 'manual' | 'auto' | 'map' | 'enova' | 'calculated'; hasValue: boolean }) => {
+  // Only show indicator for manual entries with actual values
+  if (!hasValue || source !== 'manual') {
+    return null;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="text-xs font-normal ml-2 opacity-60 cursor-help text-cyan-400">
+            (Egendefinert)
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="bg-slate-800 border-slate-600 text-white text-sm">
+          Du har definert denne verdien selv
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
 interface BuildingDataFormProps {
   address?: string;
   lat?: string;
@@ -205,10 +234,10 @@ export function BuildingDataForm({
 
   // Track data sources for each field
   const [fieldSources, setFieldSources] = useState<Record<string, 'manual' | 'auto' | 'map' | 'enova' | 'calculated'>>({
-    totalArea: 'auto',
-    heatedArea: 'auto',
-    numberOfFloors: 'auto',
-    buildingType: 'auto',
+    totalArea: 'calculated',
+    heatedArea: 'calculated',
+    numberOfFloors: 'calculated',
+    buildingType: 'calculated',
     annualEnergyConsumption: 'calculated',
   });
 
@@ -289,7 +318,8 @@ export function BuildingDataForm({
       totalArea: 120,
       heatedArea: 110,
       buildingYear: "",
-      numberOfFloors: undefined,
+      numberOfFloors: "",  // Use empty string instead of undefined
+      sdInstallation: "nei",  // Default to "nei" (No)
       annualEnergyConsumption: calculateEnergyEstimate('Kontor', 120), // Smart default based on office building
       heatingSystems: [{ value: 'Elektrisitet', percentage: 100, ranking: 'primary' }],
       lightingSystems: [{ value: 'Fluorescerende', percentage: 100, ranking: 'primary' }],
@@ -487,14 +517,92 @@ export function BuildingDataForm({
     return typeMapping[osmType] || null;
   };
 
-  // Auto-adjust heated area based on total area
-  const totalAreaValue = form.watch("totalArea");
+
+  // Effect for floors → BRA calculation
   useEffect(() => {
-    if (totalAreaValue) {
-      const heatedArea = Math.round(totalAreaValue * 0.9); // 90% as heated area default
-      form.setValue("heatedArea", heatedArea);
+    const numberOfFloors = form.watch('numberOfFloors');
+
+    // Only calculate if:
+    // 1. We have a valid number of floors
+    // 2. Total area hasn't been manually overridden
+    // 3. We have real footprint data from OSM
+    if (
+      typeof numberOfFloors === 'number' &&
+      numberOfFloors > 0 &&
+      fieldSources.totalArea !== 'manual' &&
+      osmBuildingData.footprintArea
+    ) {
+      console.log('Effect: Updating BRA based on floors:', {
+        floors: numberOfFloors,
+        footprint: osmBuildingData.footprintArea,
+        totalAreaSource: fieldSources.totalArea
+      });
+
+      // Use real footprint with top floor reduction: footprint × (floors - 0.3)
+      const calculatedArea = Math.round(osmBuildingData.footprintArea * (numberOfFloors - 0.3));
+
+      // Ensure BRA is never less than current heated area
+      const heatedArea = form.getValues('heatedArea');
+      const totalArea = heatedArea && calculatedArea < heatedArea ? heatedArea : calculatedArea;
+
+      form.setValue("totalArea", totalArea);
+      setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
     }
-  }, [totalAreaValue, form]);
+  }, [form.watch('numberOfFloors'), fieldSources.totalArea, osmBuildingData.footprintArea, form, setFieldSources]);
+
+  // Effect for BRA → heated area calculation
+  useEffect(() => {
+    const totalAreaValue = form.watch('totalArea');
+
+    // Only calculate if:
+    // 1. We have a valid total area
+    // 2. Heated area hasn't been manually overridden
+    if (
+      totalAreaValue &&
+      typeof totalAreaValue === 'number' &&
+      totalAreaValue > 0 &&
+      fieldSources.heatedArea !== 'manual'
+    ) {
+      console.log('Effect: Updating heated area based on BRA:', {
+        totalArea: totalAreaValue,
+        heatedAreaSource: fieldSources.heatedArea
+      });
+
+      // Calculate heated area but ensure it never exceeds total BRA
+      const calculatedHeated = Math.round(totalAreaValue * 0.92);
+      const heatedArea = Math.min(calculatedHeated, totalAreaValue);
+
+      form.setValue("heatedArea", heatedArea);
+      setFieldSources(prev => ({ ...prev, heatedArea: 'calculated' }));
+    }
+  }, [form.watch('totalArea'), fieldSources.heatedArea, form, setFieldSources]);
+
+  // Effect for building type + area → energy estimate calculation
+  useEffect(() => {
+    const buildingType = form.watch('buildingType');
+    const totalAreaValue = form.watch('totalArea');
+
+    // Only calculate if:
+    // 1. We have both building type and total area
+    // 2. Energy consumption hasn't been manually overridden
+    if (
+      buildingType &&
+      totalAreaValue &&
+      typeof totalAreaValue === 'number' &&
+      totalAreaValue > 0 &&
+      fieldSources.annualEnergyConsumption !== 'manual'
+    ) {
+      console.log('Effect: Updating energy estimate based on building type + area:', {
+        buildingType,
+        totalArea: totalAreaValue,
+        energySource: fieldSources.annualEnergyConsumption
+      });
+
+      const energyEstimate = calculateEnergyEstimate(buildingType as BuildingType, totalAreaValue);
+      form.setValue('annualEnergyConsumption', energyEstimate);
+      setFieldSources(prev => ({ ...prev, annualEnergyConsumption: 'calculated' }));
+    }
+  }, [form.watch('buildingType'), form.watch('totalArea'), fieldSources.annualEnergyConsumption, form, setFieldSources]);
 
   const handleSubmit = async (data: FormData) => {
     if (!address) return;
@@ -530,20 +638,16 @@ export function BuildingDataForm({
             name="buildingType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white text-sm">Bygningstype</FormLabel>
+                <FormLabel className="text-white text-sm">
+                  Bygningstype
+                  <DataSourceIndicator
+                    source={fieldSources.buildingType || 'auto'}
+                    hasValue={!!form.watch('buildingType')}
+                  />
+                </FormLabel>
                 <Select onValueChange={(value) => {
                   field.onChange(value);
                   setFieldSources(prev => ({ ...prev, buildingType: 'manual' }));
-
-                  // Recalculate energy estimate if not manually entered
-                  if (fieldSources.annualEnergyConsumption !== 'manual') {
-                    const totalArea = form.getValues('totalArea');
-                    if (totalArea && value) {
-                      const energyEstimate = calculateEnergyEstimate(value as BuildingType, totalArea);
-                      form.setValue('annualEnergyConsumption', energyEstimate);
-                      setFieldSources(prev => ({ ...prev, annualEnergyConsumption: 'calculated' }));
-                    }
-                  }
                 }} value={field.value}>
                   <FormControl>
                     <SelectTrigger className="bg-white/5 border-white/20 text-white">
@@ -570,7 +674,13 @@ export function BuildingDataForm({
               name="totalArea"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">Total BRA</FormLabel>
+                  <FormLabel className="text-white text-sm">
+                    Total BRA
+                    <DataSourceIndicator
+                      source={fieldSources.totalArea || 'auto'}
+                      hasValue={!!form.watch('totalArea')}
+                    />
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -579,25 +689,12 @@ export function BuildingDataForm({
                       {...field}
                       onChange={(e) => {
                         const value = Number(e.target.value);
-                        field.onChange(value);
+                        const heatedArea = form.getValues('heatedArea');
+
+                        // Ensure BRA is never less than heated area
+                        const finalValue = heatedArea && value < heatedArea ? heatedArea : value;
+                        field.onChange(finalValue);
                         setFieldSources(prev => ({ ...prev, totalArea: 'manual' }));
-
-                        // Update heated area only if it's not manual
-                        if (fieldSources.heatedArea !== 'manual' && value > 0) {
-                          const heatedArea = Math.round(value * 0.92);
-                          form.setValue("heatedArea", heatedArea);
-                          setFieldSources(prev => ({ ...prev, heatedArea: 'calculated' }));
-                        }
-
-                        // Recalculate energy estimate if not manually entered
-                        if (fieldSources.annualEnergyConsumption !== 'manual' && value > 0) {
-                          const buildingType = form.getValues('buildingType');
-                          if (buildingType) {
-                            const energyEstimate = calculateEnergyEstimate(buildingType as BuildingType, value);
-                            form.setValue('annualEnergyConsumption', energyEstimate);
-                            setFieldSources(prev => ({ ...prev, annualEnergyConsumption: 'calculated' }));
-                          }
-                        }
                       }}
                     />
                   </FormControl>
@@ -611,7 +708,13 @@ export function BuildingDataForm({
               name="heatedArea"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">Oppvarmet</FormLabel>
+                  <FormLabel className="text-white text-sm">
+                    Oppvarmet BRA
+                    <DataSourceIndicator
+                      source={fieldSources.heatedArea || 'auto'}
+                      hasValue={!!form.watch('heatedArea')}
+                    />
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -620,7 +723,11 @@ export function BuildingDataForm({
                       {...field}
                       onChange={(e) => {
                         const value = Number(e.target.value);
-                        field.onChange(value);
+                        const totalArea = form.getValues('totalArea');
+
+                        // Ensure heated area never exceeds total BRA
+                        const finalValue = totalArea && value > totalArea ? totalArea : value;
+                        field.onChange(finalValue);
                         setFieldSources(prev => ({ ...prev, heatedArea: 'manual' }));
                       }}
                     />
@@ -663,33 +770,25 @@ export function BuildingDataForm({
               name="numberOfFloors"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">Antall etasjer (valgfritt)</FormLabel>
+                  <FormLabel className="text-white text-sm">
+                    Antall etasjer (valgfritt)
+                    <DataSourceIndicator
+                      source={fieldSources.numberOfFloors || 'auto'}
+                      hasValue={!!form.watch('numberOfFloors')}
+                    />
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       placeholder="2"
                       className="bg-white/5 border-white/20 text-white"
                       {...field}
+                      value={field.value || ""}
                       onChange={(e) => {
-                        const floors = Number(e.target.value);
+                        const value = e.target.value;
+                        const floors = value === "" ? "" : Number(value);
                         field.onChange(floors);
                         setFieldSources(prev => ({ ...prev, numberOfFloors: 'manual' }));
-
-                        // Only update BRA if it wasn't manually entered and we have real footprint data
-                        if (floors && floors > 0 && fieldSources.totalArea !== 'manual' && osmBuildingData.footprintArea) {
-                          // Use real footprint with top floor reduction: footprint × (floors - 0.3)
-                          const totalArea = Math.round(osmBuildingData.footprintArea * (floors - 0.3));
-                          form.setValue("totalArea", totalArea);
-                          setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
-
-                          // Update heated area only if it's not manual
-                          if (fieldSources.heatedArea !== 'manual') {
-                            const heatedArea = Math.round(totalArea * 0.92);
-                            form.setValue("heatedArea", heatedArea);
-                            setFieldSources(prev => ({ ...prev, heatedArea: 'calculated' }));
-                          }
-                        }
-                        // Don't calculate if no real footprint data - avoid fake estimates
                       }}
                     />
                   </FormControl>
@@ -732,7 +831,13 @@ export function BuildingDataForm({
               name="annualEnergyConsumption"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">Årlig energiforbruk</FormLabel>
+                  <FormLabel className="text-white text-sm">
+                    Årlig energiforbruk
+                    <DataSourceIndicator
+                      source={fieldSources.annualEnergyConsumption || 'auto'}
+                      hasValue={!!form.watch('annualEnergyConsumption')}
+                    />
+                  </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -789,105 +894,41 @@ export function BuildingDataForm({
                   </div>
                 </div>
 
-                {/* Ventilation System (single select with multi-select styling) */}
+                {/* Ventilation System (single select using multi-select style) */}
                 <div
                   className="flex flex-col transition-all duration-300 ease-in-out"
                   style={{ minHeight: `${dynamicHeight}px` }}
                 >
-                  <div className="space-y-3 flex-1">
-                    {/* Header matching multi-select style */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-sm font-medium">Ventilasjonssystem</span>
-                        <SystemInfoTooltip
-                          title="Ventilasjonssystemer"
-                          descriptions={ventilationSystemDescriptions}
-                        />
-                      </div>
-                      {/* Invisible spacer to match multi-select header alignment */}
-                      <span className="text-xs min-w-[60px] text-right text-transparent">Total: 100%</span>
-                    </div>
-
-                    <div className="space-y-2">
-                      <FormField
-                        control={form.control}
-                        name="ventilationSystem"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="sr-only">Ventilasjonssystem</FormLabel>
-                            {/* Selected item display (matching multi-select style exactly) */}
-                            {field.value && (
-                              <div className="flex items-center gap-2 p-2 rounded-lg border border-white/20 bg-white/5">
-                                <div className="lucide lucide-grip-vertical w-4 h-4 text-slate-500 opacity-30">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="9" cy="12" r="1"></circle>
-                                    <circle cx="9" cy="5" r="1"></circle>
-                                    <circle cx="9" cy="19" r="1"></circle>
-                                    <circle cx="15" cy="12" r="1"></circle>
-                                    <circle cx="15" cy="5" r="1"></circle>
-                                    <circle cx="15" cy="19" r="1"></circle>
-                                  </svg>
-                                </div>
-
-                                <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 min-w-[80px] text-emerald-400 border-emerald-400">
-                                  Primær
-                                </div>
-
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="w-3 h-3 rounded-full flex-shrink-0 bg-blue-400" />
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <SelectTrigger className="h-8 border-none bg-transparent text-sm font-medium px-2 py-1 hover:bg-white/5 focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
-                                      <SelectValue className="text-sm font-medium">
-                                        {ventilationSystemOptions.find(opt => opt.value === field.value)?.label || field.value}
-                                      </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {ventilationSystemOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-full bg-blue-400" />
-                                            {option.label}
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <span className="w-16 h-8 text-center text-sm text-white bg-white/5 border border-white/20 rounded flex items-center justify-center">100</span>
-                                  <span className="text-sm text-slate-400">%</span>
-                                </div>
-
-                                {/* Empty space where delete button would be for alignment */}
-                                <div className="w-8 h-8"></div>
-                              </div>
-                            )}
-
-                            {/* Add button when no selection */}
-                            {!field.value && (
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger className="w-full justify-start text-muted-foreground border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground">
-                                  <SelectValue placeholder="Velg ventilasjonssystem" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ventilationSystemOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-blue-400" />
-                                        {option.label}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-white text-sm font-medium">Ventilasjonssystem</span>
+                    <SystemInfoTooltip
+                      title="Ventilasjonssystemer"
+                      descriptions={ventilationSystemDescriptions}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <FormField
+                      control={form.control}
+                      name="ventilationSystem"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="sr-only">Ventilasjonssystem</FormLabel>
+                          <RankedMultiSelect
+                            title=""
+                            options={ventilationSystemOptions.map(opt => ({ value: opt.value, label: opt.label }))}
+                            selections={field.value ? [{ value: field.value, percentage: 100, ranking: 'primary' }] : []}
+                            onSelectionsChange={(selections) => {
+                              // Only take the first selection since ventilation is single-select
+                              const firstSelection = selections[0];
+                              field.onChange(firstSelection ? firstSelection.value : '');
+                            }}
+                            placeholder="Velg ventilasjonssystem..."
+                            maxSelections={1}
+                          />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
               </div>
