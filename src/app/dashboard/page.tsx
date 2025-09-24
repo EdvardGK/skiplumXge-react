@@ -727,12 +727,6 @@ function DashboardContent() {
                     }
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-1">
-                  {hasRealBuildingData && realEnergyData.annualWaste === 0
-                    ? ''
-                    : "Legg inn bygningsdata"
-                  }
-                </div>
               </div>
               <Button variant="outline" size="sm" className="w-full mt-2" disabled>
                 Artikkel <span className="text-xs">(kommer snart)</span>

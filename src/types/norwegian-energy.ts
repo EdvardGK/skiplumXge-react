@@ -105,11 +105,17 @@ export type BuildingType =
   | 'Industri'
   | 'Andre';
 
+export interface EnergySource<T = string> {
+  type: T;
+  percentage: number;  // 0-100
+  ranking: 'primary' | 'secondary' | 'tertiary';
+}
+
 export interface EnergySystems {
-  heating: HeatingSystem;
-  lighting: LightingSystem;
-  ventilation: VentilationSystem;
-  hotWater: HotWaterSystem;
+  heating: EnergySource<HeatingSystem>[];  // Multiple heating sources with percentages
+  lighting: EnergySource<LightingSystem>[];  // Multiple lighting types with percentages
+  ventilation: VentilationSystem;  // Usually single system
+  hotWater: EnergySource<HotWaterSystem>[];  // Multiple hot water sources with percentages
 }
 
 export type HeatingSystem =
@@ -303,10 +309,10 @@ export interface BuildingDataForm {
   totalArea: number;
   heatedArea: number;
   buildingYear?: number;
-  heatingSystem: HeatingSystem;
-  lightingSystem: LightingSystem;
+  heatingSystems: EnergySource<HeatingSystem>[];  // Multiple heating sources with percentages
+  lightingSystems: EnergySource<LightingSystem>[];  // Multiple lighting types with percentages
   ventilationSystem: VentilationSystem;
-  hotWaterSystem: HotWaterSystem;
+  hotWaterSystems: EnergySource<HotWaterSystem>[];  // Multiple hot water sources with percentages
 }
 
 // Constants

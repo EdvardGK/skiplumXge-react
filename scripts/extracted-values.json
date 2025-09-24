@@ -1,0 +1,161 @@
+{
+  "buildingStandards": {
+    "energyConsumption": {
+      "Småhus": 150,
+      "Flerbolig": 159,
+      "Barnehage": 200,
+      "Kontor": 235,
+      "Skole": 170,
+      "Sykehus": 380,
+      "Hotell": 240,
+      "Handel": 311,
+      "Kultur": 245,
+      "Idrett": 235,
+      "Industri": 255,
+      "Andre": 235
+    }
+  },
+  "energyCalculations": {
+    "constants": {
+      "discountRate": 0.06,
+      "investmentPeriod": 10
+    },
+    "heatingConsumption": {
+      "Elektrisitet": 120,
+      "Varmepumpe": 40,
+      "Bergvarme": 35,
+      "Fjernvarme": 60,
+      "Biobrensel": 5,
+      "Olje": 15,
+      "Gass": 20
+    }
+  },
+  "apiEndpoints": [
+    {
+      "path": "/apiaddresses/search",
+      "methods": [
+        "GET"
+      ],
+      "purpose": "Adressesøk via Kartverket",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apibuildings/detect",
+      "methods": [
+        "GET"
+      ],
+      "purpose": "Bygningsdata fra OSM",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apidashboard/screenshot",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "purpose": "Dashboard Screenshot API Route - DISABLED\r",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apielectricity/prices",
+      "methods": [
+        "GET"
+      ],
+      "purpose": "Strømpriser fra NVE",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apigenerate-excel",
+      "methods": [
+        "POST"
+      ],
+      "purpose": "Excel eksport",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apihealthcheck",
+      "methods": [
+        "GET"
+      ],
+      "purpose": "System helsesjekk",
+      "status": "Aktiv"
+    },
+    {
+      "path": "/apireports/generate",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "purpose": "PDF Report Generation API Route\r",
+      "status": "Aktiv"
+    }
+  ],
+  "dashboardComponents": [
+    {
+      "id": "tek17-gauge",
+      "displayName": "TEK17 Status",
+      "type": "Energikort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "enova-grade",
+      "displayName": "Enova Energimerking",
+      "type": "Energikort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "energy-zone",
+      "displayName": "Anbefalt første steg",
+      "type": "Energikort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "roi-budget",
+      "displayName": "ROI Budsjett",
+      "type": "Investeringskort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "time-series",
+      "displayName": "Prishistorikk graf",
+      "type": "Graf",
+      "status": "Aktiv"
+    },
+    {
+      "id": "investment-sankey",
+      "displayName": "Investeringsanalyse",
+      "type": "Investeringskort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "map",
+      "displayName": "Eiendomskart",
+      "type": "Kart",
+      "status": "Aktiv"
+    },
+    {
+      "id": "action-analysis",
+      "displayName": "analysis",
+      "type": "Handlingskort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "action-report",
+      "displayName": "report",
+      "type": "Handlingskort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "action-consultation",
+      "displayName": "consultation",
+      "type": "Handlingskort",
+      "status": "Aktiv"
+    },
+    {
+      "id": "action-share",
+      "displayName": "share",
+      "type": "Handlingskort",
+      "status": "Aktiv"
+    }
+  ]
+}

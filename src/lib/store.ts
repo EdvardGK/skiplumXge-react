@@ -289,10 +289,16 @@ export const useAppStore = create<StoreState & StoreActions>()(
               heatedArea: address.matrikkel.heatedArea || 0,
               buildingYear: address.matrikkel.buildingYear || undefined,
               energySystems: {
-                heating: 'Elektrisitet',
-                lighting: 'Fluorescerende',
+                heating: [
+                  { type: 'Elektrisitet', percentage: 100, ranking: 'primary' }
+                ],
+                lighting: [
+                  { type: 'Fluorescerende', percentage: 100, ranking: 'primary' }
+                ],
                 ventilation: 'Naturlig',
-                hotWater: 'Elektrisitet',
+                hotWater: [
+                  { type: 'Elektrisitet', percentage: 100, ranking: 'primary' }
+                ],
               },
               municipality: address.municipality,
               coordinates: address.coordinates,

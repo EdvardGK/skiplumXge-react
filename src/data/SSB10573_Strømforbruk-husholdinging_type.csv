@@ -1,0 +1,13 @@
+"10573: Gjennomsnittlig energiforbruk per husholdning, etter statistikkvariabel, bygningstype og år"
+
+"statistikkvariabel";"bygningstype";"1995";"2001";"2004";"2006";"2009";"2012";"2022"
+"Totalt energiforbruk (kWh)";"Alle bygningstyper";23633;22399;21143;21644;20415;20230;17518
+"Totalt energiforbruk (kWh)";"Våningshus";31911;31315;31136;32900;30599;30997;26633
+"Totalt energiforbruk (kWh)";"Enebolig";28912;27327;26414;26680;25705;25776;22848
+"Totalt energiforbruk (kWh)";"Rekkehus, kjedehus, andre småhus";18818;18731;16850;17033;17726;17090;15673
+"Totalt energiforbruk (kWh)";"Boligblokk";12817;11941;11367;12589;10541;10899;10552
+"Spesifikt energiforbruk (kWh per m² boligareal)";"Alle bygningstyper";211;203;186;190;181;185;154
+"Spesifikt energiforbruk (kWh per m² boligareal)";"Våningshus";238;256;216;220;219;229;172
+"Spesifikt energiforbruk (kWh per m² boligareal)";"Enebolig";223;214;192;199;182;198;150
+"Spesifikt energiforbruk (kWh per m² boligareal)";"Rekkehus, kjedehus, andre småhus";205;194;179;181;186;180;149
+"Spesifikt energiforbruk (kWh per m² boligareal)";"Boligblokk";178;174;173;172;166;156;159

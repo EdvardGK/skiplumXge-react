@@ -1,0 +1,222 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[norsk]{babel}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{tcolorbox}
+
+\geometry{margin=2cm}
+
+\title{Notion Database Structure\\
+Norwegian Energy Engineering Control Center}
+\author{SkiplumXGE Energy Analysis}
+\date{\today}
+
+\definecolor{primaryblue}{RGB}{59, 130, 246}
+\definecolor{secondarygreen}{RGB}{34, 197, 94}
+\definecolor{warningorange}{RGB}{251, 146, 60}
+
+\begin{document}
+
+\maketitle
+
+\section{Oversikt}
+
+Dette dokumentet definerer strukturen for 5 Notion-databaser som skal utgjøre det norske energitekniske kontrollsenteret. Systemet lar norske energiingeniører redigere formler og verdier som direkte påvirker produksjonsberegninger.
+
+\begin{tcolorbox}[colback=primaryblue!10,colframe=primaryblue,title=Hovedformål]
+\textbf{Live redigering} av produksjonsformler uten kodeutsetting gjennom norskspråklig grensesnitt for energiingeniører.
+\end{tcolorbox}
+
+\section{Database 1: Beregningsformler}
+
+\textbf{Formål:} Kjerneformler for investerings- og energiberegninger brukt i produksjon
+
+\begin{longtable}{@{}p{4cm}p{2.5cm}p{8cm}@{}}
+\toprule
+\textbf{Feltnavn} & \textbf{Type} & \textbf{Beskrivelse/Alternativer} \\
+\midrule
+Navn & Title & Formel-identifikator (f.eks. "norwegian\_discount\_rate") \\
+\addlinespace
+Beskrivelse & Rich Text & Norsk beskrivelse av hva formelen gjør \\
+\addlinespace
+Verdi & Number & Nåværende verdi brukt i produksjon \\
+\addlinespace
+Enhet & Select & \textbf{Alternativer:} \%, kWh/m², m, kr, år, multiplier, ratio \\
+\addlinespace
+Norsk kilde & Rich Text & Norsk kilde/standardreferanse \\
+\addlinespace
+Kategori & Select & \textbf{Alternativer:} Investering, Energi, Volum, Prisberegning \\
+\addlinespace
+Status & Select & \textbf{Alternativer:} Utkast, Under vurdering, Godkjent, Aktiv, Arkivert \\
+\addlinespace
+Ansvarlig ingeniør & People & Ansvarlig ingeniør \\
+\addlinespace
+Sist endret & Date & Dato for siste endring \\
+\addlinespace
+Gyldig fra & Date & Gyldig fra dato \\
+\addlinespace
+Kommentarer & Rich Text & Ingeniørnotater \\
+\bottomrule
+\end{longtable}
+
+\section{Database 2: Bygningstyper og energiforbruk}
+
+\textbf{Formål:} Bygningstyper med kWh/m² forbruk fra NVE Rapport 2019-31
+
+\begin{longtable}{@{}p{4cm}p{2.5cm}p{8cm}@{}}
+\toprule
+\textbf{Feltnavn} & \textbf{Type} & \textbf{Beskrivelse/Alternativer} \\
+\midrule
+Bygningstype & Select & \textbf{Alternativer:} Småhus, Flerbolig, Kontor, Handel, Skole, Barnehage, Sykehus, Hotell, Kultur, Idrett, Industri, Andre \\
+\addlinespace
+Energiforbruk kWh/m² & Number & Energiforbruk per kvadratmeter \\
+\addlinespace
+Takhøyde standard (m) & Number & Standard takhøyde \\
+\addlinespace
+Kommersiell størrelse regel & Rich Text & Kommersielle størrelsesregler (for Handel) \\
+\addlinespace
+NVE referanse & Rich Text & Referanse til NVE Rapport 2019-31 \\
+\addlinespace
+Status & Select & \textbf{Alternativer:} Utkast, Under vurdering, Godkjent, Aktiv, Arkivert \\
+\addlinespace
+Ansvarlig ingeniør & People & Ansvarlig ingeniør \\
+\addlinespace
+Sist validert & Date & Dato for siste validering \\
+\addlinespace
+Kommentarer & Rich Text & Ingeniørnotater \\
+\bottomrule
+\end{longtable}
+
+\section{Database 3: Energisystem faktorer}
+
+\textbf{Formål:} Oppvarming/belysning/ventilasjon forbruksfaktorer og effektivitetsmultiplikatorer
+
+\begin{longtable}{@{}p{4cm}p{2.5cm}p{8cm}@{}}
+\toprule
+\textbf{Feltnavn} & \textbf{Type} & \textbf{Beskrivelse/Alternativer} \\
+\midrule
+System type & Select & \textbf{Alternativer:} Elektrisitet, Varmepumpe, Bergvarme, Fjernvarme, Biobrensel, Olje, Gass, LED, Halogen, Naturlig, Mekanisk, Balansert \\
+\addlinespace
+Forbruk kWh/m² & Number & Forbruk per kvadratmeter \\
+\addlinespace
+Effektivitetsfaktor & Number & Effektivitetsmultiplikator (f.eks. COP 3.0 for varmepumper) \\
+\addlinespace
+Anvendelse & Select & \textbf{Alternativer:} Oppvarming, Belysning, Ventilasjon, Varmtvann \\
+\addlinespace
+Kilde & Rich Text & Norsk kilde/standard \\
+\addlinespace
+Status & Select & \textbf{Alternativer:} Utkast, Under vurdering, Godkjent, Aktiv, Arkivert \\
+\addlinespace
+Ansvarlig ingeniør & People & Ansvarlig ingeniør \\
+\addlinespace
+Kommentarer & Rich Text & Ingeniørnotater \\
+\bottomrule
+\end{longtable}
+
+\section{Database 4: API endepunkter}
+
+\textbf{Formål:} Alle nåværende produksjons-API-endepunkter med statusovervåking
+
+\begin{longtable}{@{}p{4cm}p{2.5cm}p{8cm}@{}}
+\toprule
+\textbf{Feltnavn} & \textbf{Type} & \textbf{Beskrivelse/Alternativer} \\
+\midrule
+Endepunkt & URL & Full API-endepunkt URL \\
+\addlinespace
+Metode & Select & \textbf{Alternativer:} GET, POST, PUT, DELETE \\
+\addlinespace
+Formål & Rich Text & Norsk beskrivelse av endepunktets formål \\
+\addlinespace
+Forespørsel eksempel & Rich Text & Eksempel på forespørsel \\
+\addlinespace
+Svar eksempel & Rich Text & Eksempel på svar \\
+\addlinespace
+Status & Select & \textbf{Alternativer:} Aktiv, Under utvikling, Avviklet, Planlagt \\
+\addlinespace
+Sist testet & Date & Dato for siste test \\
+\addlinespace
+Responstid (ms) & Number & Responstid i millisekunder \\
+\addlinespace
+Kommentarer & Rich Text & Tekniske notater \\
+\bottomrule
+\end{longtable}
+
+\section{Database 5: Dashboard komponenter}
+
+\textbf{Formål:} Alle dashbord-fliser og deres datakilder for visuell komponentregister
+
+\begin{longtable}{@{}p{4cm}p{2.5cm}p{8cm}@{}}
+\toprule
+\textbf{Feltnavn} & \textbf{Type} & \textbf{Beskrivelse/Alternativer} \\
+\midrule
+Komponent navn & Title & Komponent-ID (f.eks. "tek17-gauge") \\
+\addlinespace
+Norsk visningsnavn & Rich Text & Norsk visningsnavn \\
+\addlinespace
+Beskrivelse & Rich Text & Komponentbeskrivelse \\
+\addlinespace
+Type & Select & \textbf{Alternativer:} Energikort, Investeringskort, Kart, Graf, Handlingskort \\
+\addlinespace
+Status & Select & \textbf{Alternativer:} Aktiv, Test, Arkivert \\
+\addlinespace
+Datakilder & Rich Text & Datakilder som brukes \\
+\addlinespace
+Beregninger brukt & Rich Text & Beregninger brukt fra formeldatabase \\
+\addlinespace
+Kommentarer & Rich Text & Tekniske notater \\
+\bottomrule
+\end{longtable}
+
+\section{Ingeniørarbeidsflyt}
+
+\begin{tcolorbox}[colback=secondarygreen!10,colframe=secondarygreen,title=Arbeidsflyt for endringer]
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Ingeniør foreslår endring} - Ingeniør foreslår endring i Notion
+    \item \textbf{Faglig vurdering} - Teknisk vurderingsprosess
+    \item \textbf{Godkjenning} - Godkjenning av senior ingeniør
+    \item \textbf{Aktivering} - Går live automatisk via API-synkronisering
+    \item \textbf{Overvåkning} - Overvåk påvirkning på beregninger
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Implementeringsnotater}
+
+\subsection{Datapopulering}
+Når databaser er opprettet, kjør:
+
+\begin{lstlisting}[language=bash, backgroundcolor=\color{gray!10}]
+node scripts/extract-current-values.js
+node scripts/populate-notion-data.js
+\end{lstlisting}
+
+\subsection{Neste fase: Live integrasjon}
+Etter databaseopprettelse, implementer \texttt{/api/config/notion-sync} endepunkt for å:
+
+\begin{itemize}[leftmargin=*]
+    \item Hente godkjente verdier fra Notion-databaser
+    \item Validere dataområder og norske standarder
+    \item Oppdatere produksjonskonfigurasjon dynamisk
+    \item Loggføre endringer for revisjonssti
+\end{itemize}
+
+\section{Hovedfordeler}
+
+\begin{tcolorbox}[colback=warningorange!10,colframe=warningorange,title=Nøkkelfordeler]
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Live redigering} av produksjonsformler uten kodeutsetting
+    \item \textbf{Norskspråklig grensesnitt} for energiingeniører
+    \item \textbf{Ingeniørvalideringsarbeidsflyt} med godkjenningsprosess
+    \item \textbf{Revisjonssti} for alle formeledninger
+    \item \textbf{Datakildetransparens} - hver verdi knyttet til norske standarder
+    \item \textbf{Teamsamarbeid} mellom utviklere og domeneeksperter
+\end{itemize}
+\end{tcolorbox}
+
+\end{document}

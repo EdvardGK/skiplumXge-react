@@ -550,10 +550,18 @@ function SelectBuildingContent() {
         totalArea: formData.totalArea.toString(),
         heatedArea: formData.heatedArea.toString(),
         annualEnergyConsumption: formData.annualEnergyConsumption.toString(),
-        heatingSystem: formData.heatingSystem,
-        lightingSystem: formData.lightingSystem,
+        // Convert multi-select arrays to primary systems for URL params (backward compatibility)
+        heatingSystem: formData.heatingSystems?.[0]?.value || 'Elektrisitet',
+        lightingSystem: formData.lightingSystems?.[0]?.value || 'LED',
         ventilationSystem: formData.ventilationSystem,
-        hotWaterSystem: formData.hotWaterSystem,
+        hotWaterSystem: formData.hotWaterSystems?.[0]?.value || 'Elektrisitet',
+        // Also include the full multi-select data as JSON for the dashboard
+        energySystemsMulti: JSON.stringify({
+          heating: formData.heatingSystems || [],
+          lighting: formData.lightingSystems || [],
+          ventilation: formData.ventilationSystem,
+          hotWater: formData.hotWaterSystems || []
+        }),
         ...(formData.buildingYear && { buildingYear: formData.buildingYear.toString() }),
         ...(formData.numberOfFloors && { numberOfFloors: formData.numberOfFloors.toString() }),
         ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
@@ -798,17 +806,36 @@ function SelectBuildingContent() {
                 </div>
 
                 {/* Building/Certificate List - Right sidebar */}
-                <div className={`${showForm ? 'w-[480px]' : 'w-80'} border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col`}>
+                <div className={`${showForm ? 'w-1/2' : 'w-80'} border-l border-white/10 bg-black/20 backdrop-blur-lg flex flex-col`}>
                   <div className="p-4 border-b border-white/10">
                     {showForm ? (
                       <>
-                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                          <FormInput className="w-5 h-5 text-cyan-400" />
-                          Bygningsdata
-                        </h3>
-                        <p className="text-slate-400 text-sm mt-1">
-                          Fyll ut bygningsinformasjon for analyse
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                              <FormInput className="w-5 h-5 text-cyan-400" />
+                              Bygningsdata
+                            </h3>
+                            <p className="text-slate-400 text-sm mt-1">
+                              Fyll ut bygningsinformasjon for analyse
+                            </p>
+                          </div>
+
+                          {/* Reset button always visible */}
+                          <Button
+                            onClick={() => {
+                              // Trigger reset in form component
+                              if ((window as any).resetBuildingFormToCalculated) {
+                                (window as any).resetBuildingFormToCalculated();
+                              }
+                            }}
+                            size="sm"
+                            variant="outline"
+                            className="border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 text-sm px-3 py-1"
+                          >
+                            Bruk estimater
+                          </Button>
+                        </div>
                       </>
                     ) : !showCertificates ? (
                       <>
@@ -850,6 +877,7 @@ function SelectBuildingContent() {
                         bygningsnummer={selectedCertificate || ''}
                         onSubmit={handleFormSubmit}
                         isSubmitting={isSubmittingForm}
+                        onResetRequest={() => {/* Handled by global function */}}
                       />
                     ) : !showCertificates ? (
                       // Building List - Show all buildings, selected first

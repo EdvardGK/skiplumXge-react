@@ -32,7 +32,8 @@
       "WebFetch(domain:www.enova.no)",
       "Read(//mnt/host/c/Users/edkjo/DC/ACCDocs/Skiplum AS/Skiplum Backup/Project Files/00000 - Gudbrandsdall Energi/6. Prosjektdokumentasjon/04_Grunnlagsfiler/**)",
       "WebFetch(domain:vercel.com)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

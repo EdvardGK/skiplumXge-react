@@ -19,6 +19,8 @@ import {
   Sun,
   Wrench
 } from 'lucide-react';
+import { calculateBuildingVolume, getBuildingStandards } from '@/lib/norwegian-building-standards';
+import { BuildingType } from '@/types/norwegian-energy';
 
 // Form data structure based on the Excel template
 interface EnergyAssessmentData {
@@ -201,7 +203,20 @@ export default function DataEditingOverlay({
   }, [buildingData]);
 
   const updateField = (field: keyof EnergyAssessmentData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-calculate building volume when building type or area changes
+      if ((field === 'bygningstype' || field === 'bruksareal') && newData.bygningstype && newData.bruksareal) {
+        const totalArea = parseInt(newData.bruksareal);
+        if (!isNaN(totalArea) && totalArea > 0) {
+          const volume = calculateBuildingVolume(totalArea, newData.bygningstype as BuildingType);
+          newData.bygningsvolum = volume.toString();
+        }
+      }
+
+      return newData;
+    });
   };
 
   const handleSave = () => {

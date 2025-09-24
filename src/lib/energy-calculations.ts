@@ -8,6 +8,7 @@ import {
   TEK17_REQUIREMENTS,
   BuildingData,
   EnergyAnalysis,
+  EnergySource,
   InvestmentGuidance,
   InvestmentRecommendation
 } from '@/types/norwegian-energy';
@@ -92,6 +93,18 @@ export interface BuildingEnergyData {
   priceZone?: NorwegianPriceZone; // Norwegian electricity pricing zone
 }
 
+export interface BuildingEnergyDataMultiple {
+  buildingType: BuildingType;
+  totalArea: number;
+  heatedArea: number;
+  heatingSystems: EnergySource<HeatingSystem>[];
+  lightingSystems: EnergySource<LightingSystem>[];
+  ventilationSystem: VentilationSystem;
+  hotWaterSystems: EnergySource<HotWaterSystem>[];
+  buildingYear?: number;
+  priceZone?: NorwegianPriceZone;
+}
+
 export interface EnergyCalculationResult {
   totalEnergyUse: number; // kWh/m²/år
   tek17Requirement: number; // kWh/m²/år
@@ -114,6 +127,19 @@ export interface EnergyCalculationResult {
   };
 }
 
+// Calculate weighted consumption for multiple energy sources
+function calculateWeightedConsumption<T extends string>(
+  sources: EnergySource<T>[],
+  consumptionMap: Record<T, number>
+): number {
+  if (!sources || sources.length === 0) return 0;
+
+  return sources.reduce((total, source) => {
+    const consumption = consumptionMap[source.type as T] || 0;
+    return total + (consumption * (source.percentage / 100));
+  }, 0);
+}
+
 export function calculateEnergyAnalysis(data: BuildingEnergyData): EnergyCalculationResult {
   // Get TEK17 requirement for building type
   const tek17Requirement = TEK17_REQUIREMENTS[data.buildingType];
@@ -123,6 +149,79 @@ export function calculateEnergyAnalysis(data: BuildingEnergyData): EnergyCalcula
   const lightingConsumption = LIGHTING_CONSUMPTION[data.lightingSystem];
   const ventilationConsumption = VENTILATION_CONSUMPTION[data.ventilationSystem];
   const hotWaterConsumption = HOT_WATER_CONSUMPTION[data.hotWaterSystem];
+
+  // Building age factor (newer buildings are more efficient)
+  const currentYear = new Date().getFullYear();
+  const buildingAge = data.buildingYear ? currentYear - data.buildingYear : 24; // Default to 2000
+  const ageFactor = Math.max(0.8, Math.min(1.2, 1 + (buildingAge - 20) * 0.01)); // 0.8 to 1.2 range
+
+  // Calculate total energy use per m² (adjusted for building age)
+  const totalEnergyUse = Math.round(
+    (heatingConsumption + lightingConsumption + ventilationConsumption + hotWaterConsumption) * ageFactor
+  );
+
+  // Compliance check
+  const isCompliant = totalEnergyUse <= tek17Requirement;
+  const deviation = Math.round(((totalEnergyUse - tek17Requirement) / tek17Requirement) * 100);
+
+  // Energy grade calculation
+  const energyGrade = calculateEnergyGrade(totalEnergyUse, data.buildingType);
+
+  // Get current electricity price (36-month average from SSB data) for the specific zone
+  const electricityPrice = getElectricityPrice(data.priceZone || 'NO1');
+
+  // Total annual consumption and costs
+  const annualEnergyConsumption = totalEnergyUse * data.heatedArea;
+  const annualEnergyCost = Math.round(annualEnergyConsumption * electricityPrice);
+
+  // Waste calculation (only if over TEK17 requirement)
+  const wastePerM2 = Math.max(0, totalEnergyUse - tek17Requirement);
+  const annualWaste = wastePerM2 * data.heatedArea;
+  const annualWasteCost = Math.round(annualWaste * electricityPrice);
+
+  // NPV-based investment analysis (10 years at 6% discount rate)
+  const presentValueFactor = getPresentValueFactor(); // 7.36 for 10 years at 6%
+  const npvOfWaste = calculateNPV(annualWasteCost); // Full NPV calculation for reference
+  const investmentRoom = Math.round(annualWasteCost * presentValueFactor);
+
+  // Energy breakdown by system (actual percentages based on user's systems)
+  const breakdown = {
+    heating: Math.round((heatingConsumption / totalEnergyUse) * 100),
+    lighting: Math.round((lightingConsumption / totalEnergyUse) * 100),
+    ventilation: Math.round((ventilationConsumption / totalEnergyUse) * 100),
+    hotWater: Math.round((hotWaterConsumption / totalEnergyUse) * 100),
+  };
+
+  return {
+    totalEnergyUse,
+    tek17Requirement,
+    isCompliant,
+    deviation,
+    energyGrade,
+    annualEnergyConsumption,
+    annualEnergyCost,
+    annualWaste,
+    annualWasteCost,
+    investmentRoom,
+    npvOfWaste,
+    presentValueFactor,
+    wastePerM2,
+    breakdown,
+  };
+}
+
+/**
+ * Enhanced energy analysis that handles multiple energy sources with percentages
+ */
+export function calculateEnergyAnalysisMultiple(data: BuildingEnergyDataMultiple): EnergyCalculationResult {
+  // Get TEK17 requirement for building type
+  const tek17Requirement = TEK17_REQUIREMENTS[data.buildingType];
+
+  // Calculate weighted energy consumption by system (kWh/m²/år)
+  const heatingConsumption = calculateWeightedConsumption(data.heatingSystems, HEATING_CONSUMPTION);
+  const lightingConsumption = calculateWeightedConsumption(data.lightingSystems, LIGHTING_CONSUMPTION);
+  const ventilationConsumption = VENTILATION_CONSUMPTION[data.ventilationSystem];
+  const hotWaterConsumption = calculateWeightedConsumption(data.hotWaterSystems, HOT_WATER_CONSUMPTION);
 
   // Building age factor (newer buildings are more efficient)
   const currentYear = new Date().getFullYear();
@@ -254,15 +353,20 @@ export function getCurrentElectricityPriceForDisplay(zone: NorwegianPriceZone = 
  * Adapter function to convert BuildingData to BuildingEnergyData and perform energy analysis
  */
 export function performEnergyAnalysis(buildingData: BuildingData): EnergyAnalysis {
-  // Convert BuildingData to BuildingEnergyData format
+  // Get primary systems (highest percentage or first in list)
+  const primaryHeating = buildingData.energySystems.heating[0]?.type || 'Elektrisitet';
+  const primaryLighting = buildingData.energySystems.lighting[0]?.type || 'LED';
+  const primaryHotWater = buildingData.energySystems.hotWater[0]?.type || 'Elektrisitet';
+
+  // Convert BuildingData to BuildingEnergyData format (using primary systems for now)
   const energyData: BuildingEnergyData = {
     buildingType: buildingData.type,
     totalArea: buildingData.totalArea,
     heatedArea: buildingData.heatedArea,
-    heatingSystem: buildingData.energySystems.heating,
-    lightingSystem: buildingData.energySystems.lighting,
+    heatingSystem: primaryHeating as HeatingSystem,
+    lightingSystem: primaryLighting as LightingSystem,
     ventilationSystem: buildingData.energySystems.ventilation,
-    hotWaterSystem: buildingData.energySystems.hotWater,
+    hotWaterSystem: primaryHotWater as HotWaterSystem,
     buildingYear: buildingData.buildingYear,
     priceZone: 'NO1', // Default to Oslo region
   };
@@ -299,48 +403,61 @@ export function calculateInvestmentGuidance(
   buildingData: BuildingData,
   energyAnalysis: EnergyAnalysis
 ): InvestmentGuidance {
-  // Calculate investment room using existing logic
-  const energyData: BuildingEnergyData = {
+  // Use the enhanced energy analysis for multiple sources
+  const energyData: BuildingEnergyDataMultiple = {
     buildingType: buildingData.type,
     totalArea: buildingData.totalArea,
     heatedArea: buildingData.heatedArea,
-    heatingSystem: buildingData.energySystems.heating,
-    lightingSystem: buildingData.energySystems.lighting,
+    heatingSystems: buildingData.energySystems.heating,
+    lightingSystems: buildingData.energySystems.lighting,
     ventilationSystem: buildingData.energySystems.ventilation,
-    hotWaterSystem: buildingData.energySystems.hotWater,
+    hotWaterSystems: buildingData.energySystems.hotWater,
     buildingYear: buildingData.buildingYear,
     priceZone: 'NO1',
   };
 
-  const result = calculateEnergyAnalysis(energyData);
+  const result = calculateEnergyAnalysisMultiple(energyData);
   const breakdown = getInvestmentBreakdown(result.investmentRoom);
 
   // Generate recommendations based on current systems
   const recommendations: InvestmentRecommendation[] = [];
 
+  // Helper function to check if a system type exists with significant percentage
+  const hasSystemType = <T>(systems: EnergySource<T>[], type: T, minPercentage = 30): boolean => {
+    return systems.some(s => s.type === type && s.percentage >= minPercentage);
+  };
+
+  // Helper function to get total percentage for a system type
+  const getSystemPercentage = <T>(systems: EnergySource<T>[], type: T): number => {
+    return systems.filter(s => s.type === type).reduce((sum, s) => sum + s.percentage, 0);
+  };
+
   // Heating recommendations
-  if (buildingData.energySystems.heating === 'Elektrisitet') {
+  const electricHeatingPercentage = getSystemPercentage(buildingData.energySystems.heating, 'Elektrisitet');
+  if (electricHeatingPercentage > 30) {
     recommendations.push({
       system: 'heating',
       title: 'Installere varmepumpe',
-      description: 'Luft-til-luft varmepumpe kan redusere oppvarmingskostnader med 60-70%',
-      annualSavings: Math.round(result.annualWasteCost * 0.7),
+      description: `Redusere ${electricHeatingPercentage}% elektrisk oppvarming med varmepumpe (60-70% besparelse)`,
+      annualSavings: Math.round(result.annualWasteCost * 0.7 * (electricHeatingPercentage / 100)),
       estimatedCost: breakdown.heating.amount,
-      paybackPeriod: Math.round(breakdown.heating.amount / (result.annualWasteCost * 0.7)),
-      priority: 'high',
+      paybackPeriod: Math.round(breakdown.heating.amount / (result.annualWasteCost * 0.7 * (electricHeatingPercentage / 100))),
+      priority: electricHeatingPercentage > 60 ? 'high' : 'medium',
     });
   }
 
-  // Lighting recommendations
-  if (buildingData.energySystems.lighting !== 'LED') {
+  // Lighting recommendations - if less than 70% LED
+  const ledPercentage = getSystemPercentage(buildingData.energySystems.lighting, 'LED');
+  if (ledPercentage < 70) {
+    const nonLedPercentage = 100 - ledPercentage;
     recommendations.push({
       system: 'lighting',
       title: 'Oppgradere til LED-belysning',
-      description: 'Smart LED-system med bevegelsessensorer og dagslysstyring',
-      annualSavings: Math.round(result.annualWasteCost * 0.15),
+      description: `Erstatte ${nonLedPercentage}% av belysning med smart LED-system`,
+      annualSavings: Math.round(result.annualWasteCost * 0.15 * (nonLedPercentage / 100)),
       estimatedCost: breakdown.lighting.amount,
-      paybackPeriod: Math.round(breakdown.lighting.amount / (result.annualWasteCost * 0.15)),
-      priority: 'medium',
+      paybackPeriod: Math.round(breakdown.lighting.amount / (result.annualWasteCost * 0.15 * (nonLedPercentage / 100))),
+      priority: nonLedPercentage > 50 ? 'high' : 'medium',
     });
   }
 

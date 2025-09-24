@@ -407,7 +407,7 @@ SUPABASE_ANON_KEY=your_key_here
 - **Main file never changes** unless you're completely forking or creating something different
 
 ### Session Documentation
-- **Always track sessions** in a worklog folder with md files named `sessionlog_timestamp`
+- **Always track sessions** in `planning/worklog/` with md files named `sessionlog_timestamp`
 - **Reference versions in the log** - we want to understand what changes were made and why at a later time
 - **Always write plans from plan mode** into the session notes
 - **Always maintain a to-do list** in the session notes, not only in context memory
@@ -430,7 +430,7 @@ All planning and research should be organized in structured locations:
 Session tracking and todo management:
 
 ```
-/worklog/
+/planning/worklog/
 ├── sessionlog_YYYYMMDD_topic.md    # Individual session tracking
 ├── todos_master.md                 # Central todo management across sessions
 └── decisions_log.md                # Key decision tracking and rationale
@@ -438,7 +438,7 @@ Session tracking and todo management:
 
 ### Session Workflow
 **Pre-session**:
-- Check `worklog/todos_master.md` for active tasks
+- Check `planning/worklog/todos_master.md` for active tasks
 - Review relevant planning documents for context
 
 **During session**:
@@ -448,7 +448,7 @@ Session tracking and todo management:
 
 **Post-session**:
 - Update session log with changes and outcomes
-- Update `worklog/todos_master.md` with session results
+- Update `planning/worklog/todos_master.md` with session results
 - Cross-reference session logs to planning doc changes
 
 ### Knowledge Organization Rules
