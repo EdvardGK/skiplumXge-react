@@ -1,0 +1,241 @@
+# Energy Performance Dashboard - Design Guide
+
+## 1. Project Overview & Vision
+
+### Core Philosophy
+**"Data as Art, Insight as Experience"** - We transform complex energy data into an immersive, beautiful journey that educates and inspires action.
+
+### Target Audience
+- **Primary**: Facility managers, sustainability officers, property owners
+- **Secondary**: C-suite executives, board members, municipal leaders
+- **Tertiary**: Office/cafeteria displays for employee engagement
+
+## 2. Visual Design System
+
+### Color Palette (Northern Lights Theme)
+```
+Primary Colors:
+- Deep Space: #0A0E17 (background)
+- Aurora Green: #00FF88 (primary accent)
+- Arctic Blue: #00D4FF (secondary accent)
+- Cosmic Purple: #8B5CF6 (tertiary accent)
+- Plasma Pink: #EC4899 (highlight)
+
+Neutral Scale:
+- Neutron White: #FFFFFF
+- Moon Dust: #E2E8F0
+- Asteroid Gray: #64748B
+- Black Hole: #020617
+```
+
+### Typography
+- **Primary Font**: Inter (clean, data-focused)
+- **Display Font**: Space Grotesk (for headlines and 3D text)
+- **Mono Font**: JetBrains Mono (for data values)
+
+### 3D Design Principles
+- **Depth Hierarchy**: Use z-axis to represent data importance
+- **Particle Systems**: Northern lights effects as data transitions
+- **Organic Motion**: Fluid, natural movements mimicking energy flow
+- **Material Design**: Glass morphism with subtle emissions
+
+## 3. Dashboard Layout & Scroll Journey
+
+### Section 1: Hero Building Visualization
+```
+Component: 3D Building Model with Energy Aura
+- Building outline pulsates with energy consumption level
+- Northern lights particles flow from high-consumption areas
+- Real-time energy "heartbeat" visualization
+- Interactive hotspots showing problem areas
+```
+
+### Section 2: Energy Consumption Breakdown
+```
+Component: Circular Flow Diagram (3D Pie + Particle Streams)
+- Sectors represent: Heating, Cooling, Lighting, Equipment, Other
+- Particle streams show energy waste as escaping particles
+- Hover reveals exact percentages and cost implications
+- Comparison to ideal benchmarks
+```
+
+### Section 3: Comparative Analysis
+```
+Component: 3D Bar Chart Forest
+- Your building as central tower
+- Surrounding "trees" represent peer buildings
+- Height = energy efficiency
+- Color intensity = improvement potential
+- Interactive filtering by building type/age/size
+```
+
+### Section 4: Cost Impact Visualization
+```
+Component: Money Flow Waterfall
+- 3D currency symbols flowing through efficiency gaps
+- Stacked bars showing current vs. potential costs
+- Animated savings calculation with particle explosions
+```
+
+### Section 5: Carbon Footprint
+```
+Component: Environmental Impact Sphere
+- Earth-like sphere with CO2 cloud density
+- Interactive timeline showing historical and projected impact
+- Comparison to natural equivalents (cars, trees, etc.)
+```
+
+### Section 6: Recommendation Engine
+```
+Component: Interactive Upgrade Path
+- 3D flowchart of recommended improvements
+- Cost/benefit bubbles with ROI timelines
+- Priority scoring via size and glow intensity
+- Click-to-expand implementation details
+```
+
+## 4. Technical Architecture
+
+### React Three Fiber Component Structure
+```javascript
+// Main dashboard structure
+<EnergyDashboard>
+  <ScrollManager>
+    <CameraController>
+      <Scene environment={northernLightsEnv}>
+        <BuildingModel />
+        <DataVisualizations />
+        <ParticleSystems />
+        <UIOverlay />
+      </Scene>
+    </CameraController>
+  </ScrollManager>
+</EnergyDashboard>
+```
+
+### Key Three.js Techniques
+- **Custom Shaders**: Aurora borealis effects using GLSL
+- **Instanced Meshes**: For efficient particle systems
+- **Raycasting**: Interactive data point selection
+- **Post-processing**: Bloom, color grading, depth of field
+
+### Performance Optimization
+- LOD (Level of Detail) systems for complex models
+- Geometry and texture recycling
+- Progressive loading during scroll
+- WebGL fallbacks for older devices
+
+## 5. Data Integration & Calculations
+
+### Real-time Data Flow
+```
+User Input + GIS Data → Calculation Engine → 3D Visualization
+     ↓
+Benchmark Database → Comparative Analysis → Interactive Insights
+```
+
+### Key Metrics to Visualize
+- Energy Use Intensity (EUI)
+- Carbon Emissions (kgCO2/m²)
+- Cost per Square Meter
+- Efficiency Score (0-100)
+- Improvement Potential (%)
+- Payback Period (years)
+
+## 6. Interactivity Design
+
+### Scroll-based Animations
+- Parallax layers for depth perception
+- Progressive revelation of information
+- Smooth camera transitions between sections
+- Haptic feedback on key insights
+
+### User Controls
+- **3D Navigation**: Orbit controls with constraints
+- **Data Filtering**: Timeline sliders, category toggles
+- **Detail Views**: Click-to-expand data points
+- **Comparison Mode**: Side-by-side scenario analysis
+
+## 7. Export & Presentation Features
+
+### PDF Report Generation
+- Vector-based 3D snapshot conversion
+- Data tables with visualization thumbnails
+- Executive summary with key metrics
+- Implementation roadmap
+
+### Kiosk/Presentation Mode
+- Auto-play narrative mode
+- Touch-friendly interface for large displays
+- Scheduled data refresh
+- Fullscreen immersive experience
+
+## 8. Accessibility Considerations
+
+### Visual Accessibility
+- High contrast mode toggle
+- Text-to-speech for key insights
+- Keyboard navigation support
+- Reduced motion option
+
+### Data Accessibility
+- Simplified numerical summaries
+- Progressive disclosure of complexity
+- Multiple representation formats (charts, numbers, visual)
+
+## 9. Implementation Roadmap
+
+### Phase 1: Core Framework (Weeks 1-4)
+- Basic R3F scene setup
+- Building model integration
+- Scroll management system
+- Northern lights particle system
+
+### Phase 2: Data Visualization (Weeks 5-8)
+- Energy flow diagrams
+- Comparative analysis components
+- Interactive filtering system
+
+### Phase 3: Polish & Export (Weeks 9-12)
+- Advanced shaders and effects
+- PDF generation system
+- Performance optimization
+- User testing and refinement
+
+## 10. Quality Assurance Checklist
+
+### Visual Quality
+- [ ] Consistent frame rate (60fps target)
+- [ ] Smooth transitions between sections
+- [ ] Color consistency across devices
+- [ ] Proper lighting and shadow rendering
+
+### Data Accuracy
+- [ ] Calculation validation against known benchmarks
+- [ ] Real-time data synchronization
+- [ ] Error handling for missing data
+- [ ] Unit conversion accuracy
+
+### User Experience
+- [ ] Intuitive scroll journey
+- [ ] Clear information hierarchy
+- [ ] Responsive interaction feedback
+- [ ] Loading state management
+
+---
+
+## Design Lead Collaboration Notes
+
+**Key Alignment Points:**
+1. Ensure 3D visualizations support the narrative, don't distract from it
+2. Maintain brand consistency while pushing creative boundaries
+3. Balance aesthetic appeal with data clarity
+4. Test color contrast ratios for readability in dark mode
+5. Validate emotional impact of the northern lights theme
+
+**Design Review Schedule:**
+- Weekly design-dev syncs
+- Bi-weekly stakeholder reviews
+- User testing at end of each phase
+
+This design guide provides the foundation for creating an engaging, informative, and beautiful energy performance dashboard that meets both functional requirements and aesthetic vision.

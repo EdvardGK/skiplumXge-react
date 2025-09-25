@@ -4,6 +4,12 @@
   "installCommand": "yarn install --frozen-lockfile",
   "framework": "nextjs",
   "regions": ["arn1"],
+  "crons": [
+    {
+      "path": "/api/cron/refresh-analytics",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "functions": {
     "src/app/api/dashboard/screenshot/route.ts": {
       "maxDuration": 30
@@ -16,6 +22,12 @@
     },
     "src/app/api/buildings/detect/route.ts": {
       "maxDuration": 10
+    },
+    "src/app/api/cron/refresh-analytics/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/climate/frost-data/route.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [

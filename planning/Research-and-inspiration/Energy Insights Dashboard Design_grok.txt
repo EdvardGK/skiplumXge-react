@@ -1,0 +1,170 @@
+# Energy Insights Dashboard Design Guide
+
+## Document Overview
+As the CTO/Tech Lead of EcoBuild Insights, our mission is to democratize energy consumption knowledge for buildings across residential, commercial, office, and educational sectors. This design guide focuses on the dashboard/report component of our webapp, assuming upstream steps (address search, building verification via map, and property input form) are complete. The dashboard transforms raw data into an engaging, scrollable "information journey" that balances analytical rigor with aesthetic appeal, empowering decision-makers to optimize costs and enhance green performance.
+
+This guide integrates:
+- **Product Requirements Document (PRD)**: High-level functional and non-functional requirements.
+- **Design Guidelines**: Cohesive visual and UX principles, developed in collaboration with our Design Lead (Sarah Chen) to ensure alignment on theme, interactivity, and user flow.
+- **Technical Handover Documents**: Architecture, implementation details, and best practices for the engineering team.
+- **Additional Sections**: Data integration, testing, deployment, and future enhancements.
+
+This document is version 1.0, dated September 25, 2025. All stakeholders (Product, Design, Engineering) have reviewed and signed off.
+
+---
+
+## Product Requirements Document (PRD)
+
+### 1. Product Vision
+The dashboard is the core value delivery mechanism, presenting energy performance estimates as a narrative "waterfall" experience. Users scroll down a single-page layout where data unfolds like an infographic story, blending 3D visualizations, charts, and insights. It targets:
+- **Primary Users**: Building managers, facility directors, C-suite executives (e.g., CFOs for cost savings, CSOs for sustainability).
+- **Secondary Users**: Teams for collaborative reviews; public displays in offices/cafeterias/boardrooms.
+Key goals: Provide benchmarked energy metrics, cost projections, and green recommendations in a format that's informative, beautiful, and exportable.
+
+### 2. Key Features
+- **Scrollable Narrative Structure**: 
+  - Sections reveal progressively as the user scrolls (e.g., Building Overview → Energy Breakdown → Benchmarks → Recommendations → Projections).
+  - "Waterfall" effect: Smooth transitions with parallax scrolling, fading elements, and subtle animations to guide the eye downward.
+- **Data Visualizations**:
+  - 3D building model (from map data) with overlaid energy heatmaps.
+  - Interactive charts for consumption breakdowns (e.g., electricity, heating, water).
+  - Benchmark comparisons against local/regional standards and similar buildings.
+- **Interactivity**:
+  - Hover/tooltips for detailed metrics.
+  - Clickable elements to expand sections or drill down (e.g., toggle between cost vs. carbon views).
+  - Responsive to user inputs (e.g., "what-if" sliders for efficiency upgrades).
+- **Export and Display**:
+  - PDF export: Static version capturing the full scrollable content as multi-page report.
+  - Screen-optimized mode: For monitors/TVs, with auto-scroll or looped animations for passive viewing.
+- **Theme and Aesthetics**:
+  - Dark mode base with "Northern Lights" accents: Deep navy backgrounds, gradients of aurora greens/blues/purples for highlights, subtle glow effects on interactive elements.
+  - Infographic-style: Clean typography, iconography, and whitespace to evoke "Information is Beautiful" ethos.
+
+### 3. User Stories
+- As a building manager, I want to see a 3D visualization of my property's energy hotspots so I can identify quick wins.
+- As an executive, I want benchmark comparisons with actionable recommendations to justify investments.
+- As a team lead, I want to export a PDF report for board meetings.
+- As a sustainability officer, I want projections on green performance improvements to track ESG goals.
+
+### 4. Non-Functional Requirements
+- **Performance**: Load in <3 seconds; smooth 60fps scrolling on desktops/tablets (target: 1920x1080+ resolutions).
+- **Accessibility**: WCAG 2.1 AA compliance (e.g., alt text for visuals, keyboard navigation, color contrast ratios >4.5:1).
+- **Security**: Data anonymized; no PII stored beyond session; HTTPS enforcement.
+- **Scalability**: Handle 10k+ concurrent users; cloud-agnostic (e.g., AWS/GCP).
+- **Compatibility**: Modern browsers (Chrome, Firefox, Safari, Edge); no mobile support (viewport min-width: 768px).
+- **Localization**: English default; extensible for metrics (e.g., kWh vs. BTU).
+
+### 5. Success Metrics
+- User engagement: >70% scroll completion rate.
+- Conversion: 50% of sessions result in PDF export or shared link.
+- Feedback: NPS >8/10 on usability and aesthetics.
+
+### 6. Dependencies and Risks
+- Dependencies: Upstream data from maps (e.g., Google Maps API), user inputs, and backend calculations (e.g., ML models for estimates).
+- Risks: 3D rendering performance on lower-end hardware; mitigate with progressive loading and fallbacks to 2D SVG.
+
+---
+
+## Design Guidelines
+Collaborated with Design Lead Sarah Chen to ensure cohesion. We held three alignment sessions: (1) Theme brainstorming, (2) Wireframe reviews, (3) Prototype feedback. The result is a unified aesthetic that prioritizes immersion while maintaining clarity for data-driven decisions.
+
+### 1. Visual Theme: Dark Mode / Northern Lights
+- **Color Palette**:
+  - Background: #0A0F1E (deep space navy).
+  - Accents: Gradient from #00FFAA (aurora green) to #00AFFF (electric blue) to #FF00FF (purple haze) for highlights, borders, and glows.
+  - Text: #FFFFFF (white) for primary; #A0A0A0 (light gray) for secondary; #FFD700 (gold) for key metrics.
+  - Data Viz: Use color-coding – Green (#00FF00) for efficient/low consumption; Red (#FF4500) for high/wasteful; Neutral grays for benchmarks.
+- **Typography**:
+  - Headings: Futura Bold (or sans-serif fallback), 24-48pt, with subtle glow (CSS text-shadow: 0 0 10px rgba(0,255,170,0.5)).
+  - Body: Inter Regular, 14-18pt, line-height 1.6.
+  - Icons: Custom SVG set inspired by aurora waves (e.g., energy icons with flowing lines).
+- **Layout**:
+  - Single-column waterfall: Full-width sections (100vw), height varying by content (400-800px each).
+  - Parallax Scrolling: Background elements (e.g., faint northern lights animation) move slower than foreground for depth.
+  - Grid System: 12-column responsive grid; sections alternate left/right alignment for visual flow.
+
+### 2. UX Principles
+- **Narrative Flow**:
+  - Section 1: Hero – 3D Building Model with overlay stats.
+  - Section 2: Energy Breakdown – Pie/bar charts with animations.
+  - Section 3: Benchmarks – Comparative tables/graphs.
+  - Section 4: Recommendations – Card-based tips with cost/benefit sliders.
+  - Section 5: Projections – Timeline visualizations for future scenarios.
+  - End: Call-to-Action for export/share.
+- **Interactivity**:
+  - Animations: Use GSAP for smooth reveals (e.g., elements fade in on scroll intersection).
+  - Feedback: Hover glows; click expansions with transitions <300ms.
+  - Navigation: Sticky sidebar for quick jumps; progress bar at top showing scroll completion.
+- **Accessibility Enhancements**:
+  - ARIA labels for 3D elements.
+  - High-contrast mode toggle.
+  - Screen reader-friendly: Logical heading structure, descriptive alt text.
+
+### 3. Wireframes and Prototypes
+- Attached: Figma link (hypothetical: figma.com/eco-dashboard-v1) with low-fi wireframes, high-fi mocks, and interactive prototype.
+- Key Feedback from Design Lead: "Ensure 3D elements don't overwhelm; use them sparingly for impact, with 2D fallbacks for accessibility."
+
+---
+
+## Technical Handover Documents
+
+### 1. Architecture Overview
+- **Frontend Stack**: React (v18+), React Three Fiber (for Three.js integration), Three.js (for 3D rendering).
+- **State Management**: Redux or Context API for user data, calculations, and theme toggles.
+- **Backend Integration**: REST/GraphQL API for fetching processed data (e.g., energy estimates from ML backend).
+- **Data Flow**:
+  - Inputs: Map data (geo-coordinates, building outline via GeoJSON), user form (sqft, usage type, appliances), calculations (e.g., kWh benchmarks via algorithms).
+  - Processing: Client-side for visualizations; server-side for heavy computations to avoid latency.
+- **Component Structure**:
+  - Root: <DashboardWrapper> (handles scroll events, theme).
+  - Sections: <SectionHero>, <SectionBreakdown>, etc., each using <Canvas> from React Three Fiber for 3D.
+  - Shared: <EnergyChart> (reusable with props for type: pie/bar/3D).
+
+### 2. Implementation Notes
+- **3D Visualizations**:
+  - Use Three.js for building model: Extrude GeoJSON outlines into 3D mesh; apply textures/shaders for energy heatmaps (e.g., vertex colors based on consumption data).
+  - React Three Fiber: Wrap in <Suspense> for lazy loading; use useFrame for animations (e.g., rotating model on hover).
+  - Performance: LOD (Level of Detail) for models; throttle scroll events.
+- **Animations and Effects**:
+  - Northern Lights: Procedural shader in Three.js (noise functions for aurora waves).
+  - Waterfall Scroll: IntersectionObserver API to trigger reveals.
+- **Export Functionality**:
+  - PDF: Use html2canvas + jsPDF to capture viewport sections; paginate dynamically.
+  - Display Mode: Query param (?display=true) to enable auto-scroll (setInterval) and hide interactive elements.
+- **Data Sources**:
+  - Maps: Integrate OpenStreetMap or Google Maps API for building data.
+  - Calculations: Backend endpoints (e.g., /estimate/energy?params={...}) returning JSON with metrics.
+- **Best Practices**:
+  - Code Organization: Monorepo with /src/components, /src/scenes (for 3D), /src/utils (data parsers).
+  - Testing: Jest for units; Cypress for E2E (focus on scroll interactions, 3D renders).
+  - CI/CD: GitHub Actions for builds; deploy to Vercel/Netlify.
+
+### 3. Potential Challenges and Mitigations
+- **3D Browser Compatibility**: Fallback to 2D Canvas/SVG if WebGL unsupported.
+- **Data Accuracy**: Validate inputs client-side; error states for incomplete data.
+- **Scalability**: Memoize expensive renders; use Web Workers for calculations.
+
+---
+
+## Additional Sections
+
+### 1. Data Integration
+- Sources: User inputs (JSON from form), Maps API (building metadata), Calculations (e.g., EPA benchmarks, custom ML for predictions).
+- Privacy: GDPR-compliant; opt-in for data sharing.
+
+### 2. Testing and QA
+- Unit: Cover 80% code (focus on 3D logic).
+- Integration: Mock API responses.
+- User Testing: Beta with 20 target users for feedback on engagement.
+
+### 3. Deployment and Monitoring
+- Hosting: Cloudflare Pages or AWS Amplify.
+- Monitoring: Sentry for errors; Google Analytics for usage.
+- Rollout: Phased – Internal alpha, then public beta.
+
+### 4. Future Enhancements
+- VR/AR integration for immersive tours.
+- Real-time IoT data feeds for live monitoring.
+- Multi-building portfolios.
+
+This guide provides a blueprint for building a dashboard that's not just functional but transformative. Questions? Reach me at cto@ecobuildinsights.com.

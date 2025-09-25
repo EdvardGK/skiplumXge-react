@@ -271,8 +271,10 @@ export function BuildingDataForm({
       let totalArea: number;
 
       if (osmBuildingData.levels && osmBuildingData.levels > 1) {
-        // Recalculate BRA using formula with top floor reduction
-        totalArea = Math.round(osmBuildingData.footprintArea * (osmBuildingData.levels - 0.3));
+        // Apply top floor reduction formula only for buildings with 3+ floors
+        totalArea = osmBuildingData.levels >= 3
+          ? Math.round(osmBuildingData.footprintArea * (osmBuildingData.levels - 0.3))
+          : Math.round(osmBuildingData.footprintArea * osmBuildingData.levels);
         form.setValue("totalArea", totalArea);
         setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
       } else {
@@ -372,10 +374,13 @@ export function BuildingDataForm({
 
           // Set building area if available
           if (building.area && building.area > 20) { // Minimum reasonable size
-            // If we have multiple floors, calculate total BRA using formula
+            // Calculate total BRA based on floor count
             if (building.levels && building.levels > 1) {
-              // Use formula: footprint × (floors - 0.3) to account for reduced top floor
-              const totalBRA = Math.round(building.area * (building.levels - 0.3));
+              // Apply top floor reduction formula only for buildings with 3+ floors
+              const totalBRA = building.levels >= 3
+                ? Math.round(building.area * (building.levels - 0.3))
+                : Math.round(building.area * building.levels);
+
               form.setValue("totalArea", totalBRA);
               setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
               setBuildingDataSource(`Hentet fra kart (${building.type}, ${building.levels} etg)`);
@@ -538,12 +543,19 @@ export function BuildingDataForm({
         totalAreaSource: fieldSources.totalArea
       });
 
-      // Use real footprint with top floor reduction: footprint × (floors - 0.3)
-      const calculatedArea = Math.round(osmBuildingData.footprintArea * (numberOfFloors - 0.3));
+      // Apply top floor reduction formula only for buildings with 3+ floors
+      // For 1-2 floors: use footprint directly
+      // For 3+ floors: use footprint × (floors - 0.3)
+      const calculatedArea = numberOfFloors >= 3
+        ? Math.round(osmBuildingData.footprintArea * (numberOfFloors - 0.3))
+        : Math.round(osmBuildingData.footprintArea * numberOfFloors);
 
-      // Ensure BRA is never less than current heated area
+      // Only constrain by heated area if heated area was manually set (Egendefinert)
+      // If heated area is calculated/auto, let it recalculate based on new BRA
       const heatedArea = form.getValues('heatedArea');
-      const totalArea = heatedArea && calculatedArea < heatedArea ? heatedArea : calculatedArea;
+      const totalArea = (fieldSources.heatedArea === 'manual' && heatedArea && calculatedArea < heatedArea)
+        ? heatedArea
+        : calculatedArea;
 
       form.setValue("totalArea", totalArea);
       setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
@@ -688,13 +700,19 @@ export function BuildingDataForm({
                       className="bg-white/5 border-white/20 text-white"
                       {...field}
                       onChange={(e) => {
+                        // Allow any input during typing
+                        field.onChange(Number(e.target.value));
+                        setFieldSources(prev => ({ ...prev, totalArea: 'manual' }));
+                      }}
+                      onBlur={(e) => {
+                        // Only validate and adjust when user finishes editing (on blur)
                         const value = Number(e.target.value);
                         const heatedArea = form.getValues('heatedArea');
 
-                        // Ensure BRA is never less than heated area
-                        const finalValue = heatedArea && value < heatedArea ? heatedArea : value;
-                        field.onChange(finalValue);
-                        setFieldSources(prev => ({ ...prev, totalArea: 'manual' }));
+                        // Only constrain if heated area is manually set and value is less than heated area
+                        if (fieldSources.heatedArea === 'manual' && heatedArea && value < heatedArea) {
+                          field.onChange(heatedArea);
+                        }
                       }}
                     />
                   </FormControl>

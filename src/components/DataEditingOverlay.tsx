@@ -82,6 +82,20 @@ interface EnergyAssessmentData {
   termostater: string;
   sdAnlegg: string;
   behovsstyring: string;
+
+  // Building Physics (NS 3031:2014 compliant)
+  uValueWalls: string;        // U-verdi yttervegger W/m²K
+  uValueRoof: string;         // U-verdi tak W/m²K
+  uValueFloor: string;        // U-verdi gulv W/m²K
+  uValueWindows: string;      // U-verdi vinduer W/m²K
+  normalizedThermalBridge: string; // Normalisert kuldebroverdi W/m²K
+  airLeakageRate: string;     // Luftlekkasje ved 50 Pa (n50) ac/h
+  ventilationRate: string;    // Luftmengde m³/h per m²
+  heatRecoveryEfficiency: string; // Varmegjenvinningsgrad %
+  specificFanPower: string;   // SFP-faktor kW/(m³/s)
+  windowOrientation: string;  // Vindusfordeling (N/S/E/W)
+  windowArea: string;         // Vindusareal m²
+  solarHeatGainCoeff: string; // g-verdi for vinduer
 }
 
 interface BuildingDataFromForm {
@@ -171,6 +185,20 @@ export default function DataEditingOverlay({
     termostater: '',
     sdAnlegg: '',
     behovsstyring: '',
+
+    // Building Physics defaults
+    uValueWalls: '',
+    uValueRoof: '',
+    uValueFloor: '',
+    uValueWindows: '',
+    normalizedThermalBridge: '',
+    airLeakageRate: '',
+    ventilationRate: '',
+    heatRecoveryEfficiency: '',
+    specificFanPower: '',
+    windowOrientation: '',
+    windowArea: '',
+    solarHeatGainCoeff: '',
     ...initialData
   });
 
@@ -319,29 +347,33 @@ export default function DataEditingOverlay({
           {/* Content */}
           <div className="flex-1 flex flex-col min-h-0 p-6">
             <Tabs defaultValue="general" className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-6 bg-muted/50 mb-3">
+              <TabsList className="grid w-full grid-cols-7 bg-muted/50 mb-3 text-xs">
                 <TabsTrigger value="general" className="data-[state=active]:bg-background data-[state=active]:text-cyan-400">
-                  <Building className="w-4 h-4 mr-2" />
+                  <Building className="w-3 h-3 mr-1" />
                   Generelt
                 </TabsTrigger>
+                <TabsTrigger value="physics" className="data-[state=active]:bg-background data-[state=active]:text-pink-400">
+                  <Thermometer className="w-3 h-3 mr-1" />
+                  Byggfysikk
+                </TabsTrigger>
                 <TabsTrigger value="envelope" className="data-[state=active]:bg-background data-[state=active]:text-orange-400">
-                  <Thermometer className="w-4 h-4 mr-2" />
-                  Bygningskropp
+                  <Thermometer className="w-3 h-3 mr-1" />
+                  Isolasjon
                 </TabsTrigger>
                 <TabsTrigger value="windows" className="data-[state=active]:bg-background data-[state=active]:text-blue-400">
-                  <Sun className="w-4 h-4 mr-2" />
-                  Vinduer/Dører
+                  <Sun className="w-3 h-3 mr-1" />
+                  Vinduer
                 </TabsTrigger>
                 <TabsTrigger value="hvac" className="data-[state=active]:bg-background data-[state=active]:text-green-400">
-                  <Wind className="w-4 h-4 mr-2" />
+                  <Wind className="w-3 h-3 mr-1" />
                   Ventilasjon
                 </TabsTrigger>
                 <TabsTrigger value="electrical" className="data-[state=active]:bg-background data-[state=active]:text-yellow-400">
-                  <Zap className="w-4 h-4 mr-2" />
-                  El/Oppvarming
+                  <Zap className="w-3 h-3 mr-1" />
+                  El/Varme
                 </TabsTrigger>
                 <TabsTrigger value="controls" className="data-[state=active]:bg-background data-[state=active]:text-purple-400">
-                  <Wrench className="w-4 h-4 mr-2" />
+                  <Wrench className="w-3 h-3 mr-1" />
                   Styring
                 </TabsTrigger>
               </TabsList>
@@ -508,6 +540,216 @@ export default function DataEditingOverlay({
                     </div>
                   </CardContent>
                 </Card>
+                </div>
+              </TabsContent>
+
+              {/* Building Physics Tab - NS 3031:2014 Compliant */}
+              <TabsContent value="physics" className="flex-1 overflow-auto">
+                <div className="space-y-6 h-full">
+                  <Card className="bg-card border-border">
+                    <CardHeader className="pt-6">
+                      <CardTitle className="text-pink-400 flex items-center gap-2">
+                        U-verdier og bygningsfysikk
+                        <span className="text-xs bg-pink-500/20 px-2 py-1 rounded-full text-pink-300">
+                          TEK17 § 14-3
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pb-6">
+                      {/* U-values section */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            U-verdi yttervegger
+                            <span className="text-xs text-muted-foreground">(W/m²K)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.uValueWalls}
+                            onChange={(e) => updateField('uValueWalls', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.18"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,18 W/m²K
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            U-verdi tak
+                            <span className="text-xs text-muted-foreground">(W/m²K)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.uValueRoof}
+                            onChange={(e) => updateField('uValueRoof', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.13"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,13 W/m²K
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            U-verdi gulv
+                            <span className="text-xs text-muted-foreground">(W/m²K)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.uValueFloor}
+                            onChange={(e) => updateField('uValueFloor', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.10"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,10 W/m²K
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            U-verdi vinduer/dører
+                            <span className="text-xs text-muted-foreground">(W/m²K)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.uValueWindows}
+                            onChange={(e) => updateField('uValueWindows', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.80"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,80 W/m²K
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Air tightness and thermal bridges */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 border border-border rounded-lg">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            Luftlekkasje n50
+                            <span className="text-xs text-muted-foreground">(ac/h)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={formData.airLeakageRate}
+                            onChange={(e) => updateField('airLeakageRate', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.6"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,6 ac/h
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            Normalisert kuldebroverdi
+                            <span className="text-xs text-muted-foreground">(W/m²K)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.normalizedThermalBridge}
+                            onChange={(e) => updateField('normalizedThermalBridge', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="≤ 0.05"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 0,05 W/m²K
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            g-verdi vinduer
+                            <span className="text-xs text-muted-foreground">(0-1)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="1"
+                            value={formData.solarHeatGainCoeff}
+                            onChange={(e) => updateField('solarHeatGainCoeff', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="0.50"
+                          />
+                          <div className="text-xs text-slate-400">
+                            Soltransmittans
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ventilation system specifications */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-accent/10 border border-accent/20 rounded-lg">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            Luftmengde
+                            <span className="text-xs text-muted-foreground">(m³/h per m²)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={formData.ventilationRate}
+                            onChange={(e) => updateField('ventilationRate', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="1.2"
+                          />
+                          <div className="text-xs text-slate-400">
+                            Typisk: 0,8-2,0 m³/h per m²
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            Varmegjenvinning
+                            <span className="text-xs text-muted-foreground">(%)</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="1"
+                            min="0"
+                            max="100"
+                            value={formData.heatRecoveryEfficiency}
+                            onChange={(e) => updateField('heatRecoveryEfficiency', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="80"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≥ 80%
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2 text-sm leading-none font-medium text-foreground">
+                            SFP-faktor
+                            <span className="text-xs text-muted-foreground">(kW/(m³/s))</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={formData.specificFanPower}
+                            onChange={(e) => updateField('specificFanPower', e.target.value)}
+                            className="h-10 bg-input border-input text-foreground placeholder:text-muted-foreground"
+                            placeholder="1.5"
+                          />
+                          <div className="text-xs text-emerald-400">
+                            TEK17 krav: ≤ 2,5 kW/(m³/s)
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </TabsContent>
 

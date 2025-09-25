@@ -34,7 +34,8 @@
       "WebFetch(domain:vercel.com)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(curl:*)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "WebFetch(domain:frost.met.no)"
     ],
     "deny": [],
     "ask": []

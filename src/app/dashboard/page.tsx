@@ -18,7 +18,8 @@ import {
   ArrowLeft,
   Download,
   Share,
-  CheckCircle
+  CheckCircle,
+  Thermometer
 } from "lucide-react";
 import { calculateEnergyAnalysis, BuildingEnergyData } from "@/lib/energy-calculations";
 import { BuildingType, HeatingSystem, LightingSystem, VentilationSystem, HotWaterSystem } from "@/types/norwegian-energy";
@@ -27,6 +28,8 @@ import type { PriceZone } from "@/services/zone.service";
 import EnergyTimeSeriesChart from "@/components/charts/EnergyTimeSeriesChart";
 import EnergyGaugeChart from "@/components/charts/EnergyGaugeChart";
 import EnergyBreakdownChart from "@/components/charts/EnergyBreakdownChart";
+import HeatLossBreakdownChart from "@/components/charts/HeatLossBreakdownChart";
+import MonthlyPerformanceChart from "@/components/charts/MonthlyPerformanceChart";
 import NorwayPriceZoneMap from "@/components/charts/NorwayPriceZoneMap";
 import NPVInvestmentChart from "@/components/charts/NPVInvestmentChart";
 import DashboardGrid, { DashboardLayoutDefinition } from "@/components/grid/DashboardGrid";
@@ -34,6 +37,7 @@ import DashboardTile from "@/components/grid/DashboardTile";
 import { usePdfReport, extractBuildingDataFromParams, buildAnalysisData } from "@/hooks/use-pdf-report";
 import { getZoneMessaging, getUrgencyColor, getInvestmentMessage, getHeatPumpRecommendation } from "@/lib/zone-messaging";
 import DataEditingOverlay from "@/components/DataEditingOverlay";
+import DashboardToggle from "@/components/DashboardToggle";
 
 // Toggle between mock and real data maps
 const USE_REAL_MAP_DATA = true; // Set to false to use mock data
@@ -91,6 +95,70 @@ function calculateRealEnergyData(
   };
 
   return calculateEnergyAnalysis(energyData);
+}
+
+// Calculate heat loss breakdown based on building data and Norwegian building physics
+function calculateHeatLossBreakdown(
+  buildingType: string,
+  totalArea: number,
+  buildingYear?: number
+) {
+  // Typical heat loss distribution for Norwegian buildings
+  // Based on SINTEF research and TEK17 standards
+  const currentYear = new Date().getFullYear();
+  const age = buildingYear ? currentYear - buildingYear : 50;
+
+  // Adjust distribution based on building age and typical U-values
+  let baseDistribution;
+
+  if (age <= 5) { // New construction (TEK17)
+    baseDistribution = {
+      walls: 25,
+      roof: 20,
+      floor: 15,
+      windows: 20,
+      ventilation: 15,
+      infiltration: 5,
+    };
+  } else if (age <= 15) { // TEK10 era
+    baseDistribution = {
+      walls: 30,
+      roof: 25,
+      floor: 10,
+      windows: 20,
+      ventilation: 10,
+      infiltration: 5,
+    };
+  } else if (age <= 25) { // TEK97 era
+    baseDistribution = {
+      walls: 35,
+      roof: 20,
+      floor: 8,
+      windows: 25,
+      ventilation: 7,
+      infiltration: 5,
+    };
+  } else { // Older buildings
+    baseDistribution = {
+      walls: 40,
+      roof: 25,
+      floor: 5,
+      windows: 20,
+      ventilation: 5,
+      infiltration: 5,
+    };
+  }
+
+  // Adjust for building type
+  if (buildingType === 'Kontor') {
+    // Office buildings typically have more windows and ventilation
+    baseDistribution.windows += 5;
+    baseDistribution.ventilation += 5;
+    baseDistribution.walls -= 5;
+    baseDistribution.roof -= 5;
+  }
+
+  return baseDistribution;
 }
 
 function DashboardContent() {
@@ -305,12 +373,19 @@ function DashboardContent() {
 
       <main className="dashboard-container px-2 md:px-4 lg:px-6">
         {/* Dashboard Header */}
-        <div className="dashboard-header pt-1 pb-1">
-          <div className="text-xs text-slate-400">
-            Hjem → Velg bygg → <span className="text-cyan-400">Dashboard</span>
-          </div>
-          <div className="flex items-center justify-end">
-            {/* Header actions removed - TEK17 info now only in main tile */}
+        <div className="dashboard-header pt-1 pb-4">
+          <div className="flex justify-between items-center">
+            <div className="text-xs text-slate-400">
+              Hjem → Velg bygg → <span className="text-cyan-400">Dashboard</span>
+            </div>
+
+            {/* Dashboard Toggle */}
+            <div className="flex items-center gap-4">
+              <DashboardToggle
+                currentPath="/dashboard"
+                searchParams={searchParams}
+              />
+            </div>
           </div>
         </div>
 
@@ -321,63 +396,45 @@ function DashboardContent() {
           className="mb-6"
         >
           {/* ROW 1: Individual cards across 4 columns */}
-          {/* 1. TEK17 Status */}
+          {/* 1. TEK17 Compliance Status */}
           <DashboardTile id="tek17-gauge" variant="default">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Target className="w-5 h-5 text-cyan-400" />
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  hasRealBuildingData
-                    ? 'bg-cyan-500/20 text-cyan-400'
-                    : 'bg-slate-500/20 text-slate-400'
-                }`}>
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
                   TEK17 § 14-2
                 </span>
               </div>
               <div className="text-center">
                 {hasRealBuildingData ? (
                   (() => {
+                    const isCompliant = realEnergyData.totalEnergyUse <= realEnergyData.tek17Requirement;
                     const percentageDeviation = Math.round(((realEnergyData.totalEnergyUse - realEnergyData.tek17Requirement) / realEnergyData.tek17Requirement) * 100);
-
-                    // Use energy grade color scale for percentage deviation
-                    let colorClass = "text-emerald-400"; // A grade (excellent)
-                    if (percentageDeviation > 30) colorClass = "text-red-600";       // G grade (extreme)
-                    else if (percentageDeviation > 15) colorClass = "text-red-500";  // F grade (very poor)
-                    else if (percentageDeviation > 0) colorClass = "text-orange-500"; // E grade (poor)
-                    else if (percentageDeviation > -15) colorClass = "text-orange-400"; // D grade (below average)
-                    else if (percentageDeviation > -25) colorClass = "text-yellow-400"; // C grade (average)
-                    else if (percentageDeviation > -35) colorClass = "text-lime-500";   // B grade (good)
-                    // else stays emerald-400 for A grade
-
-                    // Determine if this is an existing building vs new construction
-                    const buildingAge = buildingYear ? (new Date().getFullYear() - parseInt(buildingYear)) : null;
-                    const isExistingBuilding = buildingAge && buildingAge > 5; // Built more than 5 years ago
-
-                    // Simple comparison text
-                    const comparisonText = percentageDeviation > 0
-                      ? "Dårligere enn krav til nybygg"
-                      : "Bedre enn krav til nybygg";
 
                     return (
                       <div>
-                        <div>
-                          <span className="text-2xl font-bold text-cyan-400">
-                            {Math.round(realEnergyData.totalEnergyUse)}
-                          </span>
-                          <span className="text-sm font-normal text-cyan-400"> kWh/m²/år</span>
-                          <span className="text-2xl font-bold text-slate-400 mx-1">|</span>
-                          <span className={`text-2xl font-bold ${colorClass}`}>
-                            {percentageDeviation > 0 ? '+' : ''}{percentageDeviation}%
-                          </span>
+                        <div className={`text-2xl font-bold mb-1 ${isCompliant ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {isCompliant ? 'Godkjent' : 'Ikke godkjent'}
                         </div>
-                        <div className="text-xs text-slate-300 mt-1">
-                          {comparisonText}
+                        <div className="text-xs text-slate-300">
+                          {isCompliant
+                            ? `${Math.abs(percentageDeviation)}% bedre enn krav`
+                            : `${percentageDeviation}% over energiramme`
+                          }
+                        </div>
+                        <div className="text-xs text-slate-400 mt-1">
+                          Krav: {Math.round(realEnergyData.tek17Requirement)} kWh/m²/år
                         </div>
                       </div>
                     );
                   })()
                 ) : (
-                  <span className="text-4xl font-bold text-slate-400">–</span>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-400 mb-1">–</div>
+                    <div className="text-xs text-slate-300">
+                      Legg til bygningsdata for TEK17-analyse
+                    </div>
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -434,24 +491,32 @@ function DashboardContent() {
             </CardContent>
           </DashboardTile>
 
-          {/* 3. Recommended First Step */}
+          {/* 3. Heat Loss Breakdown */}
           <DashboardTile id="energy-zone">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Target className="w-5 h-5 text-emerald-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
-                  Anbefalt første steg
+                <Thermometer className="w-5 h-5 text-orange-400" />
+                <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
+                  Varmetap
                 </span>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-400 mb-2">
-                  {hasRealBuildingData && realEnergyData.annualWaste === 0 ? 'Optimalisering' : 'Varmepumpe'}
+                <div className="w-full h-24 relative">
+                  <HeatLossBreakdownChart
+                    heatLoss={hasRealBuildingData
+                      ? calculateHeatLossBreakdown(
+                          buildingType || 'Småhus',
+                          parseInt(totalArea || '150'),
+                          buildingYear ? parseInt(buildingYear) : undefined
+                        )
+                      : calculateHeatLossBreakdown('Småhus', 150, undefined)
+                    }
+                    totalHeatLoss={hasRealBuildingData ? 120 : 150} // Estimated W/K
+                    className="text-xs"
+                  />
                 </div>
-                <div className="text-xs text-slate-300">
-                  {hasRealBuildingData && realEnergyData.annualWaste === 0
-                    ? ''
-                    : heatPumpRec.reasoning
-                  }
+                <div className="text-xs text-slate-400 mt-1">
+                  Største tapspost: {hasRealBuildingData ? 'Yttervegger' : 'Yttervegger'}
                 </div>
               </div>
             </CardContent>
@@ -530,11 +595,11 @@ function DashboardContent() {
             </CardContent>
           </DashboardTile>
 
-          {/* ROW 3-4: Large Investment & Energy Flow Sankey (2x2 tile) */}
+          {/* ROW 3-4: Large Energy Breakdown Analysis (2x2 tile) */}
           <DashboardTile id="investment-sankey" variant="default">
             <CardContent className="p-3 flex flex-col h-full">
               <div className="flex gap-4 flex-1 min-h-0 max-h-full">
-                {/* Energy Breakdown Chart */}
+                {/* Energy Breakdown Chart - Full space */}
                 <div className="flex-1 flex items-center justify-center overflow-hidden">
                   <div className="w-full h-full max-w-full max-h-full">
                     <EnergyBreakdownChart
@@ -655,14 +720,13 @@ function DashboardContent() {
             </CardContent>
           </DashboardTile>
 
-          {/* ROW 5: Action Cards */}
+          {/* ROW 5: Monthly Performance Chart */}
           <DashboardTile id="action-analysis">
-            <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <TrendingUp className="w-12 h-12 text-cyan-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-3">Energianalyse</h3>
-              <Button variant="outline" size="sm" className="w-full" disabled>
-                Kommer snart
-              </Button>
+            <CardContent className="p-3 h-full">
+              <MonthlyPerformanceChart
+                data={[]} // Will use generated data
+                buildingType={buildingType || 'Småhus'}
+              />
             </CardContent>
           </DashboardTile>
 
