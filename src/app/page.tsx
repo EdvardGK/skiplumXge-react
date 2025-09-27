@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Search, Building, Zap, Target, MapPin, Loader2, ArrowRight, CheckCircle2, X } from "lucide-react";
 import { usePropertySearch } from "@/hooks/use-property-search";
 import { TrustBadges } from "@/components/landing/TrustBadges";
-import { ContextualTooltip } from "@/components/ui/ContextualTooltip";
+import { ContactFormModal } from "@/components/ContactFormModal";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -27,6 +27,7 @@ export default function LandingPage() {
   const [showResults, setShowResults] = useState(false);
   const [isCheckingBuildings, setIsCheckingBuildings] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
 
   // Helper function to handle address selection and building detection
   const handleAddressSelection = async (address: any) => {
@@ -112,7 +113,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0c0c0e] relative overflow-hidden">
+    <div className="min-h-screen bg-[#0c0c0e] relative flex flex-col">
       {/* Northern Lights Background */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
@@ -121,7 +122,7 @@ export default function LandingPage() {
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-gray-800/50 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 border-b border-gray-800/50 backdrop-blur-sm bg-[#0c0c0e]/80">
         <div className="container mx-auto px-4 py-2">
           <nav className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -129,12 +130,16 @@ export default function LandingPage() {
                 <Zap className="w-6 h-6 text-emerald-400" />
                 <div className="absolute inset-0 w-6 h-6 bg-emerald-400/20 rounded-full blur-sm animate-pulse"></div>
               </div>
-              <span className="text-xl font-bold text-white">SkiplumXGE</span>
+              <span className="text-lg sm:text-xl font-bold text-white">SkiplumXGE</span>
             </div>
-            <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors text-sm">Funksjoner</a>
-              <a href="https://www.skiplum.no/om-oss/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors text-sm">Om oss</a>
-              <Button variant="outline" size="sm" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400 h-8">
+            <div className="hidden sm:flex items-center space-x-4 sm:space-x-6">
+              <a href="https://www.skiplum.no/om-oss/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-emerald-400 transition-colors text-xs sm:text-sm">Om oss</a>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-400 h-7 sm:h-8 text-xs sm:text-sm px-3 sm:px-4"
+                onClick={() => setShowContactForm(true)}
+              >
                 Kontakt
               </Button>
             </div>
@@ -142,78 +147,74 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="relative z-10">
+      <main className="relative z-10 flex-grow">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-6 md:py-8">
+        <section className="container mx-auto px-4 pt-8 pb-6 md:pt-12 md:pb-8">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-3 tracking-tight leading-normal">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 tracking-tight">
               Spar tusenvis på
-              <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent pb-2">
+              <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400 bg-clip-text text-transparent leading-relaxed">
                 energikostnadene
               </span>
             </h1>
 
-            <p className="text-base md:text-lg text-gray-300 mb-6 leading-relaxed max-w-3xl mx-auto">
-              Oppdag besparingsmuligheter og TEK17-etterlevelse på minutter
+            <p className="text-sm sm:text-base md:text-lg text-gray-300 mb-4 sm:mb-6 leading-relaxed max-w-3xl mx-auto">
+              Se energianbefalinger for ditt bygg!
             </p>
 
 
             {/* Primary Search CTA */}
-            <div className="max-w-2xl mx-auto mb-4 relative z-50" ref={searchRef}>
+            <div className="w-full max-w-xl lg:max-w-2xl mx-auto mb-3 sm:mb-4 relative z-50 px-4 sm:px-0" ref={searchRef}>
               <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl text-center text-white flex items-center justify-center gap-3">
-                    <Search className="w-6 h-6 text-emerald-400" />
-                    Start din energianalyse
+                <CardHeader className="py-3 sm:py-4">
+                  <CardTitle className="text-lg sm:text-xl text-center text-white">
+
                   </CardTitle>
                   <CardDescription className="text-center text-gray-400">
-                    <ContextualTooltip
-                      title="Hvordan fungerer søket?"
-                      content="Vi bruker Kartverkets offisielle adresseregister for å finne din eiendom. Skriv bare inn gateadresse og sted, så finner vi resten automatisk."
-                    >
-                      <span>Søk etter norsk adresse for å begynne</span>
-                    </ContextualTooltip>
+
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 pb-4">
-                  <div className="flex gap-3">
-                    <div className="relative flex-1">
-                      <Input
-                        type="text"
-                        placeholder="F.eks. 'Karl Johans gate 1, Oslo' eller 'Storgata 10, Bergen'"
-                        className="h-12 text-base bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-emerald-400/50 focus:ring-emerald-400/20 pr-10"
-                        value={query}
-                        onChange={(e) => {
-                          setQuery(e.target.value);
-                          setShowResults(true);
+                <CardContent className="space-y-3 sm:space-y-4 pb-3 sm:pb-4 px-3 sm:px-6">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400 pointer-events-none" />
+                    <Input
+                      type="text"
+                      placeholder="Søk etter adresse"
+                      className="h-10 sm:h-12 text-sm sm:text-base bg-gray-800/50 border-gray-600/50 text-white placeholder-gray-400 focus:border-emerald-400/50 focus:ring-emerald-400/20 pl-10 sm:pl-12 pr-10"
+                      value={query}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setShowResults(true);
+                      }}
+                      onFocus={() => setShowResults(true)}
+                      autoComplete="off"
+                    />
+                    {query.length > 0 && (
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-700/50 rounded-md transition-colors"
+                        onClick={() => {
+                          clearSearch();
+                          setShowResults(false);
                         }}
-                        onFocus={() => setShowResults(true)}
-                        autoComplete="off"
-                      />
-                      {query.length > 0 && (
-                        <button
-                          type="button"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-700/50 rounded-md transition-colors"
-                          onClick={() => {
-                            clearSearch();
-                            setShowResults(false);
-                          }}
-                          aria-label="Tøm søkefelt"
-                        >
-                          <X className="w-5 h-5 text-gray-400 hover:text-white" />
-                        </button>
-                      )}
-                      {query.length > 0 && query.length < 3 && !hasSelection && (
-                        <div className="absolute right-12 top-1/2 -translate-y-1/2">
-                          <span className="text-sm text-gray-500">
-                            Skriv minst 3 tegn
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        aria-label="Tøm søkefelt"
+                      >
+                        <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                      </button>
+                    )}
+                    {query.length > 0 && query.length < 3 && !hasSelection && (
+                      <div className="absolute right-12 top-1/2 -translate-y-1/2">
+                        <span className="text-sm text-gray-500">
+                          Skriv minst 3 tegn
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-center">
                     <Button
                       size="lg"
-                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-12 whitespace-nowrap shadow-xl shadow-emerald-500/25 min-w-[160px]"
+                      className="w-full sm:w-1/2 md:w-1/3 min-w-[100px] bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-3 sm:px-4 md:px-6 h-10 sm:h-12 shadow-xl shadow-emerald-500/25 text-sm sm:text-base"
                       onClick={() => {
                         if (selectedAddress) {
                           handleAddressSelection(selectedAddress);
@@ -223,13 +224,15 @@ export default function LandingPage() {
                     >
                       {isNavigating ? (
                         <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Starter analyse
+                          <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 animate-spin flex-shrink-0" />
+                          <span className="hidden sm:inline">Starter analyse</span>
+                          <span className="sm:hidden">Start</span>
                         </>
                       ) : (
                         <>
-                          <ArrowRight className="w-5 h-5 mr-2" />
-                          Start analyse
+                          <ArrowRight className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2 flex-shrink-0" />
+                          <span className="hidden sm:inline">Start analyse</span>
+                          <span className="sm:hidden">Start</span>
                         </>
                       )}
                     </Button>
@@ -306,74 +309,75 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-8 max-w-lg mx-auto">
+            {/* Quick Stats - moved below search */}
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 md:gap-8 max-w-lg mx-auto mt-4 sm:mt-6">
               <div className="text-center">
-                <div className="text-xl font-bold text-cyan-400">Mer enn 78%</div>
-                <div className="text-gray-400 text-xs">Har besparingsmuligheter</div>
+                <div className="text-lg sm:text-xl font-bold text-cyan-400">Mer enn 78%</div>
+                <div className="text-gray-400 text-[10px] sm:text-xs">Har besparingsmuligheter</div>
               </div>
               <div className="text-center">
-                <div className="text-xl font-bold text-violet-400">2 min</div>
-                <div className="text-gray-400 text-xs">Analysetid</div>
+                <div className="text-lg sm:text-xl font-bold text-violet-400">2 min</div>
+                <div className="text-gray-400 text-[10px] sm:text-xs">Analysetid</div>
               </div>
             </div>
+
 
           </div>
         </section>
 
 
         {/* Features Grid */}
-        <section className="container mx-auto px-4 pb-16 relative z-10" id="features">
+        <section className="container mx-auto px-4 pb-4 sm:pb-6 md:pb-8 relative z-10" id="features">
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="max-w-5xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
-              <CardContent className="p-6 text-center">
-                <div className="relative mb-4">
-                  <Search className="w-12 h-12 text-emerald-400 mx-auto" />
-                  <div className="absolute inset-0 w-12 h-12 bg-emerald-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-emerald-400/30"></div>
+              <CardContent className="p-3 sm:p-4 md:p-5 text-center">
+                <div className="relative mb-2 sm:mb-3">
+                  <Search className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400 mx-auto" />
+                  <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-emerald-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-emerald-400/30"></div>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-3">Adressesøk</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Adressesøk</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  Kartverket-integrert søk med real-time validering av norske adresser
+
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
-              <CardContent className="p-6 text-center">
-                <div className="relative mb-4">
-                  <Building className="w-12 h-12 text-cyan-400 mx-auto" />
-                  <div className="absolute inset-0 w-12 h-12 bg-cyan-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-cyan-400/30"></div>
+              <CardContent className="p-3 sm:p-4 md:p-5 text-center">
+                <div className="relative mb-2 sm:mb-3">
+                  <Building className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-400 mx-auto" />
+                  <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-cyan-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-cyan-400/30"></div>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-3">Eiendomsanalyse</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Eiendomsanalyse</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  TEK17 § 14-2 etterlevelse med energikarakter A-G klassifisering
+
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
-              <CardContent className="p-6 text-center">
-                <div className="relative mb-4">
-                  <Target className="w-12 h-12 text-violet-400 mx-auto" />
-                  <div className="absolute inset-0 w-12 h-12 bg-violet-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-violet-400/30"></div>
+              <CardContent className="p-3 sm:p-4 md:p-5 text-center">
+                <div className="relative mb-2 sm:mb-3">
+                  <Target className="w-8 h-8 sm:w-10 sm:h-10 text-violet-400 mx-auto" />
+                  <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-violet-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-violet-400/30"></div>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-3">Investeringsguide</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Investeringsguide</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  Konservative investeringsanbefalinger basert på faktisk energisløsing
+
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-gray-900/50 border-gray-700/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300 group">
-              <CardContent className="p-6 text-center">
-                <div className="relative mb-4">
-                  <MapPin className="w-12 h-12 text-orange-400 mx-auto" />
-                  <div className="absolute inset-0 w-12 h-12 bg-orange-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-orange-400/30"></div>
+              <CardContent className="p-3 sm:p-4 md:p-5 text-center">
+                <div className="relative mb-2 sm:mb-3">
+                  <MapPin className="w-8 h-8 sm:w-10 sm:h-10 text-orange-400 mx-auto" />
+                  <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-orange-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-orange-400/30"></div>
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-3">Eiendomskart</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Eiendomskart</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  Interaktiv visualisering med bygningsomriss og eiendomsgrenser
+
                 </p>
               </CardContent>
             </Card>
@@ -383,13 +387,20 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-gray-800/50 mt-8">
-        <div className="container mx-auto px-4 py-8">
+      <footer className="relative z-10 border-t border-gray-800/50 mt-auto">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="text-center text-gray-400">
-            <p>SkiplumXGE - Drevet av Skiplum | Data fra Kartverket, SSB, SINTEF og Enova</p>
+            <p className="text-xs sm:text-sm">SkiplumXGE - Drevet av Skiplum | Data fra Kartverket, SSB, SINTEF og Enova</p>
           </div>
         </div>
       </footer>
+
+      {/* Contact Form Modal */}
+      <ContactFormModal
+        isOpen={showContactForm}
+        onClose={() => setShowContactForm(false)}
+        propertyAddress={selectedAddress?.adressetekst}
+      />
     </div>
   );
 }

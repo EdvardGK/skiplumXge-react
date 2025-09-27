@@ -51,7 +51,8 @@
       "Bash(wget:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,7 @@
-# Session Log - 2025-01-27 14:00 - Build Fixes
+# Session Log - 2025-09-27 14:00 - Build Fixes and Security
 
 ## Session Goal
-Fix production build errors for Next.js app
+Fix production build errors for Next.js app and resolve security issues
 
 ## Issues Identified
 1. Supabase environment variables not available at build time in API routes
@@ -56,8 +56,37 @@ Fix production build errors for Next.js app
 - Landing page: 118 kB total
 - API routes: 103 kB each
 
+## Git Security Issue Resolution
+
+### Problem
+- GitHub push protection blocked push due to exposed Notion API key in commits
+- Secrets found in:
+  - `scripts/notion_supabase_sync.py` - Hardcoded Notion API key
+  - `supabase/migrations/006_create_notion_wrapper_complete.sql` - Notion API key in SQL
+
+### Solution
+1. **Removed Hardcoded Secrets**:
+   - Updated Python script to use `os.getenv()` for environment variables
+   - Replaced SQL migration API key with placeholder text
+
+2. **Created Documentation**:
+   - Added `.env.example` file with all required environment variables
+
+3. **Reset Git History**:
+   - Used `git reset --soft HEAD~1` to remove the commit with secrets
+   - Recommitted changes without exposed keys
+   - Successfully pushed to `origin/waterfall`
+
+### Final Status
+✅ Build successful
+✅ No TypeScript errors
+✅ All Matrikkel code removed
+✅ Secrets removed from git history
+✅ Successfully pushed to GitHub
+
 ## Next Steps
 - App is ready for deployment
 - All unused Matrikkel code removed
 - Focus on Kartverket + OpenStreetMap integration for property data
 - Supabase configured for data storage
+- Environment variables properly documented in `.env.example`

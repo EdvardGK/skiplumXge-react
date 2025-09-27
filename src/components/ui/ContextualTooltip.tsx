@@ -33,7 +33,7 @@ export function ContextualTooltip({
   const sizeStyles = {
     sm: 'max-w-xs',
     md: 'max-w-sm',
-    lg: 'max-w-md'
+    lg: 'min-w-[400px] max-w-2xl'
   };
 
   const positionStyles = {
@@ -86,7 +86,7 @@ export function ContextualTooltip({
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 pb-2">
               <p className="text-xs text-slate-300 leading-relaxed">
                 {content}
               </p>
