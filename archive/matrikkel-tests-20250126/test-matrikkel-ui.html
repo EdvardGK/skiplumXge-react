@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrikkel Test UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .results {
+            display: grid;
+            gap: 15px;
+        }
+
+        .address-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .address-card:hover {
+            background: #fff;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .address-main {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .address-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .address-id {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+            font-family: monospace;
+        }
+
+        .building-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .building-section.show {
+            display: block;
+        }
+
+        .building-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .building-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .building-card {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .building-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .building-details {
+            display: grid;
+            gap: 8px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .detail-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: #333;
+            font-family: monospace;
+        }
+
+        .raw-data {
+            background: #263238;
+            color: #aed581;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre;
+            margin-top: 20px;
+        }
+
+        .toggle-raw {
+            margin-top: 15px;
+            background: #37474f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Matrikkel Data Test UI</h1>
+
+        <div class="search-section">
+            <h2>Søk etter adresse</h2>
+            <p style="color: #666; margin: 10px 0;">Skriv inn en adresse du kjenner for å verifisere at vi får ekte data fra Matrikkel</p>
+
+            <div class="search-form">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="F.eks: Stortorvet 1 Oslo, eller Karl Johans gate..."
+                    autocomplete="off"
+                />
+                <button onclick="searchAddress()">Søk</button>
+            </div>
+
+            <div id="status" class="status"></div>
+
+            <div id="addressResults" class="results"></div>
+        </div>
+
+        <div id="buildingSection" class="building-section">
+            <div class="building-header">
+                <h2>Bygningsdata fra Matrikkel</h2>
+                <p id="selectedAddress" style="color: #666; margin-top: 5px;"></p>
+            </div>
+
+            <div id="buildingResults" class="building-grid"></div>
+
+            <button class="toggle-raw" onclick="toggleRawData()">Vis/Skjul rådata</button>
+            <pre id="rawData" class="raw-data" style="display: none;"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3006';
+        let currentRawData = null;
+
+        async function searchAddress() {
+            const input = document.getElementById('searchInput');
+            const query = input.value.trim();
+
+            if (!query) {
+                showStatus('Skriv inn en adresse først', 'error');
+                return;
+            }
+
+            showStatus('Søker etter adresser...', 'info');
+            document.getElementById('addressResults').innerHTML = '';
+            document.getElementById('buildingSection').classList.remove('show');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/addresses/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Søk feilet');
+                }
+
+                if (data.addresses && data.addresses.length > 0) {
+                    showStatus(`Fant ${data.addresses.length} adresse(r)`, 'success');
+                    displayAddresses(data.addresses);
+                } else {
+                    showStatus('Ingen adresser funnet', 'error');
+                }
+
+            } catch (error) {
+                showStatus(`Feil: ${error.message}`, 'error');
+                console.error('Search error:', error);
+            }
+        }
+
+        function displayAddresses(addresses) {
+            const container = document.getElementById('addressResults');
+            container.innerHTML = addresses.map(addr => `
+                <div class="address-card" onclick='selectAddress(${JSON.stringify(addr).replace(/'/g, "&apos;")})'>
+                    <div class="address-main">${addr.text}</div>
+                    <div class="address-details">
+                        ${addr.poststed} • ${addr.kommune}
+                        ${addr.coordinates ? `• GPS: ${addr.coordinates.lat.toFixed(6)}, ${addr.coordinates.lon.toFixed(6)}` : ''}
+                    </div>
+                    <div class="address-id">
+                        Matrikkel: ${addr.kommunenr}-${addr.gardsnr}-${addr.bruksnr}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectAddress(address) {
+            showStatus(`Henter bygningsdata for ${address.text}...`, 'info');
+
+            document.getElementById('selectedAddress').textContent =
+                `${address.text} (${address.kommunenr}-${address.gardsnr}-${address.bruksnr})`;
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/buildings/${address.kommunenr}/${address.gardsnr}/${address.bruksnr}`
+                );
+                const data = await response.json();
+                currentRawData = data;
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Kunne ikke hente bygningsdata');
+                }
+
+                if (data.buildings && data.buildings.length > 0) {
+                    showStatus(`Fant ${data.buildings.length} bygning(er)`, 'success');
+                    displayBuildings(data.buildings);
+                    document.getElementById('buildingSection').classList.add('show');
+                } else {
+                    showStatus('Ingen bygninger funnet på denne adressen', 'info');
+                    document.getElementById('buildingSection').classList.remove('show');
+                }
+
+            } catch (error) {
+                showStatus(`Feil ved henting av bygningsdata: ${error.message}`, 'error');
+                console.error('Building fetch error:', error);
+            }
+        }
+
+        function displayBuildings(buildings) {
+            const container = document.getElementById('buildingResults');
+            container.innerHTML = buildings.map((building, index) => `
+                <div class="building-card">
+                    <div class="building-title">Bygning ${index + 1}</div>
+                    <div class="building-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Bygnings-ID:</span>
+                            <span class="detail-value">${building.id || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Bygningsnummer:</span>
+                            <span class="detail-value">${building.bygningsnr || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Bygningstype:</span>
+                            <span class="detail-value">${building.bygningstype || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Bygningsstatus:</span>
+                            <span class="detail-value">${building.bygningstatus || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Kommune:</span>
+                            <span class="detail-value">${building.kommunenr || 'N/A'}</span>
+                        </div>
+                        ${building.coordinates ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Koordinater:</span>
+                                <span class="detail-value">${building.coordinates.lat}, ${building.coordinates.lon}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Update raw data
+            document.getElementById('rawData').textContent = JSON.stringify(currentRawData, null, 2);
+        }
+
+        function toggleRawData() {
+            const rawDataEl = document.getElementById('rawData');
+            rawDataEl.style.display = rawDataEl.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchAddress();
+            }
+        });
+
+        // Test connection on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showStatus('✅ Koblet til Matrikkel server', 'success');
+                }
+            } catch (error) {
+                showStatus('⚠️ Kunne ikke koble til server på port 3006', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

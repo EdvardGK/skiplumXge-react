@@ -466,3 +466,4 @@ Session tracking and todo management:
 - **User facing language is Norwegian** (Bokmål)
 - **Dev language is English** (code, comments, documentation)
 - **Never try to fill gaps** with false data or assumptions - no data is a real issue that needs to be solved with real solutions, not mock data or lies
+- session notes in /worklog need timestamps including the time of day

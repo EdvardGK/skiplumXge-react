@@ -1,0 +1,142 @@
+{
+  "bra_adjustment": {
+    "id": "1",
+    "name": "bra_adjustment",
+    "value": 8,
+    "unit": "%",
+    "category": "area",
+    "description": "Reduction from BRA to heated BRA",
+    "min_value": 0,
+    "max_value": 20
+  },
+  "investment_multiplier": {
+    "id": "2",
+    "name": "investment_multiplier",
+    "value": 7,
+    "unit": "x",
+    "category": "investment",
+    "description": "Annual waste multiplied by this for investment room",
+    "min_value": 5,
+    "max_value": 10
+  },
+  "heating_investment_percentage": {
+    "id": "3",
+    "name": "heating_investment_percentage",
+    "value": 70,
+    "unit": "%",
+    "category": "investment",
+    "description": "Percentage of investment for heating",
+    "min_value": 50,
+    "max_value": 80
+  },
+  "lighting_investment_percentage": {
+    "id": "4",
+    "name": "lighting_investment_percentage",
+    "value": 15,
+    "unit": "%",
+    "category": "investment",
+    "description": "Percentage of investment for lighting",
+    "min_value": 10,
+    "max_value": 25
+  },
+  "other_investment_percentage": {
+    "id": "5",
+    "name": "other_investment_percentage",
+    "value": 15,
+    "unit": "%",
+    "category": "investment",
+    "description": "Percentage of investment for other",
+    "min_value": 10,
+    "max_value": 25
+  },
+  "base_electricity_price": {
+    "id": "6",
+    "name": "base_electricity_price",
+    "value": 2.80,
+    "unit": "kr/kWh",
+    "category": "energy",
+    "description": "Base electricity price 2024",
+    "min_value": 1.00,
+    "max_value": 5.00
+  },
+  "grid_rent": {
+    "id": "7",
+    "name": "grid_rent",
+    "value": 0.50,
+    "unit": "kr/kWh",
+    "category": "energy",
+    "description": "Grid rental cost",
+    "min_value": 0.30,
+    "max_value": 1.00
+  },
+  "good_tek17_threshold": {
+    "id": "8",
+    "name": "good_tek17_threshold",
+    "value": 90,
+    "unit": "%",
+    "category": "analysis",
+    "description": "Below this % of TEK17 is good",
+    "min_value": 80,
+    "max_value": 95
+  },
+  "warning_tek17_threshold": {
+    "id": "9",
+    "name": "warning_tek17_threshold",
+    "value": 110,
+    "unit": "%",
+    "category": "analysis",
+    "description": "Above this % of TEK17 is warning",
+    "min_value": 100,
+    "max_value": 120
+  },
+  "kwh_to_co2": {
+    "id": "10",
+    "name": "kwh_to_co2",
+    "value": 0.185,
+    "unit": "kg/kWh",
+    "category": "conversion",
+    "description": "CO2 emissions per kWh",
+    "min_value": 0.1,
+    "max_value": 0.3
+  },
+  "default_floors": {
+    "id": "11",
+    "name": "default_floors",
+    "value": 2,
+    "unit": "floors",
+    "category": "defaults",
+    "description": "Default number of floors if not specified",
+    "min_value": 1,
+    "max_value": 10
+  },
+  "default_build_year": {
+    "id": "12",
+    "name": "default_build_year",
+    "value": 1990,
+    "unit": "year",
+    "category": "defaults",
+    "description": "Default build year if not specified",
+    "min_value": 1900,
+    "max_value": 2024
+  },
+  "target_conversion_rate": {
+    "id": "13",
+    "name": "target_conversion_rate",
+    "value": 35,
+    "unit": "%",
+    "category": "metrics",
+    "description": "Target conversion rate for landing page",
+    "min_value": 30,
+    "max_value": 50
+  },
+  "analysis_time_minutes": {
+    "id": "14",
+    "name": "analysis_time_minutes",
+    "value": 2,
+    "unit": "minutes",
+    "category": "metrics",
+    "description": "Average time for analysis",
+    "min_value": 1,
+    "max_value": 5
+  }
+}

@@ -26,9 +26,13 @@ export default function LandingPage() {
   } = usePropertySearch();
   const [showResults, setShowResults] = useState(false);
   const [isCheckingBuildings, setIsCheckingBuildings] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Helper function to handle address selection and building detection
   const handleAddressSelection = async (address: any) => {
+    // Set navigating state that persists until page unloads
+    setIsNavigating(true);
+
     if (!address.matrikkel?.gardsnummer || !address.matrikkel?.bruksnummer) {
       // No gnr/bnr - go directly to building form
       const params = new URLSearchParams({
@@ -91,7 +95,7 @@ export default function LandingPage() {
       });
       window.location.href = `/select-building?${params.toString()}`;
     } finally {
-      setIsCheckingBuildings(false);
+      // Keep loading state active - don't reset since we're navigating away
     }
   };
 
@@ -209,28 +213,23 @@ export default function LandingPage() {
                     </div>
                     <Button
                       size="lg"
-                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-12 whitespace-nowrap shadow-xl shadow-emerald-500/25"
+                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-8 h-12 whitespace-nowrap shadow-xl shadow-emerald-500/25 min-w-[160px]"
                       onClick={() => {
                         if (selectedAddress) {
                           handleAddressSelection(selectedAddress);
                         }
                       }}
-                      disabled={!selectedAddress || isCheckingBuildings}
+                      disabled={!selectedAddress || isNavigating}
                     >
-                      {isCheckingBuildings ? (
+                      {isNavigating ? (
                         <>
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Sjekker bygninger...
-                        </>
-                      ) : selectedAddress ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Starter...
+                          Starter analyse
                         </>
                       ) : (
                         <>
                           <ArrowRight className="w-5 h-5 mr-2" />
-                          Start Analyse
+                          Start analyse
                         </>
                       )}
                     </Button>
@@ -268,6 +267,7 @@ export default function LandingPage() {
                                 onClick={() => {
                                   setSelectedAddress(address);
                                   setShowResults(false);
+                                  setIsNavigating(true); // Set loading state immediately
 
                                   // Auto-trigger analysis when address is selected (reduced delay)
                                   setTimeout(() => {
@@ -279,7 +279,7 @@ export default function LandingPage() {
                                   {address.adressetekst}
                                 </div>
                                 <div className="text-gray-400 text-sm">
-                                  {address.municipality} • {address.postalCode}
+                                  {address.municipality} <span className="text-slate-500">({address.municipalityNumber})</span> • {address.postalCode} {address.postalPlace}
                                 </div>
                               </button>
                             ))}
@@ -293,15 +293,12 @@ export default function LandingPage() {
                   {selectedAddress && (
                     <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                       <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-1">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {isCheckingBuildings ? 'Sjekker bygninger:' : 'Starter energianalyse:'}
+                        <CheckCircle2 className="w-4 h-4" />
+                        Valgt adresse:
                       </div>
                       <div className="text-white font-medium">{selectedAddress.adressetekst}</div>
                       <div className="text-gray-400 text-sm mt-1">
-                        {isCheckingBuildings
-                          ? 'Søker etter bygninger registrert i Enova...'
-                          : 'Forbereder bygningsdata og Enova-oppslag...'
-                        }
+                        {selectedAddress.municipality} <span className="text-slate-500">({selectedAddress.municipalityNumber})</span> • {selectedAddress.postalCode} {selectedAddress.postalPlace}
                       </div>
                     </div>
                   )}

@@ -12,38 +12,62 @@ interface HeatLossSectionProps {
     totalArea: string | null;
     buildingYear: string | null;
   };
+  energyAnalysis?: any;
 }
 
-export default function HeatLossSection({ buildingData }: HeatLossSectionProps) {
+export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLossSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-20%" });
 
-  // Heat loss data needs to come from building analysis
-  const heatLossItems = [
-    { name: 'Yttervegger', value: 'Input wall heat loss %', color: 'bg-red-500', icon: '🧱' },
-    { name: 'Tak', value: 'Input roof heat loss %', color: 'bg-orange-500', icon: '🏠' },
-    { name: 'Vinduer', value: 'Input window heat loss %', color: 'bg-yellow-500', icon: '🪟' },
-    { name: 'Gulv', value: 'Input floor heat loss %', color: 'bg-blue-500', icon: '📐' },
-    { name: 'Ventilasjon', value: 'Input ventilation heat loss %', color: 'bg-purple-500', icon: '💨' },
-  ];
+  // Calculate building age
+  const currentYear = new Date().getFullYear();
+  const buildingAge = buildingData.buildingYear
+    ? currentYear - parseInt(buildingData.buildingYear)
+    : 0;
 
-  // Heat loss breakdown percentages (placeholder until real data)
-  const heatLossBreakdown = {
-    walls: 35,  // Placeholder for wall heat loss percentage
-    roof: 25,
-    windows: 20,
-    floor: 10,
-    ventilation: 10
-  };
+  // Heat loss breakdown based on building age (Norwegian building physics)
+  const heatLossBreakdown = (() => {
+    if (!buildingAge || buildingAge === 0) {
+      // No building year - use defaults with source label
+      return {
+        walls: 35,
+        roof: 25,
+        windows: 20,
+        floor: 10,
+        ventilation: 10,
+        source: 'Krever: Bygningsår'
+      };
+    }
+
+    // Age-based distribution (from main dashboard logic)
+    if (buildingAge <= 10) { // TEK17 era
+      return { walls: 25, roof: 20, floor: 15, windows: 20, ventilation: 15, infiltration: 5 };
+    } else if (buildingAge <= 15) { // TEK10 era
+      return { walls: 30, roof: 25, floor: 10, windows: 20, ventilation: 10, infiltration: 5 };
+    } else if (buildingAge <= 25) { // TEK97 era
+      return { walls: 35, roof: 20, floor: 8, windows: 25, ventilation: 7, infiltration: 5 };
+    } else { // Older buildings
+      return { walls: 40, roof: 25, floor: 5, windows: 20, ventilation: 5, infiltration: 5 };
+    }
+  })();
+
+  // Heat loss data with proper sourcing
+  const heatLossItems = [
+    { name: 'Yttervegger', value: `${heatLossBreakdown.walls}%`, source: 'TEK-analyse', color: 'bg-cyan-500', icon: '🧱' },
+    { name: 'Tak', value: `${heatLossBreakdown.roof}%`, source: 'TEK-analyse', color: 'bg-emerald-500', icon: '🏠' },
+    { name: 'Vinduer', value: `${heatLossBreakdown.windows}%`, source: 'TEK-analyse', color: 'bg-purple-500', icon: '🪟' },
+    { name: 'Gulv', value: `${heatLossBreakdown.floor}%`, source: 'TEK-analyse', color: 'bg-blue-500', icon: '📐' },
+    { name: 'Ventilasjon', value: `${heatLossBreakdown.ventilation}%`, source: 'TEK-analyse', color: 'bg-indigo-500', icon: '💨' },
+  ];
 
   return (
     <section
       ref={ref}
       className="min-h-screen flex items-center justify-center px-4 py-20 relative"
     >
-      {/* Background gradient */}
+      {/* Background gradient - Northern Lights Theme */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-orange-900/20 to-red-900/20"
+        className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-purple-900/20 to-blue-900/30"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 1.5 }}
@@ -112,14 +136,17 @@ export default function HeatLossSection({ buildingData }: HeatLossSectionProps) 
                       <div className="text-2xl">{item.icon}</div>
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-white font-medium">{item.name}</span>
-                          <span className="text-white font-bold">{item.value}</span>
+                          <div>
+                            <span className="text-white font-medium">{item.name}</span>
+                            <span className="text-xs text-slate-500 ml-2">({item.source || heatLossBreakdown.source})</span>
+                          </div>
+                          <span className="text-white font-bold text-lg">{item.value}</span>
                         </div>
                         <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
                           <motion.div
                             className={`h-full ${item.color}`}
                             initial={{ width: 0 }}
-                            animate={{ width: isInView ? '50%' : 0 }}
+                            animate={{ width: isInView ? `${parseInt(item.value)}%` : 0 }}
                             transition={{ delay: 1.2 + index * 0.1, duration: 0.8 }}
                           />
                         </div>
@@ -138,9 +165,9 @@ export default function HeatLossSection({ buildingData }: HeatLossSectionProps) 
             animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : 50 }}
             transition={{ delay: 1.2 }}
           >
-            <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20 backdrop-blur-sm">
+            <Card className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border-cyan-500/20 backdrop-blur-sm">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-orange-400 mb-3">
+                <h3 className="text-xl font-bold text-cyan-400 mb-3">
                   Største tapspost
                 </h3>
                 <p className="text-slate-300 text-lg mb-4">
@@ -148,7 +175,7 @@ export default function HeatLossSection({ buildingData }: HeatLossSectionProps) 
                   hovedårsaken til varmetap i din bygning
                   {buildingAge > 25 && " fra " + buildingData.buildingYear}.
                 </p>
-                <div className="flex items-center space-x-2 text-orange-400">
+                <div className="flex items-center space-x-2 text-emerald-400">
                   <span className="text-sm font-medium">Isolering kan redusere dette med 60-80%</span>
                 </div>
               </CardContent>

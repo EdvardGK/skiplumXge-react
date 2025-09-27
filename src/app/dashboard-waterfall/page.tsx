@@ -1,10 +1,15 @@
 'use client';
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Zap, Settings, Download, Share } from "lucide-react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { EmailCaptureModal } from "@/components/email-capture-modal";
+import { calculateEnergyAnalysis, BuildingEnergyData } from "@/lib/energy-calculations";
+import { BuildingType, HeatingSystem, LightingSystem, VentilationSystem, HotWaterSystem } from "@/types/norwegian-energy";
+import { useRealEnergyData } from "@/hooks/use-real-energy-data";
+import type { PriceZone } from "@/services/zone.service";
 
 // Import waterfall sections
 import PropertyHeroSection from "@/components/waterfall/sections/PropertyHeroSection";
@@ -33,6 +38,9 @@ function WaterfallLoading() {
 function WaterfallContent() {
   const searchParams = useSearchParams();
   const addressParam = searchParams.get('address');
+
+  // Email modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   // Scroll progress tracking
   const { scrollYProgress } = useScroll();
@@ -73,6 +81,69 @@ function WaterfallContent() {
     hotWaterSystem: searchParams.get('hotWaterSystem'),
     energyClass: searchParams.get('energyClass'),
     energyConsumption: searchParams.get('energyConsumption'),
+    municipalityNumber: searchParams.get('municipalityNumber'),
+    gnr: searchParams.get('gnr'),
+    bnr: searchParams.get('bnr'),
+    bygningsnummer: searchParams.get('bygningsnummer'),
+    // Add OSM building data
+    buildingFootprint: searchParams.get('buildingFootprint') ?
+      JSON.parse(searchParams.get('buildingFootprint')!) : null,
+    osmLevels: searchParams.get('osmLevels') ? Number(searchParams.get('osmLevels')) : null,
+  };
+
+  // Memoize certificate data to prevent infinite re-renders
+  const directCertificateData = useMemo(() => ({
+    energyClass: buildingData.energyClass,
+    energyConsumption: buildingData.energyConsumption ? Number(buildingData.energyConsumption) : null,
+    buildingCategory: buildingData.buildingType,
+    constructionYear: buildingData.buildingYear ? Number(buildingData.buildingYear) : null,
+  }), [
+    buildingData.energyClass,
+    buildingData.energyConsumption,
+    buildingData.buildingType,
+    buildingData.buildingYear
+  ]);
+
+  // Fetch real energy data from Supabase
+  const realEnergyDataFromHook = useRealEnergyData(
+    addressParam,
+    buildingData.priceZone as PriceZone | null,
+    buildingData.gnr,
+    buildingData.bnr,
+    buildingData.municipalityNumber,
+    buildingData.bygningsnummer,
+    directCertificateData
+  );
+
+  // Calculate real energy data if we have building information
+  const realEnergyData = (() => {
+    if (!buildingData.buildingType || !buildingData.totalArea || !buildingData.heatedArea || !buildingData.heatingSystem) {
+      return null;
+    }
+
+    const energyData: BuildingEnergyData = {
+      buildingType: buildingData.buildingType as BuildingType,
+      totalArea: parseInt(buildingData.totalArea),
+      heatedArea: parseInt(buildingData.heatedArea),
+      heatingSystem: buildingData.heatingSystem as HeatingSystem,
+      lightingSystem: (buildingData.lightingSystem || 'LED') as LightingSystem,
+      ventilationSystem: (buildingData.ventilationSystem || 'Naturlig') as VentilationSystem,
+      hotWaterSystem: (buildingData.hotWaterSystem || 'Elektrisitet') as HotWaterSystem,
+      buildingYear: buildingData.buildingYear ? parseInt(buildingData.buildingYear) : undefined,
+    };
+
+    return calculateEnergyAnalysis(energyData);
+  })();
+
+  // Handle email modal for report download
+  const handleReportDownload = () => {
+    setIsEmailModalOpen(true);
+  };
+
+  const handleEmailSubmit = async (emailData: any) => {
+    // Email submitted, can trigger PDF generation here
+    console.log('Email captured:', emailData);
+    // TODO: Generate and send PDF report
   };
 
   return (
@@ -154,6 +225,7 @@ function WaterfallContent() {
                   variant="outline"
                   size="sm"
                   className="border-primary text-primary hover:bg-primary hover:text-primary-foreground px-2 py-1 text-xs"
+                  onClick={handleReportDownload}
                 >
                   <Download className="w-3 h-3 mr-1" />
                   Rapport
@@ -175,22 +247,42 @@ function WaterfallContent() {
       {/* Waterfall Sections */}
       <main className="relative z-10">
         {/* Act 1: The Cold Open - Your Building's Energy Portrait */}
-        <PropertyHeroSection buildingData={buildingData} />
+        <PropertyHeroSection
+          buildingData={buildingData}
+          realEnergyData={realEnergyDataFromHook}
+          energyAnalysis={realEnergyData}
+        />
 
         {/* Act 2: The Heat Map - Where Your Energy Escapes */}
-        <HeatLossSection buildingData={buildingData} />
+        <HeatLossSection
+          buildingData={buildingData}
+          energyAnalysis={realEnergyData}
+        />
 
         {/* Act 3: The Seasons Cycle - Energy Through Norwegian Seasons */}
-        <SeasonalSection buildingData={buildingData} />
+        <SeasonalSection
+          buildingData={buildingData}
+          realEnergyData={realEnergyDataFromHook}
+        />
 
         {/* Act 4: The Money Waterfall - From Waste to Wealth */}
-        <InvestmentSection buildingData={buildingData} />
+        <InvestmentSection
+          buildingData={buildingData}
+          energyAnalysis={realEnergyData}
+          realEnergyData={realEnergyDataFromHook}
+        />
 
         {/* Act 5: The Comparison - You're Not Alone */}
-        <ComparisonSection buildingData={buildingData} />
+        <ComparisonSection
+          buildingData={buildingData}
+          realEnergyData={realEnergyDataFromHook}
+        />
 
         {/* Act 6: The Action Plan - Path to Excellence */}
-        <ActionSection buildingData={buildingData} />
+        <ActionSection
+          buildingData={buildingData}
+          energyAnalysis={realEnergyData}
+        />
       </main>
 
       {/* Scroll Progress Indicator */}
@@ -201,6 +293,26 @@ function WaterfallContent() {
 
       {/* Dashboard ready indicator */}
       <div data-waterfall-ready="true" className="hidden" />
+
+      {/* Email Capture Modal */}
+      <EmailCaptureModal
+        open={isEmailModalOpen}
+        onOpenChange={setIsEmailModalOpen}
+        onSuccess={handleEmailSubmit}
+        reportData={
+          realEnergyData
+            ? {
+                energyGrade: buildingData.energyClass || 'C',
+                annualWaste: realEnergyData.annualWasteCost,
+                investmentPotential: realEnergyData.investmentRoom,
+              }
+            : undefined
+        }
+        propertyAddress={addressParam}
+        investmentPotential={
+          realEnergyData ? realEnergyData.investmentRoom : undefined
+        }
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, Fragment } from "react";
+import React, { useState, useEffect, useRef, Suspense, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,30 @@ interface EnovaCertificate {
   constructionYear?: number;
 }
 
+// Component to track zoom changes (will be loaded dynamically)
+const ZoomTracker = ({ onZoomChange }: { onZoomChange: (zoom: number) => void }) => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const { useMapEvents } = require('react-leaflet');
+
+    const MapEventHandler = () => {
+      useMapEvents({
+        zoomend: (e: any) => {
+          const newZoom = e.target.getZoom();
+          onZoomChange(newZoom);
+        },
+      });
+      return null;
+    };
+
+    return <MapEventHandler />;
+  } catch (e) {
+    console.warn('Failed to load useMapEvents');
+    return null;
+  }
+};
+
 function SelectBuildingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +95,61 @@ function SelectBuildingContent() {
   const [mapRef, setMapRef] = useState<any>(null);
   const [currentZoom, setCurrentZoom] = useState(19);
   const [hasParameterError, setHasParameterError] = useState(false);
+  const [showInactivityPrompt, setShowInactivityPrompt] = useState(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle inactivity timer
+  const resetInactivityTimer = () => {
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Hide prompt if it's showing
+    setShowInactivityPrompt(false);
+
+    // Set new timer for 5 seconds
+    inactivityTimerRef.current = setTimeout(() => {
+      // Only show prompt if a building is selected and we're not in form or certificates view
+      if (selectedBuildingId && !showForm && !showCertificates) {
+        setShowInactivityPrompt(true);
+      }
+    }, 5000);
+  };
+
+  // Track user activity
+  useEffect(() => {
+    const handleActivity = () => {
+      // Don't reset timer if prompt is showing - let user interact with it
+      if (!showInactivityPrompt) {
+        resetInactivityTimer();
+      }
+    };
+
+    // Add event listeners for user activity
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('keypress', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+
+    // Start the timer only if not showing prompt
+    if (!showInactivityPrompt) {
+      resetInactivityTimer();
+    }
+
+    // Cleanup
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('keypress', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+    };
+  }, [selectedBuildingId, showForm, showCertificates, showInactivityPrompt]);
 
   // Fetch map buildings and Enova certificates in parallel
   useEffect(() => {
@@ -567,6 +646,11 @@ function SelectBuildingContent() {
         ...(selectedCertificate && { bygningsnummer: selectedCertificate }),
         // Add selected building data for map highlighting
         ...(selectedBuilding?.id && { selectedBuildingOsmId: selectedBuilding.id }),
+        // Add building footprint coordinates for 3D model
+        ...(selectedBuilding?.coordinates && {
+          buildingFootprint: JSON.stringify(selectedBuilding.coordinates)
+        }),
+        ...(selectedBuilding?.levels && { osmLevels: selectedBuilding.levels.toString() }),
       });
 
       // Add certificate data if available
@@ -581,7 +665,8 @@ function SelectBuildingContent() {
       }
 
       // Use window.location to prevent Next.js router issues
-      window.location.href = `/dashboard?${queryParams.toString()}`;
+      // Navigate to waterfall dashboard to use the 3D model and roof algorithm
+      window.location.href = `/dashboard-waterfall?${queryParams.toString()}`;
     } catch (error) {
       console.error('Failed to submit building data:', error);
       setIsSubmittingForm(false);
@@ -661,73 +746,120 @@ function SelectBuildingContent() {
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
-      <div className="relative z-10 h-screen flex flex-col">
-        {/* Minimal Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/20 backdrop-blur-lg">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="text-slate-400 hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {showForm ? 'Tilbake til sertifikater' : showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
-          </Button>
+      {/* Inactivity Prompt Overlay */}
+      {showInactivityPrompt && selectedBuildingId && !showForm && !showCertificates && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="bg-gray-900/95 border-cyan-500/30 max-w-md">
+            <CardContent className="p-6">
+              <div className="text-center space-y-4">
+                <Building className="w-12 h-12 text-cyan-400 mx-auto" />
+                <h3 className="text-xl font-semibold text-white">
+                  Er riktig bygg valgt?
+                </h3>
+                <div className="flex gap-3 justify-center pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowInactivityPrompt(false);
+                      setSelectedBuildingId(null);
+                      resetInactivityTimer();
+                    }}
+                    className="border-gray-600 hover:bg-gray-800"
+                  >
+                    Velg annet bygg
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowInactivityPrompt(false);
+                      proceedToForm();
+                    }}
+                    className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                  >
+                    Ja, fortsett
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-          <div className="flex items-center gap-3 text-white">
+      <div className="relative z-10 h-screen flex flex-col">
+        {/* Minimal Header - Three column layout with centered address */}
+        <div className="grid grid-cols-3 items-center px-6 py-3 border-b border-white/10 bg-black/20 backdrop-blur-lg">
+          {/* Left column - Back button */}
+          <div className="flex justify-start">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="text-slate-400 hover:text-white"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {showForm ? 'Tilbake til sertifikater' : showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
+            </Button>
+          </div>
+
+          {/* Center column - Address (always centered) */}
+          <div className="flex items-center justify-center gap-3 text-white">
             <MapPin className="w-4 h-4 text-cyan-400" />
             <div className="text-sm">
               <span className="font-medium">{address}</span>
-              <span className="text-slate-400 ml-2">{municipality}</span>
+              <span className="text-slate-400 ml-2">
+                {municipality}{municipalityNumber && <span className="text-slate-500 ml-1">({municipalityNumber})</span>}
+              </span>
             </div>
           </div>
 
-          {selectedBuildingId && !showCertificates && !showForm && (
-            <Button
-              onClick={() => {
-                // Check if there are any certificates for this address
-                if (enovaCertificates.length === 0) {
-                  // No certificates at all → skip directly to form
-                  proceedToForm();
-                  return;
-                }
+          {/* Right column - Action buttons */}
+          <div className="flex justify-end">
+            {selectedBuildingId && !showCertificates && !showForm && (
+              <Button
+                onClick={() => {
+                  // Check if there are any certificates for this address
+                  if (enovaCertificates.length === 0) {
+                    // No certificates at all → skip directly to form
+                    proceedToForm();
+                    return;
+                  }
 
-                // Find certificates that are already auto-matched to buildings via bygningsnummer
-                const matchedCertificates = enovaCertificates.filter(cert =>
-                  mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
-                );
-
-                // Check if all certificates are accounted for
-                if (matchedCertificates.length === enovaCertificates.length) {
-                  // All certificates are auto-matched → skip to form
-                  proceedToForm();
-                } else {
-                  // Check if there are actually any unmatched certificates to map
-                  const unmatchedCertificates = enovaCertificates.filter(cert =>
-                    !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                  // Find certificates that are already auto-matched to buildings via bygningsnummer
+                  const matchedCertificates = enovaCertificates.filter(cert =>
+                    mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
                   );
 
-                  if (unmatchedCertificates.length > 0) {
-                    // Some certificates need manual mapping → show mapping step
-                    setShowCertificates(true);
-                  } else {
-                    // No certificates to map → skip to form
+                  // Check if all certificates are accounted for
+                  if (matchedCertificates.length === enovaCertificates.length) {
+                    // All certificates are auto-matched → skip to form
                     proceedToForm();
+                  } else {
+                    // Check if there are actually any unmatched certificates to map
+                    const unmatchedCertificates = enovaCertificates.filter(cert =>
+                      !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
+                    );
+
+                    if (unmatchedCertificates.length > 0) {
+                      // Some certificates need manual mapping → show mapping step
+                      setShowCertificates(true);
+                    } else {
+                      // No certificates to map → skip to form
+                      proceedToForm();
+                    }
                   }
-                }
-              }}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
-            >
-              Fortsett
-            </Button>
-          )}
-          {showCertificates && !showForm && (
-            <Button
-              onClick={proceedToForm}
-              className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
-            >
-              Fortsett til bygningsdata
-            </Button>
-          )}
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+              >
+                Fortsett
+              </Button>
+            )}
+            {showCertificates && !showForm && (
+              <Button
+                onClick={proceedToForm}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+              >
+                Fortsett til bygningsdata
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Interactive Map + Building/Certificate Selection */}
@@ -776,6 +908,7 @@ function SelectBuildingContent() {
                         wheelDebounceTime={100}
                         wheelPxPerZoomLevel={120}
                       >
+                        <ZoomTracker onZoomChange={(zoom) => setCurrentZoom(zoom)} />
                         <TileLayer
                           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                           attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -1221,12 +1354,10 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
         }
       }
 
-      // Hide numbers when zoomed out 2+ levels from starting zoom (19)
-      const shouldShowNumber = currentZoom >= 17; // 19 - 2 = 17
+      // Hide markers when zoomed out 2+ levels from starting zoom (19)
+      const shouldShowMarker = currentZoom > 17; // Show only at zoom 18, 19+ (hide at 17 and below)
 
-      console.log('Current zoom:', currentZoom, 'Should show number:', shouldShowNumber);
-
-      const iconHtml = shouldShowNumber ? `
+      const iconHtml = shouldShowMarker ? `
         <div class="flex items-center justify-center w-8 h-8 rounded-full font-bold text-lg shadow-lg cursor-pointer transition-all duration-300 border-2 ${bgColor} ${
           isSelected
             ? 'border-fuchsia-500 scale-110'
@@ -1307,14 +1438,16 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
         </Tooltip>
       </Polygon>
 
-      {/* Number Label at Centroid - Show for all buildings */}
-      <Marker
-        position={centroid}
-        icon={numberIcon}
-        eventHandlers={{
-          click: onSelect,
-        }}
-      />
+      {/* Number Label at Centroid - Only show when zoomed in enough */}
+      {currentZoom > 17 && (
+        <Marker
+          position={centroid}
+          icon={numberIcon}
+          eventHandlers={{
+            click: onSelect,
+          }}
+        />
+      )}
     </>
   );
 }

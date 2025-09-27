@@ -1,0 +1,82 @@
+{
+  "0301": {
+    "code": "0301",
+    "name": "Oslo",
+    "fylke": "Oslo",
+    "price_zone": "NO1",
+    "climate_zone": "coastal",
+    "heating_degree_days": 3800
+  },
+  "5001": {
+    "code": "5001",
+    "name": "Trondheim",
+    "fylke": "Trøndelag",
+    "price_zone": "NO3",
+    "climate_zone": "coastal",
+    "heating_degree_days": 4200
+  },
+  "4601": {
+    "code": "4601",
+    "name": "Bergen",
+    "fylke": "Vestland",
+    "price_zone": "NO5",
+    "climate_zone": "oceanic",
+    "heating_degree_days": 3400
+  },
+  "1201": {
+    "code": "1201",
+    "name": "Bergen",
+    "fylke": "Vestland",
+    "price_zone": "NO5",
+    "climate_zone": "oceanic",
+    "heating_degree_days": 3400
+  },
+  "1101": {
+    "code": "1101",
+    "name": "Stavanger",
+    "fylke": "Rogaland",
+    "price_zone": "NO2",
+    "climate_zone": "oceanic",
+    "heating_degree_days": 3200
+  },
+  "3001": {
+    "code": "3001",
+    "name": "Drammen",
+    "fylke": "Buskerud",
+    "price_zone": "NO1",
+    "climate_zone": "inland",
+    "heating_degree_days": 3900
+  },
+  "3201": {
+    "code": "3201",
+    "name": "Bærum",
+    "fylke": "Akershus",
+    "price_zone": "NO1",
+    "climate_zone": "coastal",
+    "heating_degree_days": 3800
+  },
+  "1804": {
+    "code": "1804",
+    "name": "Bodø",
+    "fylke": "Nordland",
+    "price_zone": "NO4",
+    "climate_zone": "arctic",
+    "heating_degree_days": 4800
+  },
+  "5401": {
+    "code": "5401",
+    "name": "Tromsø",
+    "fylke": "Troms",
+    "price_zone": "NO4",
+    "climate_zone": "arctic",
+    "heating_degree_days": 5200
+  },
+  "3801": {
+    "code": "3801",
+    "name": "Kristiansand",
+    "fylke": "Agder",
+    "price_zone": "NO2",
+    "climate_zone": "coastal",
+    "heating_degree_days": 3500
+  }
+}

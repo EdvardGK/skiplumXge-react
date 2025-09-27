@@ -1,0 +1,86 @@
+{
+  "pdf_export": {
+    "id": "1",
+    "feature_name": "pdf_export",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "PDF report generation - currently broken"
+  },
+  "excel_export": {
+    "id": "2",
+    "feature_name": "excel_export",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Excel export functionality"
+  },
+  "email_capture": {
+    "id": "3",
+    "feature_name": "email_capture",
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Email lead capture modal"
+  },
+  "share_functionality": {
+    "id": "4",
+    "feature_name": "share_functionality",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Share analysis results"
+  },
+  "map_visualization": {
+    "id": "5",
+    "feature_name": "map_visualization",
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Show building footprint on map"
+  },
+  "investment_breakdown": {
+    "id": "6",
+    "feature_name": "investment_breakdown",
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Show detailed investment recommendations"
+  },
+  "climate_data": {
+    "id": "7",
+    "feature_name": "climate_data",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Integration with Frost API for climate data"
+  },
+  "consultation_booking": {
+    "id": "8",
+    "feature_name": "consultation_booking",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Book consultation directly from app"
+  },
+  "multi_building_support": {
+    "id": "9",
+    "feature_name": "multi_building_support",
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Support for properties with multiple buildings"
+  },
+  "demo_mode": {
+    "id": "10",
+    "feature_name": "demo_mode",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Show demo data for testing"
+  },
+  "advanced_analytics": {
+    "id": "11",
+    "feature_name": "advanced_analytics",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Advanced energy analytics and predictions"
+  },
+  "comparison_tool": {
+    "id": "12",
+    "feature_name": "comparison_tool",
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Compare multiple properties"
+  }
+}

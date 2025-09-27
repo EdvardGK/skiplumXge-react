@@ -71,10 +71,10 @@ export async function GET(request: NextRequest) {
 
     // Get current zone statistics
     const { data: currentZoneData, error: zoneError } = await supabaseClient
-      .rpc('get_zone_certified_insights', {
+      .rpc('get_zone_certified_insights' as any, {
         p_zone: priceZone
       })
-      .single();
+      .single() as { data: any; error: any };
 
     if (zoneError) {
       console.error('Failed to fetch zone statistics:', zoneError);
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
       for (const zone of allZones) {
         if (zone !== priceZone) {
           const { data: zoneData, error } = await supabaseClient
-            .rpc('get_zone_certified_insights', {
+            .rpc('get_zone_certified_insights' as any, {
               p_zone: zone
             })
-            .single();
+            .single() as { data: any; error: any };
 
           if (!error && zoneData) {
             const percentageDiff = ((zoneData.avg_consumption - currentZoneData.avg_consumption) /

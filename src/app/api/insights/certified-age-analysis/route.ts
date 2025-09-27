@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     // Get all age brackets comparison from database
     const { data: allBracketsData, error: bracketsError } = await supabaseClient
-      .rpc('get_all_age_brackets_comparison', {
+      .rpc('get_all_age_brackets_comparison' as any, {
         building_type: buildingType,
         postal_code: postalCode
       });

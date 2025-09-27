@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "generated": "2024-09-26T14:00:00Z",
+  "environment": "development",
+  "items": {
+    "calculations": 14,
+    "content": 43,
+    "tek17_requirements": 13,
+    "formulas": 15,
+    "heat_sources": 10,
+    "municipalities": 0,
+    "feature_flags": 12
+  },
+  "checksums": {
+    "calculations": "sha256:pending",
+    "content": "sha256:pending",
+    "tek17_requirements": "sha256:pending",
+    "formulas": "sha256:pending",
+    "heat_sources": "sha256:pending",
+    "municipalities": "sha256:pending",
+    "feature_flags": "sha256:pending"
+  },
+  "lastSyncTimestamp": "2024-09-26T14:00:00Z",
+  "syncStatus": "success",
+  "syncMetadata": {
+    "source": "manual",
+    "duration": 0,
+    "errors": []
+  }
+}

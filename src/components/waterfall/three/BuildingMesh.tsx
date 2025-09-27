@@ -3,6 +3,7 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, Shape, ExtrudeGeometry, Vector2 } from 'three';
+import { generateRoofSections, generateRoof3DGeometry } from '@/lib/roof-algorithm';
 
 interface BuildingMeshProps {
   footprint: [number, number][];
@@ -19,6 +20,81 @@ export default function BuildingMesh({
 }: BuildingMeshProps) {
   const meshRef = useRef<Mesh>(null);
   const particlesRef = useRef<Mesh[]>([]);
+
+  // Use intelligent roof algorithm to analyze building and generate roof sections
+  const roofData = useMemo(() => {
+    if (!footprint || footprint.length === 0) {
+      // Default fallback for empty footprint
+      return {
+        sections: [],
+        intersections: [],
+        geometry3D: [],
+        bounds: { minX: -10, maxX: 10, minY: -8, maxY: 8, centerX: 0, centerY: 0, width: 20, depth: 16 }
+      };
+    }
+
+    try {
+      // Generate roof sections using the intelligent algorithm
+      const { sections, intersections } = generateRoofSections(footprint);
+
+      // Generate 3D geometry for rendering
+      const geometry3D = generateRoof3DGeometry(sections, intersections);
+
+      // Calculate overall bounds for fallback
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      footprint.forEach(([x, y]) => {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      });
+
+      const bounds = {
+        minX, maxX, minY, maxY,
+        centerX: (minX + maxX) / 2,
+        centerY: (minY + maxY) / 2,
+        width: maxX - minX,
+        depth: maxY - minY
+      };
+
+      return {
+        sections,
+        intersections,
+        geometry3D,
+        bounds
+      };
+    } catch (error) {
+      console.warn('Roof generation failed, using simple fallback:', error);
+
+      // Fallback to simple single-section roof
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      footprint.forEach(([x, y]) => {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      });
+
+      const bounds = {
+        minX, maxX, minY, maxY,
+        centerX: (minX + maxX) / 2,
+        centerY: (minY + maxY) / 2,
+        width: maxX - minX,
+        depth: maxY - minY
+      };
+
+      return {
+        sections: [],
+        intersections: [],
+        geometry3D: [],
+        bounds
+      };
+    }
+  }, [footprint]);
 
   // Create building geometry from footprint
   const geometry = useMemo(() => {
@@ -49,19 +125,23 @@ export default function BuildingMesh({
     return new ExtrudeGeometry(shape, extrudeSettings);
   }, [footprint, height]);
 
-  // Building color based on type and efficiency
+  // Building color based on type - Northern lights palette
   const buildingColor = useMemo(() => {
     if (showHeatParticles) {
-      return '#dc2626'; // Red for inefficient buildings
+      return '#a855f7'; // Purple for inefficient (northern lights)
     }
 
     switch (buildingType.toLowerCase()) {
       case 'kontor':
-        return '#1e40af'; // Blue for office
+        return '#0891b2'; // Cyan for office
       case 'bolig':
-        return '#059669'; // Green for residential
+        return '#10b981'; // Emerald for residential
+      case 'barnehage':
+        return '#06b6d4'; // Cyan variant
+      case 'sykehus':
+        return '#8b5cf6'; // Purple for hospital
       default:
-        return '#6366f1'; // Purple for other
+        return '#0ea5e9'; // Sky blue for other
     }
   }, [buildingType, showHeatParticles]);
 
@@ -130,7 +210,7 @@ export default function BuildingMesh({
             >
               <sphereGeometry args={[0.1, 8, 8]} />
               <meshBasicMaterial
-                color="#f59e0b"
+                color="#a855f7"
                 transparent
                 opacity={0.6}
               />
@@ -155,9 +235,9 @@ export default function BuildingMesh({
                 >
                   <boxGeometry args={[1, 1.5, 0.1]} />
                   <meshBasicMaterial
-                    color="#60a5fa"
+                    color="#06b6d4"
                     transparent
-                    opacity={0.3}
+                    opacity={0.4}
                   />
                 </mesh>
               ))}
@@ -166,16 +246,113 @@ export default function BuildingMesh({
         </group>
       )}
 
-      {/* Roof (simplified saddle roof) */}
+      {/* Intelligent roof system based on building shape */}
       <group position={[0, height, 0]}>
-        <mesh position={[0, 1, 2.5]} rotation={[Math.PI / 6, 0, 0]}>
-          <boxGeometry args={[10, 4, 0.2]} />
-          <meshPhysicalMaterial color="#374151" roughness={0.8} />
-        </mesh>
-        <mesh position={[0, 1, -2.5]} rotation={[-Math.PI / 6, 0, 0]}>
-          <boxGeometry args={[10, 4, 0.2]} />
-          <meshPhysicalMaterial color="#374151" roughness={0.8} />
-        </mesh>
+        {/* Norwegian standard: 600mm (0.6m) overhang, 200mm (0.2m) below wall top */}
+        {(() => {
+          const { geometry3D, bounds } = roofData;
+
+          // If intelligent algorithm generated roof sections, render them
+          if (geometry3D && geometry3D.length > 0) {
+            return (
+              <>
+                {geometry3D.map((roofPart, index) => {
+                  if (roofPart.type === 'gable') {
+                    const { ridgeLength, roofWidth, ridgeHeight, orientation, position } = roofPart;
+                    if (!roofWidth || !ridgeLength || !ridgeHeight) return null;
+                    const slopeDepth = roofWidth / 2;
+                    const [posX, , posZ] = position;
+
+                    return (
+                      <group key={index} position={[posX, 0, posZ]}>
+                        {orientation === 'x' ? (
+                          <>
+                            {/* Ridge runs east-west */}
+                            <mesh position={[0, ridgeHeight / 2, -slopeDepth / 2]} rotation={[-Math.PI / 5, 0, 0]}>
+                              <boxGeometry args={[ridgeLength, 0.3, slopeDepth * 1.1]} />
+                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                            </mesh>
+                            <mesh position={[0, ridgeHeight / 2, slopeDepth / 2]} rotation={[Math.PI / 5, 0, 0]}>
+                              <boxGeometry args={[ridgeLength, 0.3, slopeDepth * 1.1]} />
+                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                            </mesh>
+                            <mesh position={[0, ridgeHeight, 0]}>
+                              <boxGeometry args={[ridgeLength, 0.4, 0.4]} />
+                              <meshPhysicalMaterial color="#111827" roughness={0.8} />
+                            </mesh>
+                          </>
+                        ) : (
+                          <>
+                            {/* Ridge runs north-south */}
+                            <mesh position={[-slopeDepth / 2, ridgeHeight / 2, 0]} rotation={[0, 0, Math.PI / 5]}>
+                              <boxGeometry args={[slopeDepth * 1.1, 0.3, ridgeLength]} />
+                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                            </mesh>
+                            <mesh position={[slopeDepth / 2, ridgeHeight / 2, 0]} rotation={[0, 0, -Math.PI / 5]}>
+                              <boxGeometry args={[slopeDepth * 1.1, 0.3, ridgeLength]} />
+                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                            </mesh>
+                            <mesh position={[0, ridgeHeight, 0]}>
+                              <boxGeometry args={[0.4, 0.4, ridgeLength]} />
+                              <meshPhysicalMaterial color="#111827" roughness={0.8} />
+                            </mesh>
+                          </>
+                        )}
+                      </group>
+                    );
+                  } else if (roofPart.type === 'valley') {
+                    // Render valley geometry
+                    return null; // TODO: Implement valley rendering
+                  }
+                  return null;
+                })}
+              </>
+            );
+          } else {
+            // Fallback to simple single roof if algorithm fails
+            const overhang = 0.6;
+            const width = bounds.width + overhang * 2;
+            const depth = bounds.depth + overhang * 2;
+            const roofHeight = Math.min(width, depth) * 0.35;
+            const orientation = width > depth ? 'x' : 'y';
+
+            if (orientation === 'x') {
+              return (
+                <>
+                  <mesh position={[0, roofHeight / 2, -depth / 4]} rotation={[-Math.PI / 5, 0, 0]}>
+                    <boxGeometry args={[width, 0.3, depth * 0.55]} />
+                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                  </mesh>
+                  <mesh position={[0, roofHeight / 2, depth / 4]} rotation={[Math.PI / 5, 0, 0]}>
+                    <boxGeometry args={[width, 0.3, depth * 0.55]} />
+                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                  </mesh>
+                  <mesh position={[0, roofHeight, 0]}>
+                    <boxGeometry args={[width, 0.4, 0.4]} />
+                    <meshPhysicalMaterial color="#111827" roughness={0.8} />
+                  </mesh>
+                </>
+              );
+            } else {
+              return (
+                <>
+                  <mesh position={[-width / 4, roofHeight / 2, 0]} rotation={[0, 0, Math.PI / 5]}>
+                    <boxGeometry args={[width * 0.55, 0.3, depth]} />
+                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                  </mesh>
+                  <mesh position={[width / 4, roofHeight / 2, 0]} rotation={[0, 0, -Math.PI / 5]}>
+                    <boxGeometry args={[width * 0.55, 0.3, depth]} />
+                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
+                  </mesh>
+                  <mesh position={[0, roofHeight, 0]}>
+                    <boxGeometry args={[0.4, 0.4, depth]} />
+                    <meshPhysicalMaterial color="#111827" roughness={0.8} />
+                  </mesh>
+                </>
+              );
+            }
+          }
+        })()}
       </group>
     </group>
   );

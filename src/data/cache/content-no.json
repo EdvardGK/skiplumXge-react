@@ -1,0 +1,346 @@
+{
+  "landing.title": {
+    "id": "1",
+    "key": "landing.title",
+    "norwegian_text": "Spar tusenvis på energikostnadene",
+    "english_text": "Save thousands on energy costs",
+    "category": "landing",
+    "context": "Main headline on landing page"
+  },
+  "landing.subtitle": {
+    "id": "2",
+    "key": "landing.subtitle",
+    "norwegian_text": "Oppdag besparingsmuligheter og TEK17-etterlevelse på minutter",
+    "english_text": "Discover savings and TEK17 compliance in minutes",
+    "category": "landing",
+    "context": "Subtitle on landing page"
+  },
+  "landing.cta.primary": {
+    "id": "3",
+    "key": "landing.cta.primary",
+    "norwegian_text": "Start analyse",
+    "english_text": "Start analysis",
+    "category": "landing",
+    "context": "Primary CTA button"
+  },
+  "landing.search.placeholder": {
+    "id": "4",
+    "key": "landing.search.placeholder",
+    "norwegian_text": "F.eks. 'Karl Johans gate 1, Oslo' eller 'Storgata 10, Bergen'",
+    "english_text": "E.g. 'Karl Johans gate 1, Oslo'",
+    "category": "landing",
+    "context": "Search field placeholder"
+  },
+  "landing.search.title": {
+    "id": "5",
+    "key": "landing.search.title",
+    "norwegian_text": "Start din energianalyse",
+    "english_text": "Start your energy analysis",
+    "category": "landing",
+    "context": "Search section title"
+  },
+  "landing.feature.address": {
+    "id": "6",
+    "key": "landing.feature.address",
+    "norwegian_text": "Adressesøk",
+    "english_text": "Address Search",
+    "category": "landing",
+    "context": "Feature card title"
+  },
+  "landing.feature.analysis": {
+    "id": "7",
+    "key": "landing.feature.analysis",
+    "norwegian_text": "Eiendomsanalyse",
+    "english_text": "Property Analysis",
+    "category": "landing",
+    "context": "Feature card title"
+  },
+  "landing.feature.investment": {
+    "id": "8",
+    "key": "landing.feature.investment",
+    "norwegian_text": "Investeringsguide",
+    "english_text": "Investment Guide",
+    "category": "landing",
+    "context": "Feature card title"
+  },
+  "landing.feature.map": {
+    "id": "9",
+    "key": "landing.feature.map",
+    "norwegian_text": "Eiendomskart",
+    "english_text": "Property Map",
+    "category": "landing",
+    "context": "Feature card title"
+  },
+  "dashboard.title": {
+    "id": "10",
+    "key": "dashboard.title",
+    "norwegian_text": "Energianalyse",
+    "english_text": "Energy Analysis",
+    "category": "dashboard",
+    "context": "Dashboard page title"
+  },
+  "dashboard.investment.title": {
+    "id": "11",
+    "key": "dashboard.investment.title",
+    "norwegian_text": "Investeringsrom",
+    "english_text": "Investment Room",
+    "category": "dashboard",
+    "context": "Investment card title"
+  },
+  "dashboard.investment.subtitle": {
+    "id": "12",
+    "key": "dashboard.investment.subtitle",
+    "norwegian_text": "Konservativ beregning basert på 7x årlig sløsing",
+    "english_text": "Conservative calculation based on 7x annual waste",
+    "category": "dashboard",
+    "context": "Investment card subtitle"
+  },
+  "dashboard.waste.title": {
+    "id": "13",
+    "key": "dashboard.waste.title",
+    "norwegian_text": "Årlig sløsing",
+    "english_text": "Annual Waste",
+    "category": "dashboard",
+    "context": "Waste card title"
+  },
+  "dashboard.waste.subtitle": {
+    "id": "14",
+    "key": "dashboard.waste.subtitle",
+    "norwegian_text": "Unødvendig energiforbruk over TEK17-krav",
+    "english_text": "Unnecessary energy consumption above TEK17 requirements",
+    "category": "dashboard",
+    "context": "Waste card subtitle"
+  },
+  "dashboard.tek17.title": {
+    "id": "15",
+    "key": "dashboard.tek17.title",
+    "norwegian_text": "TEK17 Status",
+    "english_text": "TEK17 Status",
+    "category": "dashboard",
+    "context": "Compliance card title"
+  },
+  "dashboard.tek17.compliant": {
+    "id": "16",
+    "key": "dashboard.tek17.compliant",
+    "norwegian_text": "Oppfyller krav",
+    "english_text": "Meets requirements",
+    "category": "dashboard",
+    "context": "TEK17 compliant status"
+  },
+  "dashboard.tek17.warning": {
+    "id": "17",
+    "key": "dashboard.tek17.warning",
+    "norwegian_text": "Over grenseverdier",
+    "english_text": "Above limits",
+    "category": "dashboard",
+    "context": "TEK17 warning status"
+  },
+  "dashboard.energy.title": {
+    "id": "18",
+    "key": "dashboard.energy.title",
+    "norwegian_text": "Energikarakter",
+    "english_text": "Energy Grade",
+    "category": "dashboard",
+    "context": "Energy grade card"
+  },
+  "dashboard.energy.notregistered": {
+    "id": "19",
+    "key": "dashboard.energy.notregistered",
+    "norwegian_text": "Ikke registrert",
+    "english_text": "Not registered",
+    "category": "dashboard",
+    "context": "No energy certificate"
+  },
+  "form.title": {
+    "id": "20",
+    "key": "form.title",
+    "norwegian_text": "Bygningsinformasjon",
+    "english_text": "Building Information",
+    "category": "form",
+    "context": "Form title"
+  },
+  "form.bra.label": {
+    "id": "21",
+    "key": "form.bra.label",
+    "norwegian_text": "Bruttoareal (BRA) m²",
+    "english_text": "Gross Floor Area (BRA) m²",
+    "category": "form",
+    "context": "BRA input label"
+  },
+  "form.bra.help": {
+    "id": "22",
+    "key": "form.bra.help",
+    "norwegian_text": "Samlet gulvareal for alle etasjer",
+    "english_text": "Total floor area for all floors",
+    "category": "form",
+    "context": "BRA help text"
+  },
+  "form.type.label": {
+    "id": "23",
+    "key": "form.type.label",
+    "norwegian_text": "Bygningstype",
+    "english_text": "Building Type",
+    "category": "form",
+    "context": "Building type select"
+  },
+  "form.year.label": {
+    "id": "24",
+    "key": "form.year.label",
+    "norwegian_text": "Byggeår",
+    "english_text": "Build Year",
+    "category": "form",
+    "context": "Build year input"
+  },
+  "form.floors.label": {
+    "id": "25",
+    "key": "form.floors.label",
+    "norwegian_text": "Antall etasjer",
+    "english_text": "Number of Floors",
+    "category": "form",
+    "context": "Floors input"
+  },
+  "form.heating.label": {
+    "id": "26",
+    "key": "form.heating.label",
+    "norwegian_text": "Varmesystem",
+    "english_text": "Heating System",
+    "category": "form",
+    "context": "Heating system select"
+  },
+  "form.submit": {
+    "id": "27",
+    "key": "form.submit",
+    "norwegian_text": "Analyser bygning",
+    "english_text": "Analyze Building",
+    "category": "form",
+    "context": "Submit button"
+  },
+  "form.saving": {
+    "id": "28",
+    "key": "form.saving",
+    "norwegian_text": "Lagrer...",
+    "english_text": "Saving...",
+    "category": "form",
+    "context": "Saving state"
+  },
+  "report.generate": {
+    "id": "29",
+    "key": "report.generate",
+    "norwegian_text": "Last ned rapport",
+    "english_text": "Download Report",
+    "category": "report",
+    "context": "Download button"
+  },
+  "report.title": {
+    "id": "30",
+    "key": "report.title",
+    "norwegian_text": "Energianalyse rapport",
+    "english_text": "Energy Analysis Report",
+    "category": "report",
+    "context": "Report title"
+  },
+  "error.search": {
+    "id": "31",
+    "key": "error.search",
+    "norwegian_text": "Kunne ikke søke etter adresser",
+    "english_text": "Could not search for addresses",
+    "category": "error",
+    "context": "Search error"
+  },
+  "error.building": {
+    "id": "32",
+    "key": "error.building",
+    "norwegian_text": "Kunne ikke hente bygningsdata",
+    "english_text": "Could not fetch building data",
+    "category": "error",
+    "context": "Building data error"
+  },
+  "error.calculation": {
+    "id": "33",
+    "key": "error.calculation",
+    "norwegian_text": "Kunne ikke beregne energianalyse",
+    "english_text": "Could not calculate energy analysis",
+    "category": "error",
+    "context": "Calculation error"
+  },
+  "error.general": {
+    "id": "34",
+    "key": "error.general",
+    "norwegian_text": "Noe gikk galt. Vennligst prøv igjen.",
+    "english_text": "Something went wrong. Please try again.",
+    "category": "error",
+    "context": "General error"
+  },
+  "success.email": {
+    "id": "35",
+    "key": "success.email",
+    "norwegian_text": "E-post sendt! Vi kontakter deg snart.",
+    "english_text": "Email sent! We will contact you soon.",
+    "category": "success",
+    "context": "Email success"
+  },
+  "success.report": {
+    "id": "36",
+    "key": "success.report",
+    "norwegian_text": "Rapport generert",
+    "english_text": "Report generated",
+    "category": "success",
+    "context": "Report success"
+  },
+  "success.saved": {
+    "id": "37",
+    "key": "success.saved",
+    "norwegian_text": "Lagret",
+    "english_text": "Saved",
+    "category": "success",
+    "context": "Save success"
+  },
+  "marketing.heating.title": {
+    "id": "38",
+    "key": "marketing.heating.title",
+    "norwegian_text": "Kutt oppvarmingskostnadene med opptil 75%",
+    "english_text": "Cut heating costs by up to 75%",
+    "category": "marketing",
+    "context": "Heating section title"
+  },
+  "marketing.heating.description": {
+    "id": "39",
+    "key": "marketing.heating.description",
+    "norwegian_text": "Med moderne varmepumpeløsninger kan du drastisk redusere energiforbruket og samtidig forbedre inneklimaet",
+    "english_text": "With modern heat pump solutions, you can drastically reduce energy consumption while improving indoor climate",
+    "category": "marketing",
+    "context": "Heating section description"
+  },
+  "marketing.roi.title": {
+    "id": "40",
+    "key": "marketing.roi.title",
+    "norwegian_text": "Tilbakebetaling på 2-4 år",
+    "english_text": "Payback in 2-4 years",
+    "category": "marketing",
+    "context": "ROI section title"
+  },
+  "marketing.roi.description": {
+    "id": "41",
+    "key": "marketing.roi.description",
+    "norwegian_text": "Våre analyser viser at de fleste energioppgraderinger betaler seg tilbake på under 4 år",
+    "english_text": "Our analyses show that most energy upgrades pay back in less than 4 years",
+    "category": "marketing",
+    "context": "ROI section description"
+  },
+  "marketing.environment.title": {
+    "id": "42",
+    "key": "marketing.environment.title",
+    "norwegian_text": "Reduser CO₂-utslipp med 60%",
+    "english_text": "Reduce CO₂ emissions by 60%",
+    "category": "marketing",
+    "context": "Environment section title"
+  },
+  "marketing.environment.description": {
+    "id": "43",
+    "key": "marketing.environment.description",
+    "norwegian_text": "Bidra til det grønne skiftet og oppfyll fremtidens miljøkrav",
+    "english_text": "Contribute to the green transition and meet future environmental requirements",
+    "category": "marketing",
+    "context": "Environment section description"
+  }
+}

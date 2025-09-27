@@ -1,0 +1,709 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE WMT_MS_Capabilities SYSTEM "https://prodtest.matrikkel.no/geoservergeo/schemas/wms/1.1.1/WMS_MS_Capabilities.dtd">
+<WMT_MS_Capabilities version="1.1.1" updateSequence="174">
+  <Service>
+    <Name>OGC:WMS</Name>
+    <Title>Matrikkelen WMS</Title>
+    <Abstract><![CDATA[
+        Dette er WMS tjenestene til Matrikkelsystemet. Stoetter rasterkart for alle geometri-objektene fra
+        Matrikkelen.
+    ]]></Abstract>
+    <KeywordList>
+      <Keyword>WFS</Keyword>
+      <Keyword>WMS</Keyword>
+      <Keyword>GEOSERVER</Keyword>
+      <Keyword>Matrikkelen</Keyword>
+    </KeywordList>
+    <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://www.matrikkel.no:443/innsyn_v02/docs"/>
+    <ContactInformation>
+      <ContactPersonPrimary>
+        <ContactPerson>Statens kartverk</ContactPerson>
+        <ContactOrganization>Statens kartverk</ContactOrganization>
+      </ContactPersonPrimary>
+      <ContactPosition/>
+      <ContactAddress>
+        <AddressType/>
+        <Address/>
+        <City>Hoenefoss</City>
+        <StateOrProvince/>
+        <PostCode/>
+        <Country>Norge</Country>
+      </ContactAddress>
+      <ContactVoiceTelephone/>
+      <ContactFacsimileTelephone/>
+      <ContactElectronicMailAddress/>
+    </ContactInformation>
+    <Fees>NONE</Fees>
+    <AccessConstraints>Bruker med rettigheter til innsyn i Matrikkelen</AccessConstraints>
+  </Service>
+  <Capability>
+    <Request>
+      <GetCapabilities>
+        <Format>application/vnd.ogc.wms_xml</Format>
+        <Format>text/xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+            <Post>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Post>
+          </HTTP>
+        </DCPType>
+      </GetCapabilities>
+      <GetMap>
+        <Format>image/png</Format>
+        <Format>application/atom xml</Format>
+        <Format>application/atom+xml</Format>
+        <Format>application/json;type=utfgrid</Format>
+        <Format>application/openlayers</Format>
+        <Format>application/openlayers2</Format>
+        <Format>application/openlayers3</Format>
+        <Format>application/pdf</Format>
+        <Format>application/rss xml</Format>
+        <Format>application/rss+xml</Format>
+        <Format>atom</Format>
+        <Format>image/geotiff</Format>
+        <Format>image/geotiff8</Format>
+        <Format>image/gif</Format>
+        <Format>image/gif;subtype=animated</Format>
+        <Format>image/jpeg</Format>
+        <Format>image/png8</Format>
+        <Format>image/png; mode=8bit</Format>
+        <Format>image/svg</Format>
+        <Format>image/svg xml</Format>
+        <Format>image/svg+xml</Format>
+        <Format>image/tiff</Format>
+        <Format>image/tiff8</Format>
+        <Format>image/vnd.jpeg-png</Format>
+        <Format>image/vnd.jpeg-png8</Format>
+        <Format>openlayers</Format>
+        <Format>rss</Format>
+        <Format>text/html; subtype=openlayers</Format>
+        <Format>text/html; subtype=openlayers2</Format>
+        <Format>text/html; subtype=openlayers3</Format>
+        <Format>utfgrid</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetMap>
+      <GetFeatureInfo>
+        <Format>text/plain</Format>
+        <Format>application/vnd.ogc.gml</Format>
+        <Format>text/xml</Format>
+        <Format>application/vnd.ogc.gml/3.1.1</Format>
+        <Format>text/xml; subtype=gml/3.1.1</Format>
+        <Format>text/html</Format>
+        <Format>application/json</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+            <Post>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Post>
+          </HTTP>
+        </DCPType>
+      </GetFeatureInfo>
+      <DescribeLayer>
+        <Format>application/vnd.ogc.wms_xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </DescribeLayer>
+      <GetLegendGraphic>
+        <Format>image/png</Format>
+        <Format>image/jpeg</Format>
+        <Format>application/json</Format>
+        <Format>image/gif</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetLegendGraphic>
+      <GetStyles>
+        <Format>application/vnd.ogc.sld+xml</Format>
+        <DCPType>
+          <HTTP>
+            <Get>
+              <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?SERVICE=WMS&amp;"/>
+            </Get>
+          </HTTP>
+        </DCPType>
+      </GetStyles>
+    </Request>
+    <Exception>
+      <Format>application/vnd.ogc.se_xml</Format>
+      <Format>application/vnd.ogc.se_inimage</Format>
+      <Format>application/vnd.ogc.se_blank</Format>
+      <Format>application/json</Format>
+    </Exception>
+    <UserDefinedSymbolization SupportSLD="1" UserLayer="1" UserStyle="1" RemoteWFS="1"/>
+    <Layer>
+      <Title>Matrikkelen WMS</Title>
+      <Abstract><![CDATA[
+        Dette er WMS tjenestene til Matrikkelsystemet. Stoetter rasterkart for alle geometri-objektene fra
+        Matrikkelen.
+    ]]></Abstract>
+      <!--Limited list of EPSG projections:-->
+      <SRS>EPSG:25831</SRS>
+      <SRS>EPSG:25832</SRS>
+      <SRS>EPSG:25833</SRS>
+      <SRS>EPSG:25834</SRS>
+      <SRS>EPSG:25835</SRS>
+      <SRS>EPSG:25836</SRS>
+      <SRS>EPSG:4258</SRS>
+      <SRS>EPSG:4326</SRS>
+      <SRS>EPSG:3575</SRS>
+      <SRS>EPSG:3995</SRS>
+      <SRS>EPSG:23032</SRS>
+      <SRS>EPSG:23033</SRS>
+      <SRS>EPSG:23034</SRS>
+      <SRS>EPSG:23035</SRS>
+      <SRS>EPSG:30800</SRS>
+      <SRS>EPSG:32632</SRS>
+      <SRS>EPSG:32633</SRS>
+      <SRS>EPSG:32634</SRS>
+      <SRS>EPSG:32635</SRS>
+      <SRS>EPSG:32636</SRS>
+      <SRS>EPSG:3044</SRS>
+      <SRS>EPSG:3045</SRS>
+      <SRS>EPSG:3046</SRS>
+      <SRS>EPSG:3047</SRS>
+      <SRS>EPSG:3048</SRS>
+      <SRS>EPSG:27391</SRS>
+      <SRS>EPSG:27392</SRS>
+      <SRS>EPSG:27393</SRS>
+      <SRS>EPSG:27394</SRS>
+      <SRS>EPSG:27395</SRS>
+      <SRS>EPSG:27396</SRS>
+      <SRS>EPSG:27397</SRS>
+      <SRS>EPSG:27398</SRS>
+      <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:ANLEGGSPFLATEWFS</Name>
+        <Title>wfs_ANLEGGSPFLATEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>LokalMatrikkel</Keyword>
+          <Keyword>ANLEGGSPFLATEWFS</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>anleggspflate</Name>
+          <Title>anleggspflate</Title>
+          <LegendURL width="470" height="100">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AANLEGGSPFLATEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="75000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:ANLEGGSPGRENSEWFS</Name>
+        <Title>wfs_ANLEGGSPGRENSEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>ANLEGGSPGRENSEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>anleggspgrense</Name>
+          <Title>anleggspgrense</Title>
+          <LegendURL width="528" height="120">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AANLEGGSPGRENSEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="4000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="1">
+        <Name>matrikkel:ANLEGGSPPUNKTWFS</Name>
+        <Title>wfs_ANLEGGSPPUNKTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>LokalMatrikkel</Keyword>
+          <Keyword>ANLEGGSPPUNKTWFS</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>anleggsppunkt</Name>
+          <Title>anleggsppunkt</Title>
+          <LegendURL width="728" height="240">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AANLEGGSPPUNKTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:ANNENKRETS1WFS</Name>
+        <Title>ANNENKRETS1WFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>ANNENKRETS1WFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>annenkrets1</Name>
+          <Title>annenkrets1</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AANNENKRETS1WFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:ANNENKRETS2WFS</Name>
+        <Title>ANNENKRETS2WFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>ANNENKRETS2WFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>annenkrets2</Name>
+          <Title>annenkrets2</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AANNENKRETS2WFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:BYGNINGWFS</Name>
+        <Title>wfs_BYGNINGWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>BYGNINGWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>bygning</Name>
+          <Title>bygning</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ABYGNINGWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:GATEADRESSEWFS</Name>
+        <Title>wfs_GATEADRESSEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>LokalMatrikkel</Keyword>
+          <Keyword>GATEADRESSEWFS</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>gateadresse</Name>
+          <Title>gateadresse</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AGATEADRESSEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="1">
+        <Name>matrikkel:GRUNNKRETSWFS</Name>
+        <Title>GRUNNKRETSWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>GRUNNKRETSWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>Grunnkrets</Name>
+          <Title>Grunnkrets</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AGRUNNKRETSWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:KIRKESOGNWFS</Name>
+        <Title>KIRKESOGNWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>KIRKESOGNWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>kirkesogn</Name>
+          <Title>kirkesogn</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AKIRKESOGNWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:KRETSWFS</Name>
+        <Title>wfs_KRETSWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>KRETSWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>krets</Name>
+          <Title>krets</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AKRETSWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:MATRIKKELADRESSEATKOMSTPUNKTWFS</Name>
+        <Title>MATRIKKELADRESSEATKOMSTPUNKTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>MATRIKKELADRESSEATKOMSTPUNKTWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>Atkomst</Name>
+          <Title>Atkomst</Title>
+          <LegendURL width="22" height="100">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AMATRIKKELADRESSEATKOMSTPUNKTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:MATRIKKELADRESSEATKOMSTWFS</Name>
+        <Title>MATRIKKELADRESSEATKOMSTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>MATRIKKELADRESSEATKOMSTWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>Atkomst</Name>
+          <Title>Atkomst</Title>
+          <LegendURL width="22" height="100">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AMATRIKKELADRESSEATKOMSTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:MATRIKKELADRESSEWFS</Name>
+        <Title>wfs_MATRIKKELADRESSEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>MATRIKKELADRESSEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>matrikkeladresse</Name>
+          <Title>matrikkeladresse</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AMATRIKKELADRESSEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:POSTNUMMEROMRADEWFS</Name>
+        <Title>POSTNUMMEROMRADEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>POSTNUMMEROMRADEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>postnummeromrade</Name>
+          <Title>postnummeromrade</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3APOSTNUMMEROMRADEWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:SEFRAKMINNEWFS</Name>
+        <Title>SEFRAKMINNEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>SEFRAKMINNEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>sefrakminne</Name>
+          <Title>sefrakminne</Title>
+          <LegendURL width="447" height="60">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ASEFRAKMINNEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:SKOLEKRETSWFS</Name>
+        <Title>SKOLEKRETSWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>SKOLEKRETSWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>skolekrets</Name>
+          <Title>skolekrets</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ASKOLEKRETSWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:TEIGGRENSEPUNKTWFS</Name>
+        <Title>wfs_TEIGGRENSEPUNKTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>TEIGGRENSEPUNKTWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>teiggrensepunkt</Name>
+          <Title>teiggrensepunkt</Title>
+          <LegendURL width="676" height="240">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATEIGGRENSEPUNKTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:TEIGGRENSEWFS</Name>
+        <Title>wfs_TEIGGRENSEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>TEIGGRENSEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>teiggrense</Name>
+          <Title>teiggrense</Title>
+          <LegendURL width="504" height="320">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATEIGGRENSEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="4000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:TEIGWFS</Name>
+        <Title>wfs_TEIGWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>TEIGWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>teig</Name>
+          <Title>teig</Title>
+          <LegendURL width="357" height="40">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATEIGWFS"/>
+          </LegendURL>
+        </Style>
+        <Style>
+          <Name>TeigMnrMangler</Name>
+          <Title>TeigMnrMangler</Title>
+          <LegendURL width="354" height="40">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATEIGWFS&amp;style=TeigMnrMangler"/>
+          </LegendURL>
+        </Style>
+        <Style>
+          <Name>TeigUtenFyll</Name>
+          <Title>TeigUtenFyll</Title>
+          <LegendURL width="357" height="40">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATEIGWFS&amp;style=TeigUtenFyll"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="75000.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:TETTSTEDWFS</Name>
+        <Title>TETTSTEDWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>TETTSTEDWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>tettsted</Name>
+          <Title>tettsted</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3ATETTSTEDWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:VALGKRETSWFS</Name>
+        <Title>VALGKRETSWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>VALGKRETSWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>valgkrets</Name>
+          <Title>valgkrets</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AVALGKRETSWFS"/>
+          </LegendURL>
+        </Style>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:VEGADRESSEATKOMSTPUNKTWFS</Name>
+        <Title>VEGADRESSEATKOMSTPUNKTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>VEGADRESSEATKOMSTPUNKTWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>Atkomst</Name>
+          <Title>Atkomst</Title>
+          <LegendURL width="22" height="100">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AVEGADRESSEATKOMSTPUNKTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:VEGADRESSEATKOMSTWFS</Name>
+        <Title>VEGADRESSEATKOMSTWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>VEGADRESSEATKOMSTWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>Atkomst</Name>
+          <Title>Atkomst</Title>
+          <LegendURL width="22" height="100">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AVEGADRESSEATKOMSTWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+      <Layer queryable="1" opaque="0">
+        <Name>matrikkel:VEGADRESSEWFS</Name>
+        <Title>wfs_VEGADRESSEWFS</Title>
+        <Abstract/>
+        <KeywordList>
+          <Keyword>VEGADRESSEWFS</Keyword>
+          <Keyword>LokalMatrikkel</Keyword>
+        </KeywordList>
+        <SRS>EPSG:4326</SRS>
+        <LatLonBoundingBox minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <BoundingBox SRS="EPSG:4326" minx="5.0" miny="57.0" maxx="33.0" maxy="81.0"/>
+        <Style>
+          <Name>vegadresse</Name>
+          <Title>vegadresse</Title>
+          <LegendURL width="20" height="20">
+            <Format>image/png</Format>
+            <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="https://prodtest.matrikkel.no/geoservergeo/wms?request=GetLegendGraphic&amp;version=1.1.1&amp;format=image%2Fpng&amp;width=20&amp;height=20&amp;layer=matrikkel%3AVEGADRESSEWFS"/>
+          </LegendURL>
+        </Style>
+        <ScaleHint min="0.0" max="1500.0"/>
+      </Layer>
+    </Layer>
+  </Capability>
+</WMT_MS_Capabilities>

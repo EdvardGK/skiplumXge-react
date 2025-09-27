@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="matrikkel-test" activeEnvironment="Default" name="Matrikkel API Testing" resourceRoot="" soapui-version="5.7.0" xmlns:con="http://eviware.com/soapui/config">
+  <con:settings/>
+
+  <!-- REST Service Definition -->
+  <con:restService id="matrikkel-wfs" name="Matrikkel WFS Service">
+    <con:settings/>
+    <con:definitionCache/>
+    <con:endpoints>
+      <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+    </con:endpoints>
+
+    <!-- Resource 1: Get TEIG (Property) -->
+    <con:resource name="GetTEIG" path="">
+      <con:settings/>
+      <con:parameters>
+        <con:parameter>
+          <con:name>service</con:name>
+          <con:value>WFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>version</con:name>
+          <con:value>1.1.0</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>request</con:name>
+          <con:value>GetFeature</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>typeName</con:name>
+          <con:value>matrikkel:TEIGWFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>CQL_FILTER</con:name>
+          <con:value>KOMMUNENR='3436' AND GARDSNR=290 AND BRUKSNR=22</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+      </con:parameters>
+
+      <con:method name="GetTEIG" id="get-teig" method="GET">
+        <con:settings/>
+        <con:parameters/>
+        <con:request name="Strandgata 39" id="request-1">
+          <con:settings>
+            <con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting>
+          </con:settings>
+          <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+          <con:credentials>
+            <con:authType>Basic</con:authType>
+            <con:username>skiplum_matrikkeltest</con:username>
+            <con:password>EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb</con:password>
+          </con:credentials>
+          <con:parameters/>
+        </con:request>
+      </con:method>
+    </con:resource>
+
+    <!-- Resource 2: Get Buildings -->
+    <con:resource name="GetBuildings" path="">
+      <con:settings/>
+      <con:parameters>
+        <con:parameter>
+          <con:name>service</con:name>
+          <con:value>WFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>version</con:name>
+          <con:value>1.1.0</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>request</con:name>
+          <con:value>GetFeature</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>typeName</con:name>
+          <con:value>matrikkel:BYGNINGWFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>bbox</con:name>
+          <con:value>61.595,9.739,61.599,9.745,urn:x-ogc:def:crs:EPSG:4326</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+      </con:parameters>
+
+      <con:method name="GetBuildings" id="get-buildings" method="GET">
+        <con:settings/>
+        <con:parameters/>
+        <con:request name="Buildings near Strandgata 39" id="request-2">
+          <con:settings/>
+          <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+          <con:credentials>
+            <con:authType>Basic</con:authType>
+            <con:username>skiplum_matrikkeltest</con:username>
+            <con:password>EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb</con:password>
+          </con:credentials>
+          <con:parameters/>
+        </con:request>
+      </con:method>
+    </con:resource>
+
+    <!-- Resource 3: Get Buildings with CQL Filter -->
+    <con:resource name="GetBuildingsByCQL" path="">
+      <con:settings/>
+      <con:parameters>
+        <con:parameter>
+          <con:name>service</con:name>
+          <con:value>WFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>version</con:name>
+          <con:value>1.1.0</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>request</con:name>
+          <con:value>GetFeature</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>typeName</con:name>
+          <con:value>matrikkel:BYGNINGWFS</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>CQL_FILTER</con:name>
+          <con:value>BYGNINGSTYPE='111' OR BYGNINGSTYPE='121' OR BYGNINGSTYPE='141'</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+        <con:parameter>
+          <con:name>maxFeatures</con:name>
+          <con:value>10</con:value>
+          <con:style>QUERY</con:style>
+        </con:parameter>
+      </con:parameters>
+
+      <con:method name="GetResidentialBuildings" id="get-residential" method="GET">
+        <con:settings/>
+        <con:parameters/>
+        <con:request name="Get Residential Buildings" id="request-3">
+          <con:settings/>
+          <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+          <con:credentials>
+            <con:authType>Basic</con:authType>
+            <con:username>skiplum_matrikkeltest</con:username>
+            <con:password>EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb</con:password>
+          </con:credentials>
+          <con:parameters/>
+        </con:request>
+      </con:method>
+    </con:resource>
+  </con:restService>
+
+  <!-- Test Suite -->
+  <con:testSuite id="test-suite-1" name="Matrikkel Property Tests">
+    <con:settings/>
+    <con:runType>SEQUENTIAL</con:runType>
+
+    <con:testCase id="test-case-1" failOnError="true" failTestCaseOnErrors="true" keepSession="false" maxResults="0" name="Test Strandgata 39">
+      <con:settings/>
+
+      <!-- Test Step 1: Get Property -->
+      <con:testStep type="restrequest" name="Get Property Info" id="test-step-1">
+        <con:settings/>
+        <con:config service="Matrikkel WFS Service" resourcePath="" methodName="GetTEIG" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="Get Property Info" id="test-request-1">
+            <con:settings/>
+            <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+            <con:credentials>
+              <con:authType>Basic</con:authType>
+              <con:username>skiplum_matrikkeltest</con:username>
+              <con:password>EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb</con:password>
+            </con:credentials>
+            <con:parameters/>
+            <con:assertion type="Valid HTTP Status Codes" id="assertion-1">
+              <con:configuration>
+                <codes>200</codes>
+              </con:configuration>
+            </con:assertion>
+            <con:assertion type="XPath Match" id="assertion-2">
+              <con:configuration>
+                <path>//matrikkel:TEIGID</path>
+                <content>*</content>
+              </con:configuration>
+            </con:assertion>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+
+      <!-- Test Step 2: Get Buildings -->
+      <con:testStep type="restrequest" name="Get Buildings" id="test-step-2">
+        <con:settings/>
+        <con:config service="Matrikkel WFS Service" resourcePath="" methodName="GetBuildings" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+          <con:restRequest name="Get Buildings" id="test-request-2">
+            <con:settings/>
+            <con:endpoint>https://prodtest.matrikkel.no/geoservergeo/wfs</con:endpoint>
+            <con:credentials>
+              <con:authType>Basic</con:authType>
+              <con:username>skiplum_matrikkeltest</con:username>
+              <con:password>EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb</con:password>
+            </con:credentials>
+            <con:parameters/>
+            <con:assertion type="Valid HTTP Status Codes" id="assertion-3">
+              <con:configuration>
+                <codes>200</codes>
+              </con:configuration>
+            </con:assertion>
+          </con:restRequest>
+        </con:config>
+      </con:testStep>
+    </con:testCase>
+  </con:testSuite>
+
+  <con:properties/>
+  <con:wssContainer/>
+  <con:oAuth2ProfileContainer/>
+  <con:oAuth1ProfileContainer/>
+</con:soapui-project>

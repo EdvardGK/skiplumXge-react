@@ -1,0 +1,122 @@
+{
+  "heated_bra": {
+    "id": "1",
+    "name": "heated_bra",
+    "formula": "bra * (1 - bra_adjustment/100)",
+    "variables": ["bra", "bra_adjustment"],
+    "description": "Calculate heated BRA from total BRA",
+    "category": "area"
+  },
+  "annual_energy": {
+    "id": "2",
+    "name": "annual_energy",
+    "formula": "heated_bra * energy_per_m2",
+    "variables": ["heated_bra", "energy_per_m2"],
+    "description": "Total annual energy consumption",
+    "category": "energy"
+  },
+  "annual_cost": {
+    "id": "3",
+    "name": "annual_cost",
+    "formula": "annual_energy * total_price_per_kwh",
+    "variables": ["annual_energy", "total_price_per_kwh"],
+    "description": "Total annual energy cost",
+    "category": "cost"
+  },
+  "tek17_percentage": {
+    "id": "4",
+    "name": "tek17_percentage",
+    "formula": "(actual_energy / tek17_requirement) * 100",
+    "variables": ["actual_energy", "tek17_requirement"],
+    "description": "Percentage of TEK17 requirement",
+    "category": "compliance"
+  },
+  "annual_waste": {
+    "id": "5",
+    "name": "annual_waste",
+    "formula": "annual_energy - (heated_bra * tek17_requirement)",
+    "variables": ["annual_energy", "heated_bra", "tek17_requirement"],
+    "description": "Energy waste above TEK17",
+    "category": "waste"
+  },
+  "waste_cost": {
+    "id": "6",
+    "name": "waste_cost",
+    "formula": "annual_waste * total_price_per_kwh",
+    "variables": ["annual_waste", "total_price_per_kwh"],
+    "description": "Cost of energy waste",
+    "category": "cost"
+  },
+  "investment_room": {
+    "id": "7",
+    "name": "investment_room",
+    "formula": "waste_cost * investment_multiplier",
+    "variables": ["waste_cost", "investment_multiplier"],
+    "description": "Conservative investment room (NPV at 6% with buffers)",
+    "category": "investment"
+  },
+  "heating_investment": {
+    "id": "8",
+    "name": "heating_investment",
+    "formula": "investment_room * (heating_investment_percentage/100)",
+    "variables": ["investment_room", "heating_investment_percentage"],
+    "description": "Investment for heating improvements (SINTEF)",
+    "category": "investment"
+  },
+  "lighting_investment": {
+    "id": "9",
+    "name": "lighting_investment",
+    "formula": "investment_room * (lighting_investment_percentage/100)",
+    "variables": ["investment_room", "lighting_investment_percentage"],
+    "description": "Investment for lighting improvements (SINTEF)",
+    "category": "investment"
+  },
+  "other_investment": {
+    "id": "10",
+    "name": "other_investment",
+    "formula": "investment_room * (other_investment_percentage/100)",
+    "variables": ["investment_room", "other_investment_percentage"],
+    "description": "Investment for other improvements (SINTEF)",
+    "category": "investment"
+  },
+  "co2_emissions": {
+    "id": "11",
+    "name": "co2_emissions",
+    "formula": "annual_energy * kwh_to_co2",
+    "variables": ["annual_energy", "kwh_to_co2"],
+    "description": "Annual CO2 emissions from energy use",
+    "category": "environment"
+  },
+  "potential_savings": {
+    "id": "12",
+    "name": "potential_savings",
+    "formula": "annual_cost * (savings_percentage/100)",
+    "variables": ["annual_cost", "savings_percentage"],
+    "description": "Potential annual savings from upgrades",
+    "category": "savings"
+  },
+  "payback_years": {
+    "id": "13",
+    "name": "payback_years",
+    "formula": "total_investment / annual_savings",
+    "variables": ["total_investment", "annual_savings"],
+    "description": "Years to pay back investment",
+    "category": "roi"
+  },
+  "heat_pump_cop_adjustment": {
+    "id": "14",
+    "name": "heat_pump_cop_adjustment",
+    "formula": "cop * (1 - ((design_temp - outdoor_temp) * 0.02))",
+    "variables": ["cop", "design_temp", "outdoor_temp"],
+    "description": "Adjusted COP based on outdoor temperature",
+    "category": "efficiency"
+  },
+  "degree_days_adjustment": {
+    "id": "15",
+    "name": "degree_days_adjustment",
+    "formula": "base_consumption * (actual_degree_days / normal_degree_days)",
+    "variables": ["base_consumption", "actual_degree_days", "normal_degree_days"],
+    "description": "Climate-adjusted energy consumption",
+    "category": "climate"
+  }
+}

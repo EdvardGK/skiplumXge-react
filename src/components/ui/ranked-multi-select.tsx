@@ -218,20 +218,23 @@ export function RankedMultiSelect({
   const totalPercentage = selections.reduce((sum, sel) => sum + sel.percentage, 0)
 
   return (
-    <div className={cn("space-y-3", className)}>
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">{title}</Label>
-        <span className={cn(
-          "text-xs min-w-[60px] text-right",
-          totalPercentage !== 100 && selections.length > 0
-            ? (totalPercentage > 100 ? "text-red-400" : "text-yellow-400")
-            : "text-transparent"
-        )}>
-          {totalPercentage !== 100 && selections.length > 0 ? `Total: ${totalPercentage}%` : 'Total: 100%'}
-        </span>
-      </div>
+    <div className={cn("space-y-1", className)}>
+      {/* Only show label/total row if there's a title or total is not 100% */}
+      {(title || (totalPercentage !== 100 && selections.length > 0)) && (
+        <div className="flex items-center justify-between">
+          {title && <Label className="text-sm font-medium">{title}</Label>}
+          {totalPercentage !== 100 && selections.length > 0 && (
+            <span className={cn(
+              "text-xs min-w-[60px] text-right",
+              totalPercentage > 100 ? "text-red-400" : "text-yellow-400"
+            )}>
+              Total: {totalPercentage}%
+            </span>
+          )}
+        </div>
+      )}
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         {selections.map((selection, index) => {
           const option = options.find(opt => opt.value === selection.value)
           if (!option) return null
@@ -315,10 +318,11 @@ export function RankedMultiSelect({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
+                size="sm"
                 className="w-full justify-start text-muted-foreground"
                 disabled={disabled || availableOptions.length === 0}
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3 h-3 mr-1.5" />
                 {placeholder}
               </Button>
             </PopoverTrigger>

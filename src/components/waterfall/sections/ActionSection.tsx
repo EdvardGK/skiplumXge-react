@@ -22,9 +22,10 @@ interface ActionSectionProps {
     buildingType: string | null;
     totalArea: string | null;
   };
+  energyAnalysis?: any;
 }
 
-export default function ActionSection({ buildingData }: ActionSectionProps) {
+export default function ActionSection({ buildingData, energyAnalysis }: ActionSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-20%" });
   const [selectedAction, setSelectedAction] = useState<string | null>(null);

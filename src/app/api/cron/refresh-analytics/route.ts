@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       // Refresh municipality statistics cache
       console.log('Refreshing municipality statistics...');
       const { error: muniError } = await supabaseClient
-        .rpc('refresh_municipality_stats');
+        .rpc('refresh_municipality_stats' as any);
 
       if (muniError) {
         console.error('Failed to refresh municipality stats:', muniError);
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       // Refresh zone statistics cache
       console.log('Refreshing zone statistics...');
       const { error: zoneError } = await supabaseClient
-        .rpc('refresh_zone_stats');
+        .rpc('refresh_zone_stats' as any);
 
       if (zoneError) {
         console.error('Failed to refresh zone stats:', zoneError);
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       // Refresh national benchmarks
       console.log('Refreshing national benchmarks...');
       const { error: benchmarkError } = await supabaseClient
-        .rpc('refresh_national_benchmarks');
+        .rpc('refresh_national_benchmarks' as any);
 
       if (benchmarkError) {
         console.error('Failed to refresh national benchmarks:', benchmarkError);
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       // Refresh all materialized views
       console.log('Refreshing materialized views...');
       const { error: viewError } = await supabaseClient
-        .rpc('refresh_all_analytics_cache');
+        .rpc('refresh_all_analytics_cache' as any);
 
       if (viewError) {
         console.error('Failed to refresh materialized views:', viewError);
@@ -92,18 +92,19 @@ export async function GET(request: NextRequest) {
     });
 
     // Store refresh status in database for monitoring
-    try {
-      await supabaseClient
-        .from('analytics_refresh_log')
-        .insert({
-          refresh_type: 'nightly_full',
-          success: Object.values(results).filter(v => v === true).length >= 3,
-          details: results,
-          duration_ms: results.total_time
-        });
-    } catch (logError) {
-      console.error('Failed to log refresh status:', logError);
-    }
+    // TODO: Uncomment when analytics_refresh_log table is added to database
+    // try {
+    //   await supabaseClient
+    //     .from('analytics_refresh_log')
+    //     .insert({
+    //       refresh_type: 'nightly_full',
+    //       success: Object.values(results).filter(v => v === true).length >= 3,
+    //       details: results,
+    //       duration_ms: results.total_time
+    //     });
+    // } catch (logError) {
+    //   console.error('Failed to log refresh status:', logError);
+    // }
 
     return createSecureResponse({
       success: true,

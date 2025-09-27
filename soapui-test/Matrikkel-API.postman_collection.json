@@ -1,0 +1,333 @@
+{
+  "info": {
+    "name": "Matrikkel API Tests",
+    "description": "Test collection for Matrikkel WFS API - Building data and property information",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "skiplum_matrikkeltest",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Test Connection - Get Any Building",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=matrikkel:BYGNINGWFS&maxFeatures=1",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetFeature"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:BYGNINGWFS"
+            },
+            {
+              "key": "maxFeatures",
+              "value": "1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Get Property (TEIG) - Strandgata 39",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=matrikkel:TEIGWFS&CQL_FILTER=KOMMUNENR='3436' AND GARDSNR=290 AND BRUKSNR=22",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetFeature"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:TEIGWFS"
+            },
+            {
+              "key": "CQL_FILTER",
+              "value": "KOMMUNENR='3436' AND GARDSNR=290 AND BRUKSNR=22"
+            }
+          ]
+        },
+        "description": "Get property info for Strandgata 39, Vinstra"
+      }
+    },
+    {
+      "name": "3. Get Buildings by BBOX - Strandgata Area",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=matrikkel:BYGNINGWFS&bbox=61.595,9.739,61.599,9.745,urn:x-ogc:def:crs:EPSG:4326",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetFeature"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:BYGNINGWFS"
+            },
+            {
+              "key": "bbox",
+              "value": "61.595,9.739,61.599,9.745,urn:x-ogc:def:crs:EPSG:4326"
+            }
+          ]
+        },
+        "description": "Get all buildings in area around Strandgata 39"
+      }
+    },
+    {
+      "name": "4. Get Residential Buildings Only",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=matrikkel:BYGNINGWFS&CQL_FILTER=(BYGNINGSTYPE='111' OR BYGNINGSTYPE='112' OR BYGNINGSTYPE='121' OR BYGNINGSTYPE='141') AND BRUKSAREAL>0&maxFeatures=5",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetFeature"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:BYGNINGWFS"
+            },
+            {
+              "key": "CQL_FILTER",
+              "value": "(BYGNINGSTYPE='111' OR BYGNINGSTYPE='112' OR BYGNINGSTYPE='121' OR BYGNINGSTYPE='141') AND BRUKSAREAL>0"
+            },
+            {
+              "key": "maxFeatures",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Find residential buildings with actual BRA data"
+      }
+    },
+    {
+      "name": "5. Get Buildings for Hesthagen 16",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=matrikkel:BYGNINGWFS&CQL_FILTER=KOMMUNENR='3436' AND GARDSNR=285 AND BRUKSNR=57",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetFeature"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:BYGNINGWFS"
+            },
+            {
+              "key": "CQL_FILTER",
+              "value": "KOMMUNENR='3436' AND GARDSNR=285 AND BRUKSNR=57"
+            }
+          ]
+        },
+        "description": "Original test address - Hesthagen 16"
+      }
+    },
+    {
+      "name": "6. Get WFS Capabilities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=GetCapabilities",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "GetCapabilities"
+            }
+          ]
+        },
+        "description": "Get full WFS capabilities document"
+      }
+    },
+    {
+      "name": "7. Describe Feature Type - BYGNINGWFS",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://prodtest.matrikkel.no/geoservergeo/wfs?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=matrikkel:BYGNINGWFS",
+          "protocol": "https",
+          "host": [
+            "prodtest",
+            "matrikkel",
+            "no"
+          ],
+          "path": [
+            "geoservergeo",
+            "wfs"
+          ],
+          "query": [
+            {
+              "key": "service",
+              "value": "WFS"
+            },
+            {
+              "key": "version",
+              "value": "1.1.0"
+            },
+            {
+              "key": "request",
+              "value": "DescribeFeatureType"
+            },
+            {
+              "key": "typeName",
+              "value": "matrikkel:BYGNINGWFS"
+            }
+          ]
+        },
+        "description": "Get schema for building data"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://prodtest.matrikkel.no/geoservergeo/wfs",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "skiplum_matrikkeltest",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "EFP4d74EHPaqe8jbyhcppH5Lr7!rc?k8?KP@Lkjb",
+      "type": "string"
+    }
+  ]
+}

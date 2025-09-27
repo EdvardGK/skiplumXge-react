@@ -54,19 +54,25 @@ export async function GET(request: NextRequest) {
 
     // Try to get cached statistics first (instant response)
     let { data: kommuneStats, error: kommuneError } = await supabaseClient
-      .rpc('get_cached_municipality_stats', {
+      .rpc('get_cached_municipality_stats' as any, {
         p_postal_code: postalCode
       })
-      .single();
+      .single() as {
+        data: any;
+        error: any
+      };
 
     // Fallback to real-time calculation if cache miss
     if (kommuneError || !kommuneStats) {
       console.log('Cache miss, calculating real-time statistics...');
       const result = await supabaseClient
-        .rpc('get_kommune_certified_stats', {
+        .rpc('get_kommune_certified_stats' as any, {
           p_postal_code: postalCode
         })
-        .single();
+        .single() as {
+          data: any;
+          error: any
+        };
 
       kommuneStats = result.data;
       kommuneError = result.error;
@@ -107,11 +113,11 @@ export async function GET(request: NextRequest) {
       // Calculate performance percentile if building type is provided
       if (buildingType && currentConsumption) {
         const { data: buildingStats, error: buildingError } = await supabaseClient
-          .rpc('get_building_type_statistics', {
+          .rpc('get_building_type_statistics' as any, {
             building_type: buildingType,
             postal: postalCode
           })
-          .single();
+          .single() as { data: any; error: any };
 
         if (!buildingError && buildingStats) {
           const consumption = parseFloat(currentConsumption);

@@ -1,0 +1,93 @@
+{
+  "Småhus": {
+    "id": "1",
+    "building_type": "Småhus",
+    "max_energy_kwh_m2": 100,
+    "description": "Eneboliger og rekkehus",
+    "source": "TEK17 § 14-2"
+  },
+  "Leilighetsblokk": {
+    "id": "2",
+    "building_type": "Leilighetsblokk",
+    "max_energy_kwh_m2": 95,
+    "description": "Boligblokker",
+    "source": "TEK17 § 14-2"
+  },
+  "Barnehage": {
+    "id": "3",
+    "building_type": "Barnehage",
+    "max_energy_kwh_m2": 135,
+    "description": "Barnehager",
+    "source": "TEK17 § 14-2"
+  },
+  "Kontorbygning": {
+    "id": "4",
+    "building_type": "Kontorbygning",
+    "max_energy_kwh_m2": 115,
+    "description": "Kontorer og administrasjonsbygg",
+    "source": "TEK17 § 14-2"
+  },
+  "Skolebygg": {
+    "id": "5",
+    "building_type": "Skolebygg",
+    "max_energy_kwh_m2": 110,
+    "description": "Grunnskoler og videregående skoler",
+    "source": "TEK17 § 14-2"
+  },
+  "Universitet": {
+    "id": "6",
+    "building_type": "Universitet",
+    "max_energy_kwh_m2": 125,
+    "description": "Høyskoler og universiteter",
+    "source": "TEK17 § 14-2"
+  },
+  "Sykehus": {
+    "id": "7",
+    "building_type": "Sykehus",
+    "max_energy_kwh_m2": 225,
+    "description": "Sykehus og helseinstitusjoner",
+    "source": "TEK17 § 14-2"
+  },
+  "Sykehjem": {
+    "id": "8",
+    "building_type": "Sykehjem",
+    "max_energy_kwh_m2": 195,
+    "description": "Sykehjem og omsorgsboliger",
+    "source": "TEK17 § 14-2"
+  },
+  "Hotellbygg": {
+    "id": "9",
+    "building_type": "Hotellbygg",
+    "max_energy_kwh_m2": 170,
+    "description": "Hoteller og overnattingssteder",
+    "source": "TEK17 § 14-2"
+  },
+  "Idrettsbygg": {
+    "id": "10",
+    "building_type": "Idrettsbygg",
+    "max_energy_kwh_m2": 145,
+    "description": "Idrettshaller",
+    "source": "TEK17 § 14-2"
+  },
+  "Forretningsbygg": {
+    "id": "11",
+    "building_type": "Forretningsbygg",
+    "max_energy_kwh_m2": 180,
+    "description": "Butikker og kjøpesentre",
+    "source": "TEK17 § 14-2"
+  },
+  "Kulturbygg": {
+    "id": "12",
+    "building_type": "Kulturbygg",
+    "max_energy_kwh_m2": 130,
+    "description": "Kulturbygg og forsamlingslokaler",
+    "source": "TEK17 § 14-2"
+  },
+  "Lett industri/verksted": {
+    "id": "13",
+    "building_type": "Lett industri/verksted",
+    "max_energy_kwh_m2": 140,
+    "description": "Verksteder og lett industri",
+    "source": "TEK17 § 14-2"
+  }
+}

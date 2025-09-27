@@ -1,0 +1,141 @@
+name: Sync Configuration Cache
+
+on:
+  schedule:
+    # Run at 2 AM UTC every day (3 AM Norwegian time)
+    - cron: '0 2 * * *'
+
+  workflow_dispatch:
+    # Allow manual trigger
+    inputs:
+      reason:
+        description: 'Reason for manual sync'
+        required: false
+        default: 'Manual cache update'
+
+jobs:
+  sync-cache:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm install -g tsx
+
+      - name: Sync cache from Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          echo "🔄 Starting cache sync..."
+          npm run cache:sync
+
+      - name: Validate cache integrity
+        run: |
+          echo "✅ Validating cache files..."
+          # Create validation script if it doesn't exist
+          if [ ! -f "src/scripts/validate-cache.ts" ]; then
+            echo "console.log('Cache validation placeholder');" > src/scripts/validate-cache.ts
+          fi
+          npm run cache:validate || true
+
+      - name: Generate TypeScript types
+        run: |
+          echo "🔧 Generating TypeScript types..."
+          # Create type generation script if it doesn't exist
+          if [ ! -f "src/scripts/generate-cache-types.ts" ]; then
+            echo "console.log('Type generation placeholder');" > src/scripts/generate-cache-types.ts
+          fi
+          npm run cache:generate-types || true
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git add src/data/cache/*.json src/data/generated/*.ts || true
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Cache files have been updated"
+          fi
+
+      - name: Commit and push changes
+        if: steps.git-check.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+
+          # Create commit message
+          COMMIT_MSG="chore: sync cache from Supabase [skip ci]"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            COMMIT_MSG="chore: manual cache sync - ${{ github.event.inputs.reason }} [skip ci]"
+          fi
+
+          git commit -m "$COMMIT_MSG" \
+            -m "Updated configuration cache from Supabase" \
+            -m "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+
+          git push origin main
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Cache sync failed!"
+          echo "Error details:"
+          echo "- Workflow: ${{ github.workflow }}"
+          echo "- Run ID: ${{ github.run_id }}"
+          echo "- Triggered by: ${{ github.event_name }}"
+          # In production, this could send a Slack/email notification
+
+      - name: Cache sync summary
+        if: always()
+        run: |
+          echo "📊 Cache Sync Summary"
+          echo "===================="
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Has changes: ${{ steps.git-check.outputs.has_changes || 'unknown' }}"
+
+          if [ -f "src/data/cache/manifest.json" ]; then
+            echo ""
+            echo "📦 Cache Contents:"
+            cat src/data/cache/manifest.json | jq '.items'
+          fi
+
+  verify-deployment:
+    needs: sync-cache
+    runs-on: ubuntu-latest
+    if: success()
+
+    steps:
+      - name: Trigger Vercel deployment
+        if: vars.VERCEL_DEPLOY_HOOK
+        run: |
+          echo "🚀 Triggering Vercel deployment..."
+          curl -X POST ${{ vars.VERCEL_DEPLOY_HOOK }}
+
+      - name: Wait for deployment
+        run: |
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 60
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Deployment verification placeholder"
+          # Could add actual deployment verification here

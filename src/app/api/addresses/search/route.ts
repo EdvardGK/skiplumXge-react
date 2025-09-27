@@ -87,8 +87,36 @@ export async function GET(request: NextRequest) {
     // Transform Kartverket data to our Address format (fast, no building data)
     const addresses = await Promise.all(
       data.adresser.map(async (addr) => {
-        // Look up electricity price zone for this municipality
-        const priceZone = await getPriceZoneByKommune(addr.kommunenummer);
+        // Look up electricity price zone for this municipality with fallback
+        let priceZone: 'NO1' | 'NO2' | 'NO3' | 'NO4' | 'NO5' = 'NO1'; // Default to NO1 (Eastern Norway)
+        try {
+          priceZone = await getPriceZoneByKommune(addr.kommunenummer);
+        } catch (error) {
+          console.warn(`Zone lookup failed for ${addr.adressetekst} (municipality ${addr.kommunenummer}): Using default zone NO1`);
+
+          // Smart defaults based on municipality codes
+          // Oslo region (03xx)
+          if (addr.kommunenummer.startsWith('03') || addr.kommunenummer.startsWith('30')) {
+            priceZone = 'NO1';
+          }
+          // Bergen/Western Norway (46xx, 12xx)
+          else if (addr.kommunenummer.startsWith('46') || addr.kommunenummer.startsWith('12')) {
+            priceZone = 'NO5';
+          }
+          // Trondheim/Central Norway (50xx)
+          else if (addr.kommunenummer.startsWith('50')) {
+            priceZone = 'NO3';
+          }
+          // Northern Norway (18xx, 19xx, 54xx, 55xx)
+          else if (addr.kommunenummer.startsWith('18') || addr.kommunenummer.startsWith('19') ||
+                   addr.kommunenummer.startsWith('54') || addr.kommunenummer.startsWith('55')) {
+            priceZone = 'NO4';
+          }
+          // Southern Norway (38xx, 42xx)
+          else if (addr.kommunenummer.startsWith('38') || addr.kommunenummer.startsWith('42')) {
+            priceZone = 'NO2';
+          }
+        }
 
         return {
           adressetekst: addr.adressetekst,

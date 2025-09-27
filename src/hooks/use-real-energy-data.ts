@@ -142,7 +142,7 @@ export function useRealEnergyData(
       .finally(() => {
         setIsLoadingEnova(false)
       })
-  }, [address, gnr, bnr, bygningsnummer, directCertificateData])
+  }, [address, gnr, bnr, bygningsnummer, municipalityNumber, directCertificateData])
 
   // Fetch current pricing data and 36-month average
   useEffect(() => {

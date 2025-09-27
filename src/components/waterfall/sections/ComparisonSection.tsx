@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Star, TrendingUp, ArrowDown } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import type { RealEnergyData } from '@/hooks/use-real-energy-data';
 
 interface ComparisonSectionProps {
   buildingData: {
@@ -13,6 +14,7 @@ interface ComparisonSectionProps {
     buildingType: string | null;
     totalArea: string | null;
   };
+  realEnergyData?: RealEnergyData;
 }
 
 interface ComparisonData {
@@ -78,7 +80,7 @@ function BuildingConstellation() {
   );
 }
 
-export default function ComparisonSection({ buildingData }: ComparisonSectionProps) {
+export default function ComparisonSection({ buildingData, realEnergyData }: ComparisonSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-20%" });
 

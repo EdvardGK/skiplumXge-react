@@ -25,6 +25,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Create Supabase client for server-side operations
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
+// Singleton instance for client-side operations
+let clientInstance: ReturnType<typeof createClient<Database>> | null = null
+
 // Create client-safe Supabase instance
 export const createClientSupabase = () => {
   const clientUrl = publicSupabaseUrl || supabaseUrl
@@ -37,8 +40,19 @@ export const createClientSupabase = () => {
   return createClient<Database>(clientUrl, clientKey)
 }
 
-// Default client instance for client-side operations
-export const supabaseClient = createClientSupabase()
+// Default client instance for client-side operations (singleton pattern)
+export const supabaseClient = (() => {
+  if (typeof window === 'undefined') {
+    // Server-side: use the server instance
+    return supabase
+  }
+
+  // Client-side: use singleton pattern to avoid multiple instances
+  if (!clientInstance) {
+    clientInstance = createClientSupabase()
+  }
+  return clientInstance
+})()
 
 // Session management helpers
 export const setSessionContext = async (sessionId: string) => {

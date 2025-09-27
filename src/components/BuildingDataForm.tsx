@@ -242,8 +242,9 @@ export function BuildingDataForm({
   });
 
   // Store OSM building data for calculations
+  // IMPORTANT: footprintArea is already reduced by 10% when stored (walls + roof overhangs)
   const [osmBuildingData, setOsmBuildingData] = useState<{
-    footprintArea: number | null;
+    footprintArea: number | null;  // Net area (polygon area × 0.90)
     levels: number | null;
     height: number | null;
   }>({ footprintArea: null, levels: null, height: null });
@@ -325,7 +326,7 @@ export function BuildingDataForm({
       annualEnergyConsumption: calculateEnergyEstimate('Kontor', 120), // Smart default based on office building
       heatingSystems: [{ value: 'Elektrisitet', percentage: 100, ranking: 'primary' }],
       lightingSystems: [{ value: 'Fluorescerende', percentage: 100, ranking: 'primary' }],
-      ventilationSystem: "",
+      ventilationSystem: "Naturlig",
       hotWaterSystems: [{ value: 'Elektrisitet', percentage: 100, ranking: 'primary' }],
     },
   });
@@ -360,8 +361,9 @@ export function BuildingDataForm({
           console.log('Found building data:', building);
 
           // Store OSM data for later calculations
+          // Apply 10% reduction to polygon area immediately (walls + roof overhangs)
           setOsmBuildingData({
-            footprintArea: building.area || null,
+            footprintArea: building.area ? building.area * 0.90 : null,
             levels: building.levels || null,
             height: building.height || null
           });
@@ -372,14 +374,17 @@ export function BuildingDataForm({
             setFieldSources(prev => ({ ...prev, numberOfFloors: 'map' }));
           }
 
-          // Set building area if available
+          // Set building area if available (already reduced by 10% in osmBuildingData)
           if (building.area && building.area > 20) { // Minimum reasonable size
+            // Note: osmBuildingData.footprintArea already has 10% reduction applied
+            const netFootprint = osmBuildingData.footprintArea || (building.area * 0.90);
+
             // Calculate total BRA based on floor count
             if (building.levels && building.levels > 1) {
               // Apply top floor reduction formula only for buildings with 3+ floors
               const totalBRA = building.levels >= 3
-                ? Math.round(building.area * (building.levels - 0.3))
-                : Math.round(building.area * building.levels);
+                ? Math.round(netFootprint * (building.levels - 0.3))
+                : Math.round(netFootprint * building.levels);
 
               form.setValue("totalArea", totalBRA);
               setFieldSources(prev => ({ ...prev, totalArea: 'calculated' }));
@@ -390,13 +395,14 @@ export function BuildingDataForm({
               form.setValue("heatedArea", heatedArea);
               setFieldSources(prev => ({ ...prev, heatedArea: 'calculated' }));
             } else {
-              // Single floor or no floor data - use footprint directly
-              form.setValue("totalArea", Math.round(building.area));
+              // Single floor or no floor data - use footprint directly (already reduced)
+              const totalBRA = Math.round(netFootprint);
+              form.setValue("totalArea", totalBRA);
               setFieldSources(prev => ({ ...prev, totalArea: 'map' }));
               setBuildingDataSource(`Hentet fra kart (${building.type})`);
 
               // Calculate heated area
-              const heatedArea = Math.round(building.area * 0.92);
+              const heatedArea = Math.round(totalBRA * 0.92);
               form.setValue("heatedArea", heatedArea);
               setFieldSources(prev => ({ ...prev, heatedArea: 'calculated' }));
             }
@@ -539,13 +545,12 @@ export function BuildingDataForm({
     ) {
       console.log('Effect: Updating BRA based on floors:', {
         floors: numberOfFloors,
-        footprint: osmBuildingData.footprintArea,
+        footprint: osmBuildingData.footprintArea, // Already has 10% reduction
         totalAreaSource: fieldSources.totalArea
       });
 
       // Apply top floor reduction formula only for buildings with 3+ floors
-      // For 1-2 floors: use footprint directly
-      // For 3+ floors: use footprint × (floors - 0.3)
+      // Note: footprintArea already has 10% reduction applied at source
       const calculatedArea = numberOfFloors >= 3
         ? Math.round(osmBuildingData.footprintArea * (numberOfFloors - 0.3))
         : Math.round(osmBuildingData.footprintArea * numberOfFloors);
@@ -643,7 +648,7 @@ export function BuildingDataForm({
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
           {/* Building Type */}
           <FormField
             control={form.control}
@@ -876,29 +881,28 @@ export function BuildingDataForm({
           </div>
 
           {/* Energy Systems */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h4 className="text-white font-medium text-sm border-b border-white/20 pb-1">
               Energisystemer
             </h4>
 
             {/* Two-column layout for energy systems with dynamic heights */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2">
               {/* Left Column */}
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {/* Heating Systems */}
                 <div
-                  className="flex flex-col transition-all duration-300 ease-in-out"
+                  className="transition-all duration-300 ease-in-out"
                   style={{ minHeight: `${dynamicHeight}px` }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Oppvarmingssystemer</span>
                     <SystemInfoTooltip
                       title="Oppvarmingssystemer"
                       descriptions={heatingSystemDescriptions}
                     />
                   </div>
-                  <div className="flex-1">
-                    <RankedMultiSelect
+                  <RankedMultiSelect
                       title=""
                       options={heatingSystemOptions}
                       selections={heatingSelections}
@@ -908,16 +912,15 @@ export function BuildingDataForm({
                       }}
                       placeholder="Legg til oppvarmingskilde..."
                       maxSelections={3}
-                    />
-                  </div>
+                  />
                 </div>
 
                 {/* Ventilation System (single select using multi-select style) */}
                 <div
-                  className="flex flex-col transition-all duration-300 ease-in-out"
+                  className="transition-all duration-300 ease-in-out"
                   style={{ minHeight: `${dynamicHeight}px` }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Ventilasjonssystem</span>
                     <SystemInfoTooltip
                       title="Ventilasjonssystemer"
@@ -952,21 +955,20 @@ export function BuildingDataForm({
               </div>
 
               {/* Right Column */}
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {/* Lighting Systems */}
                 <div
-                  className="flex flex-col transition-all duration-300 ease-in-out"
+                  className="transition-all duration-300 ease-in-out"
                   style={{ minHeight: `${dynamicHeight}px` }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Belysningssystemer</span>
                     <SystemInfoTooltip
                       title="Belysningssystemer"
                       descriptions={lightingSystemDescriptions}
                     />
                   </div>
-                  <div className="flex-1">
-                    <RankedMultiSelect
+                  <RankedMultiSelect
                       title=""
                       options={lightingSystemOptions}
                       selections={lightingSelections}
@@ -976,24 +978,22 @@ export function BuildingDataForm({
                       }}
                       placeholder="Legg til belysningstype..."
                       maxSelections={3}
-                    />
-                  </div>
+                  />
                 </div>
 
                 {/* Hot Water Systems */}
                 <div
-                  className="flex flex-col transition-all duration-300 ease-in-out"
+                  className="transition-all duration-300 ease-in-out"
                   style={{ minHeight: `${dynamicHeight}px` }}
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Varmtvannssystemer</span>
                     <SystemInfoTooltip
                       title="Varmtvannssystemer"
                       descriptions={hotWaterSystemDescriptions}
                     />
                   </div>
-                  <div className="flex-1">
-                    <RankedMultiSelect
+                  <RankedMultiSelect
                       title=""
                       options={hotWaterSystemOptions}
                       selections={hotWaterSelections}
@@ -1003,8 +1003,7 @@ export function BuildingDataForm({
                       }}
                       placeholder="Legg til varmtvannskilde..."
                       maxSelections={3}
-                    />
-                  </div>
+                  />
                 </div>
               </div>
             </div>

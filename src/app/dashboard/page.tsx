@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmailCaptureModal } from "@/components/email-capture-modal";
 import {
   Building,
   Zap,
@@ -236,6 +237,9 @@ function DashboardContent() {
   // Data editing overlay state
   const [isEditingOverlayOpen, setIsEditingOverlayOpen] = useState(false);
 
+  // Email capture modal state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
   const directCertificateData = useMemo(() => {
     if (!energyClass && !energyConsumptionParam) return null;
 
@@ -270,10 +274,14 @@ function DashboardContent() {
     ? getInvestmentMessage(dashboardData.priceZone, annualSavings)
     : zoneMessaging.investmentFocus;
 
-  // PDF Report generation handler
-  const handleGenerateReport = async () => {
+  // PDF Report generation handler - opens email modal
+  const handleGenerateReport = () => {
     if (!addressParam) return;
+    setIsEmailModalOpen(true);
+  };
 
+  // Handle email submission and PDF generation
+  const handleEmailSubmit = async (emailData: any) => {
     try {
       const buildingData = extractBuildingDataFromParams(searchParams);
 
@@ -294,6 +302,7 @@ function DashboardContent() {
           )
         : undefined;
 
+      // Generate the PDF report
       await generateReport({
         address: addressParam,
         buildingData,
@@ -801,6 +810,28 @@ function DashboardContent() {
         </DashboardGrid>
 
       </main>
+
+      {/* Email Capture Modal */}
+      <EmailCaptureModal
+        open={isEmailModalOpen}
+        onOpenChange={setIsEmailModalOpen}
+        onSuccess={handleEmailSubmit}
+        reportData={
+          hasRealBuildingData && realEnergyData
+            ? {
+                energyGrade: dashboardData.energyGrade || 'C',
+                annualWaste: realEnergyData.annualWasteCost,
+                investmentPotential: realEnergyData.investmentRoom,
+              }
+            : undefined
+        }
+        propertyAddress={addressParam}
+        investmentPotential={
+          hasRealBuildingData && realEnergyData
+            ? realEnergyData.investmentRoom
+            : undefined
+        }
+      />
 
       {/* Data Editing Overlay */}
       <DataEditingOverlay

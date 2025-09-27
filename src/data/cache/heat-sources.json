@@ -1,0 +1,227 @@
+{
+  "electricity": {
+    "id": "1",
+    "name": "Direct Electric",
+    "norwegian_name": "Elektrisitet",
+    "efficiency_cop": 1.0,
+    "annual_efficiency": 100,
+    "typical_investment_kr": 0,
+    "typical_savings_percent": 0,
+    "description": "Direkte elektrisk oppvarming med panelovner eller varmekabler",
+    "advantages": [
+      "Enkel installasjon",
+      "Lave investeringskostnader",
+      "Presis temperaturkontroll per rom"
+    ],
+    "disadvantages": [
+      "Høye driftskostnader",
+      "Ingen energibesparelse",
+      "Miljøbelastning ved høyt forbruk"
+    ],
+    "suitable_for": ["Småhus", "Leilighetsblokk", "Kontorbygning"],
+    "priority": 10
+  },
+  "heatpump_air_air": {
+    "id": "2",
+    "name": "Air-to-Air Heat Pump",
+    "norwegian_name": "Varmepumpe luft-luft",
+    "efficiency_cop": 3.5,
+    "annual_efficiency": 350,
+    "typical_investment_kr": 25000,
+    "typical_savings_percent": 67,
+    "description": "Varmepumpe luft-til-luft som varmer opp lufta direkte",
+    "advantages": [
+      "Rask tilbakebetaling (2-4 år)",
+      "Enkel installasjon",
+      "Kan også brukes til kjøling",
+      "67% energibesparelse"
+    ],
+    "disadvantages": [
+      "Redusert effekt ved lave temperaturer",
+      "Støy fra utedel",
+      "Begrenset rekkevidde"
+    ],
+    "suitable_for": ["Småhus", "Leilighetsblokk", "Kontorbygning", "Forretningsbygg"],
+    "priority": 1
+  },
+  "heatpump_air_water": {
+    "id": "3",
+    "name": "Air-to-Water Heat Pump",
+    "norwegian_name": "Varmepumpe luft-vann",
+    "efficiency_cop": 3.0,
+    "annual_efficiency": 300,
+    "typical_investment_kr": 80000,
+    "typical_savings_percent": 65,
+    "description": "Varmepumpe luft-til-vann tilkoblet vannbårent system eller gulvvarme",
+    "advantages": [
+      "Varmer hele bygget",
+      "Integreres med eksisterende vannbårent system",
+      "Produserer varmtvann",
+      "65% energibesparelse"
+    ],
+    "disadvantages": [
+      "Høyere investeringskostnad",
+      "Krever vannbårent varmesystem",
+      "Redusert effekt ved lave temperaturer"
+    ],
+    "suitable_for": ["Småhus", "Leilighetsblokk", "Skolebygg", "Sykehjem"],
+    "priority": 2
+  },
+  "ground_source": {
+    "id": "4",
+    "name": "Ground Source Heat Pump",
+    "norwegian_name": "Bergvarme",
+    "efficiency_cop": 4.5,
+    "annual_efficiency": 450,
+    "typical_investment_kr": 200000,
+    "typical_savings_percent": 75,
+    "description": "Bergvarme eller jordvarme med varmepumpe og energibrønner",
+    "advantages": [
+      "Svært høy virkningsgrad",
+      "Stabil ytelse hele året",
+      "75% energibesparelse",
+      "Lang levetid (25+ år)",
+      "Lite vedlikehold"
+    ],
+    "disadvantages": [
+      "Høy investeringskostnad",
+      "Krever boring av energibrønner",
+      "Lengre tilbakebetalingstid"
+    ],
+    "suitable_for": ["Småhus", "Leilighetsblokk", "Kontorbygning", "Skolebygg", "Sykehus"],
+    "priority": 3
+  },
+  "district_heating": {
+    "id": "5",
+    "name": "District Heating",
+    "norwegian_name": "Fjernvarme",
+    "annual_efficiency": 98,
+    "typical_investment_kr": 50000,
+    "typical_savings_percent": 40,
+    "description": "Sentralt fjernvarmesystem tilkoblet lokalt varmenettverk",
+    "advantages": [
+      "Miljøvennlig (ofte avfallsbasert)",
+      "Stabilt og driftssikkert",
+      "Lite vedlikehold",
+      "Tar ikke plass i bygget"
+    ],
+    "disadvantages": [
+      "Kun tilgjengelig i enkelte områder",
+      "Bundet til leverandørens priser",
+      "Tilkoblingsavgift"
+    ],
+    "suitable_for": ["Leilighetsblokk", "Kontorbygning", "Sykehus", "Universitet", "Forretningsbygg"],
+    "priority": 4
+  },
+  "biofuel": {
+    "id": "6",
+    "name": "Biofuel",
+    "norwegian_name": "Biobrensel",
+    "annual_efficiency": 85,
+    "typical_investment_kr": 40000,
+    "typical_savings_percent": 50,
+    "description": "Biobrensel som ved, pellets eller flis i vedovn eller pelletsovn",
+    "advantages": [
+      "CO2-nøytralt",
+      "Rimelig brensel",
+      "Koselig varme",
+      "Uavhengig av strømnettet"
+    ],
+    "disadvantages": [
+      "Krever manuell fyring eller pelletslager",
+      "Behov for skorstein",
+      "Askerydding og vedlikehold",
+      "Lokal luftforurensning"
+    ],
+    "suitable_for": ["Småhus", "Kulturbygg"],
+    "priority": 6
+  },
+  "oil": {
+    "id": "7",
+    "name": "Oil Heating",
+    "norwegian_name": "Olje",
+    "annual_efficiency": 85,
+    "typical_investment_kr": 0,
+    "typical_savings_percent": -20,
+    "description": "Fyringsolje i oljekjel eller oljetank",
+    "advantages": [
+      "Eksisterende anlegg kan beholdes",
+      "Høy varmeeffekt"
+    ],
+    "disadvantages": [
+      "Høye driftskostnader",
+      "Miljøbelastende",
+      "Utfases gradvis (forbud fra 2025)",
+      "Krever oljetank"
+    ],
+    "suitable_for": [],
+    "priority": 15
+  },
+  "gas": {
+    "id": "8",
+    "name": "Gas Heating",
+    "norwegian_name": "Gass",
+    "annual_efficiency": 95,
+    "typical_investment_kr": 60000,
+    "typical_savings_percent": 30,
+    "description": "Naturgass eller propan for oppvarming",
+    "advantages": [
+      "Ren forbrenning",
+      "Høy virkningsgrad",
+      "Rask oppvarming"
+    ],
+    "disadvantages": [
+      "Begrenset tilgjengelighet i Norge",
+      "Krever gassledning eller tank",
+      "Fossilt brensel"
+    ],
+    "suitable_for": ["Lett industri/verksted", "Forretningsbygg"],
+    "priority": 8
+  },
+  "solar_thermal": {
+    "id": "9",
+    "name": "Solar Thermal",
+    "norwegian_name": "Solfanger",
+    "annual_efficiency": 60,
+    "typical_investment_kr": 60000,
+    "typical_savings_percent": 30,
+    "description": "Solfangere for varmtvann og romoppvarming",
+    "advantages": [
+      "Gratis energi fra solen",
+      "Miljøvennlig",
+      "Lang levetid",
+      "Lite vedlikehold"
+    ],
+    "disadvantages": [
+      "Variabel produksjon",
+      "Krever backup-system",
+      "Høy investeringskostnad",
+      "Begrenset effekt om vinteren"
+    ],
+    "suitable_for": ["Småhus", "Hotellbygg", "Idrettsbygg"],
+    "priority": 7
+  },
+  "hybrid": {
+    "id": "10",
+    "name": "Hybrid System",
+    "norwegian_name": "Hybridsystem",
+    "efficiency_cop": 2.5,
+    "annual_efficiency": 250,
+    "typical_investment_kr": 100000,
+    "typical_savings_percent": 60,
+    "description": "Kombinasjon av varmepumpe og annen varmekilde",
+    "advantages": [
+      "Optimalisert for norske forhold",
+      "Sikker varmeforsyning",
+      "Fleksibel drift",
+      "Utnytter beste egenskaper fra flere systemer"
+    ],
+    "disadvantages": [
+      "Kompleks styring",
+      "Høyere investeringskostnad",
+      "Krever mer plass"
+    ],
+    "suitable_for": ["Sykehus", "Sykehjem", "Universitet", "Hotellbygg"],
+    "priority": 5
+  }
+}
