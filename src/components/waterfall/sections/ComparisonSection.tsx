@@ -130,7 +130,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
     >
       {/* Aurora background */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-emerald-900/20"
+        className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-primary/10 to-accent/10"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 2 }}
@@ -183,11 +183,11 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
             animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : -50 }}
             transition={{ delay: 0.8 }}
           >
-            <Card className="bg-slate-900/30 border-white/10 backdrop-blur-sm h-full">
+            <Card className="bg-background/30 border-border backdrop-blur-sm h-full">
               <CardContent className="p-2 h-full">
                 <Suspense fallback={
                   <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-slate-400">Laster nabolag...</div>
+                    <div className="text-muted-foreground">Laster nabolag...</div>
                   </div>
                 }>
                   <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
@@ -198,7 +198,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
 
                     <OrbitControls
                       enableZoom={true}
-                      enablePan={false}
+                      enablePan={true}
                       maxPolarAngle={Math.PI / 2}
                       minPolarAngle={Math.PI / 6}
                       autoRotate
@@ -267,7 +267,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
                     </div>
 
                     {/* Progress bar */}
-                    <div className="mt-3 w-full bg-slate-700 rounded-full h-2">
+                    <div className="mt-3 w-full bg-muted rounded-full h-2">
                       <motion.div
                         className={`h-2 rounded-full ${
                           typeof item.consumption === 'number' && item.consumption > 150 ? 'bg-red-500' :

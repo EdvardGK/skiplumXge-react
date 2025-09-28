@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -68,8 +68,8 @@ const buildingTypeOptions: { value: BuildingType; label: string }[] = [
 
 const heatingSystemOptions: RankedOption[] = [
   { value: 'Elektrisitet', label: 'Elektrisk' },
-  { value: 'Varmepumpe luft-luft', label: 'Varmepumpe, luft-luft' },
-  { value: 'Varmepumpe luft-vann', label: 'Varmepumpe, luft-vann' },
+  { value: 'Varmepumpe luft-luft', label: 'Varmepumpe luft-luft' },
+  { value: 'Varmepumpe luft-vann', label: 'Varmepumpe luft-vann' },
   { value: 'Bergvarme', label: 'Bergvarme' },
   { value: 'Fjernvarme', label: 'Fjernvarme' },
   { value: 'Biobrensel', label: 'Biobrensel' },
@@ -249,16 +249,56 @@ export function BuildingDataForm({
     height: number | null;
   }>({ footprintArea: null, levels: null, height: null });
 
-  // Calculate maximum selections across all energy systems for dynamic height
-  const maxSelections = Math.max(
-    heatingSelections.length,
-    lightingSelections.length,
-    hotWaterSelections.length,
-    1 // Ventilation always has 1 selection when filled
-  );
+  // Dynamic height matching for aligned rows
+  const [topRowHeight, setTopRowHeight] = useState<number | undefined>();
+  const [bottomRowHeight, setBottomRowHeight] = useState<number | undefined>();
 
-  // Base height + space for each selection row (48px per selection + 8px spacing)
-  const dynamicHeight = 80 + (maxSelections * 56) + 48; // Header + selections + add button
+  const heatingRef = useRef<HTMLDivElement>(null);
+  const lightingRef = useRef<HTMLDivElement>(null);
+  const ventilationRef = useRef<HTMLDivElement>(null);
+  const hotWaterRef = useRef<HTMLDivElement>(null);
+
+  // Update heights when selections change
+  useEffect(() => {
+    const updateHeights = () => {
+      // Only apply on larger screens where we have columns
+      if (window.innerWidth >= 1024) {
+        // Temporarily clear heights to get natural measurements
+        setTopRowHeight(undefined);
+        setBottomRowHeight(undefined);
+
+        // Let DOM update with natural heights
+        requestAnimationFrame(() => {
+          // Top row: heating vs lighting
+          const heatingHeight = heatingRef.current?.scrollHeight || 0;
+          const lightingHeight = lightingRef.current?.scrollHeight || 0;
+          const newTopHeight = Math.max(heatingHeight, lightingHeight);
+
+          // Bottom row: ventilation vs hot water
+          const ventilationHeight = ventilationRef.current?.scrollHeight || 0;
+          const hotWaterHeight = hotWaterRef.current?.scrollHeight || 0;
+          const newBottomHeight = Math.max(ventilationHeight, hotWaterHeight);
+
+          // Apply the new heights
+          setTopRowHeight(newTopHeight);
+          setBottomRowHeight(newBottomHeight);
+        });
+      } else {
+        // Reset heights on mobile
+        setTopRowHeight(undefined);
+        setBottomRowHeight(undefined);
+      }
+    };
+
+    // Trigger update after render
+    updateHeights();
+
+    // Handle window resize
+    window.addEventListener('resize', updateHeights);
+    return () => {
+      window.removeEventListener('resize', updateHeights);
+    };
+  }, [heatingSelections.length, lightingSelections.length, hotWaterSelections.length]); // React to length changes
 
 
   // Handle reset to calculated values
@@ -671,7 +711,7 @@ export function BuildingDataForm({
                       <SelectValue placeholder="Velg bygningstype" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent style={{ zIndex: 9999 }}>
                     {buildingTypeOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -685,7 +725,7 @@ export function BuildingDataForm({
           />
 
           {/* Areas */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="totalArea"
@@ -762,7 +802,7 @@ export function BuildingDataForm({
           </div>
 
           {/* Building Year and Number of Floors */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="buildingYear"
@@ -775,7 +815,7 @@ export function BuildingDataForm({
                         <SelectValue placeholder="Velg byggeperiode" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent style={{ zIndex: 9999 }}>
                       {buildingYearOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -822,7 +862,7 @@ export function BuildingDataForm({
           </div>
 
           {/* SD-anlegg and Annual Energy Consumption */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="sdInstallation"
@@ -834,7 +874,7 @@ export function BuildingDataForm({
                       <SelectTrigger className="bg-white/5 border-white/20 text-white h-9">
                         <SelectValue placeholder="SD-anlegg" />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-slate-600">
+                      <SelectContent className="bg-slate-800 border-slate-600" style={{ zIndex: 9999 }}>
                         <SelectItem value="ja" className="text-white hover:bg-slate-700">
                           Ja
                         </SelectItem>
@@ -886,14 +926,15 @@ export function BuildingDataForm({
               Energisystemer
             </h4>
 
-            {/* Two-column layout for energy systems with dynamic heights */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Responsive layout for energy systems - single column on narrow screens */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Left Column */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {/* Heating Systems */}
                 <div
-                  className="transition-all duration-300 ease-in-out"
-                  style={{ minHeight: `${dynamicHeight}px` }}
+                  ref={heatingRef}
+                  className="space-y-2"
+                  style={{ minHeight: topRowHeight ? `${topRowHeight}px` : undefined }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Oppvarmingssystemer</span>
@@ -908,7 +949,11 @@ export function BuildingDataForm({
                       selections={heatingSelections}
                       onSelectionsChange={(selections) => {
                         setHeatingSelections(selections);
-                        form.setValue('heatingSystems', selections);
+                        form.setValue('heatingSystems', selections.map(s => ({
+                          value: s.value,
+                          percentage: s.percentage || 0,
+                          ranking: s.ranking || 'primary'
+                        })));
                       }}
                       placeholder="Legg til oppvarmingskilde..."
                       maxSelections={3}
@@ -917,8 +962,9 @@ export function BuildingDataForm({
 
                 {/* Ventilation System (single select using multi-select style) */}
                 <div
-                  className="transition-all duration-300 ease-in-out"
-                  style={{ minHeight: `${dynamicHeight}px` }}
+                  ref={ventilationRef}
+                  className="space-y-2"
+                  style={{ minHeight: bottomRowHeight ? `${bottomRowHeight}px` : undefined }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Ventilasjonssystem</span>
@@ -955,11 +1001,12 @@ export function BuildingDataForm({
               </div>
 
               {/* Right Column */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {/* Lighting Systems */}
                 <div
-                  className="transition-all duration-300 ease-in-out"
-                  style={{ minHeight: `${dynamicHeight}px` }}
+                  ref={lightingRef}
+                  className="space-y-2"
+                  style={{ minHeight: topRowHeight ? `${topRowHeight}px` : undefined }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Belysningssystemer</span>
@@ -974,7 +1021,11 @@ export function BuildingDataForm({
                       selections={lightingSelections}
                       onSelectionsChange={(selections) => {
                         setLightingSelections(selections);
-                        form.setValue('lightingSystems', selections);
+                        form.setValue('lightingSystems', selections.map(s => ({
+                          value: s.value,
+                          percentage: s.percentage || 0,
+                          ranking: s.ranking || 'primary'
+                        })));
                       }}
                       placeholder="Legg til belysningstype..."
                       maxSelections={3}
@@ -983,8 +1034,9 @@ export function BuildingDataForm({
 
                 {/* Hot Water Systems */}
                 <div
-                  className="transition-all duration-300 ease-in-out"
-                  style={{ minHeight: `${dynamicHeight}px` }}
+                  ref={hotWaterRef}
+                  className="space-y-2"
+                  style={{ minHeight: bottomRowHeight ? `${bottomRowHeight}px` : undefined }}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-white text-sm font-medium">Varmtvannssystemer</span>
@@ -999,7 +1051,11 @@ export function BuildingDataForm({
                       selections={hotWaterSelections}
                       onSelectionsChange={(selections) => {
                         setHotWaterSelections(selections);
-                        form.setValue('hotWaterSystems', selections);
+                        form.setValue('hotWaterSystems', selections.map(s => ({
+                          value: s.value,
+                          percentage: s.percentage || 0,
+                          ranking: s.ranking || 'primary'
+                        })));
                       }}
                       placeholder="Legg til varmtvannskilde..."
                       maxSelections={3}
@@ -1010,12 +1066,12 @@ export function BuildingDataForm({
           </div>
 
           {/* Submit Button */}
-          <div className="pt-2">
+          <div className="pt-2 flex justify-center">
             <Button
               type="submit"
               disabled={isSubmitting}
               size="sm"
-              className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+              className="w-full sm:w-1/2 lg:w-1/5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
             >
               {isSubmitting ? (
                 <>

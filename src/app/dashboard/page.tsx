@@ -37,7 +37,6 @@ import DashboardGrid, { DashboardLayoutDefinition } from "@/components/grid/Dash
 import DashboardTile from "@/components/grid/DashboardTile";
 import { usePdfReport, extractBuildingDataFromParams, buildAnalysisData } from "@/hooks/use-pdf-report";
 import { getZoneMessaging, getUrgencyColor, getInvestmentMessage, getHeatPumpRecommendation } from "@/lib/zone-messaging";
-import DataEditingOverlay from "@/components/DataEditingOverlay";
 import DashboardToggle from "@/components/DashboardToggle";
 
 // Toggle between mock and real data maps
@@ -177,6 +176,10 @@ function DashboardContent() {
   const hotWaterSystem = searchParams.get('hotWaterSystem');
   const buildingYear = searchParams.get('buildingYear');
 
+  // Parse multi-select energy systems data
+  const energySystemsMultiParam = searchParams.get('energySystemsMulti');
+  const energySystemsMulti = energySystemsMultiParam ? JSON.parse(energySystemsMultiParam) : null;
+
   // Prevent infinite redirects - if no address, show error instead of redirecting
   if (!addressParam) {
     return (
@@ -234,8 +237,6 @@ function DashboardContent() {
   // PDF Report generation hook
   const { isGenerating, progress, error, generateReport } = usePdfReport();
 
-  // Data editing overlay state
-  const [isEditingOverlayOpen, setIsEditingOverlayOpen] = useState(false);
 
   // Email capture modal state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -314,12 +315,6 @@ function DashboardContent() {
     }
   };
 
-  // Handle data editing save
-  const handleDataEditingSave = (data: any) => {
-    console.log('Saving energy assessment data:', data);
-    // Here you would typically send the data to your backend
-    // and potentially refresh the dashboard with updated calculations
-  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -775,7 +770,10 @@ function DashboardContent() {
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => setIsEditingOverlayOpen(true)}
+                onClick={() => {
+                  // TODO: Implement editing overlay
+                  console.log('Edit data clicked - overlay not yet implemented');
+                }}
               >
                 {hasRealBuildingData ? "Rediger data" : "Legg til data"}
               </Button>
@@ -833,44 +831,6 @@ function DashboardContent() {
         }
       />
 
-      {/* Data Editing Overlay */}
-      <DataEditingOverlay
-        isOpen={isEditingOverlayOpen}
-        onClose={() => setIsEditingOverlayOpen(false)}
-        onSave={handleDataEditingSave}
-        buildingData={{
-          buildingType: buildingType || '',
-          totalArea: totalArea ? parseInt(totalArea) : undefined,
-          heatedArea: heatedArea ? parseInt(heatedArea) : undefined,
-          buildingYear: buildingYear ? parseInt(buildingYear) : undefined,
-          numberOfFloors: undefined, // Not available in URL params yet
-          annualEnergyConsumption: annualEnergyConsumption ? parseInt(annualEnergyConsumption) : undefined,
-          heatingSystem: heatingSystem || '',
-          lightingSystem: lightingSystem || '',
-          ventilationSystem: ventilationSystem || '',
-          hotWaterSystem: hotWaterSystem || '',
-          address: addressParam || '',
-          gnr: gnr || '',
-          bnr: bnr || '',
-          fnr: fnr || '',
-          snr: snr || '',
-          municipalityNumber: municipalityNumber || '',
-          bygningsnummer: bygningsnummer || '',
-          postalCode: postalCode || '',
-          energyClass: energyClass || 'Ikke sertifisert',
-        }}
-        initialData={{
-          bygningstype: buildingType || '',
-          bruksareal: totalArea || '',
-          oppforingsaar: buildingYear || '',
-          oppvarmingsType: heatingSystem || '',
-          belysningType: lightingSystem || '',
-          ventilasjonsType: ventilationSystem || '',
-          varmtvannsType: hotWaterSystem || '',
-          energimerking: energyClass || 'Ikke sertifisert',
-          totalEnergibruk: energyConsumptionParam || '',
-        }}
-      />
 
       {/* Dashboard ready indicator for screenshot capture */}
       <div data-dashboard-ready="true" className="hidden" />

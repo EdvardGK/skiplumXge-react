@@ -121,19 +121,19 @@ export function BuildingDataFormComponent({
       buildingYear: values.buildingYear,
       heatingSystems: heatingSelections.map(s => ({
         type: s.value as HeatingSystem,
-        percentage: s.percentage,
-        ranking: s.ranking
+        percentage: s.percentage || 0,
+        ranking: s.ranking || 'primary'
       })),
       lightingSystems: lightingSelections.map(s => ({
         type: s.value as LightingSystem,
-        percentage: s.percentage,
-        ranking: s.ranking
+        percentage: s.percentage || 0,
+        ranking: s.ranking || 'primary'
       })),
       ventilationSystem: values.ventilationSystem as VentilationSystem,
       hotWaterSystems: hotWaterSelections.map(s => ({
         type: s.value as HotWaterSystem,
-        percentage: s.percentage,
-        ranking: s.ranking
+        percentage: s.percentage || 0,
+        ranking: s.ranking || 'primary'
       }))
     }
 

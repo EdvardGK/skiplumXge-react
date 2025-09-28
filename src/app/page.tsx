@@ -337,8 +337,8 @@ export default function LandingPage() {
                   <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-emerald-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-emerald-400/30"></div>
                 </div>
                 <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Adressesøk</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                  Rask og presis søking i hele Norge
                 </p>
               </CardContent>
             </Card>
@@ -350,8 +350,8 @@ export default function LandingPage() {
                   <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-cyan-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-cyan-400/30"></div>
                 </div>
                 <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Eiendomsanalyse</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                  TEK17-samsvar og energipotensialet
                 </p>
               </CardContent>
             </Card>
@@ -363,8 +363,8 @@ export default function LandingPage() {
                   <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-violet-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-violet-400/30"></div>
                 </div>
                 <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Investeringsguide</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                  SINTEF-baserte anbefalinger
                 </p>
               </CardContent>
             </Card>
@@ -376,8 +376,8 @@ export default function LandingPage() {
                   <div className="absolute inset-0 w-8 h-8 sm:w-10 sm:h-10 bg-orange-400/20 rounded-full blur-sm animate-pulse mx-auto group-hover:bg-orange-400/30"></div>
                 </div>
                 <h3 className="text-sm sm:text-base font-semibold text-white mb-1 sm:mb-2">Eiendomskart</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">
-
+                <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                  Interaktivt kart med bygningsdata
                 </p>
               </CardContent>
             </Card>

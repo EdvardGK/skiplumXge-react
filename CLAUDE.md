@@ -304,6 +304,66 @@ SUPABASE_ANON_KEY=your_key_here
 - **Mobile Usage**: 50%+ traffic
 - **Return Users**: 25%+ within 30 days
 
+## Critical UX Guidelines
+
+### Input Field Requirements
+**CRITICAL**: All input fields must support proper UX patterns:
+
+1. **Empty State Handling**
+   - Use `value={field ?? ''}` NOT `value={field || 0}`
+   - Allow empty values during editing to prevent "010" concatenation issues
+   - Apply defaults only on blur, not during typing
+
+2. **Keyboard Support**
+   - Enter key must confirm input: `onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}`
+   - Tab navigation must work naturally
+   - Focus should select all text for easy replacement
+
+3. **Validation Timing**
+   - Validate on blur, not on change
+   - Show smart defaults in placeholders
+   - Never force values while user is typing
+
+### Multi-Select Component Design
+**CRITICAL**: Context-aware multi-select components must adapt to their use case:
+
+1. **Selection Modes**
+   - `energy-percentage`: For systems that must total 100%
+   - `insulation`: Thickness (mm) + U-value (W/m²K)
+   - `window-door`: Quantity + U-value
+   - `equipment-power`: Quantity + Power (W/stk)
+   - `simple`: Just selection, no additional inputs
+
+2. **Contextual Elements**
+   - Empty state text must be specific: "Ingen isolasjon registrert" not "Ingen energikilder valgt"
+   - Units must be clear: "W/stk" not just "W"
+   - Percentage totals only for energy distribution systems
+   - Appropriate placeholders showing typical values
+
+3. **Data Integrity**
+   - Never use mock data without clear labeling
+   - Ensure proper types for each context
+   - Validate based on selection mode
+
+### Responsive Design Requirements
+**CRITICAL**: Components must work across all screen sizes:
+
+1. **Layout Adaptations**
+   - Single column layouts for complex forms on narrow screens
+   - Use `flex-col sm:flex-row` for responsive stacking
+   - Input groups stack vertically on mobile
+   - Max width constraints: `max-w-3xl mx-auto`
+
+2. **Screen-Specific Features**
+   - Hide drag handles on mobile: `hidden sm:block`
+   - Show badges only on larger screens: `hidden lg:inline-flex`
+   - Ensure touch targets are adequate (min 44px)
+
+3. **Overflow Prevention**
+   - Test all components at 320px width
+   - Ensure no horizontal scrolling
+   - Use responsive text sizing
+
 ## Development Rules
 
 ### Language Rules
@@ -460,6 +520,48 @@ Session tracking and todo management:
 
 ### Code Quality Rules
 - **Never let scripts grow longer than 300 lines** - refactor if necessary
+
+## Three.js and GIS Coordinate System Integration
+
+### Critical Coordinate System Differences
+When integrating GIS data (building footprints, maps) with Three.js 3D visualization:
+
+#### GIS/Geographic Convention:
+- **X-axis**: East (longitude)
+- **Y-axis**: North (latitude)
+- **Z-axis**: Elevation/height
+- Footprints are naturally in XY plane
+
+#### Three.js/WebGL Convention:
+- **X-axis**: Right
+- **Y-axis**: Up (vertical)
+- **Z-axis**: Forward (into screen is negative)
+- Ground plane is XZ
+
+### Transformation Rules
+**CRITICAL**: Always transform GIS coordinates to Three.js consistently:
+
+```javascript
+// GIS footprint [x, y] to Three.js ground plane [x, 0, z]
+const three_x = gis_x;  // East stays right
+const three_y = 0;      // Ground level
+const three_z = -gis_y; // North becomes negative Z (into screen)
+
+// For shapes that need rotation:
+// 1. Create in XY plane: shape.lineTo(gis_x, gis_y)
+// 2. Rotate -90° around X: rotation={[-Math.PI/2, 0, 0]}
+// This makes Y → -Z transformation
+```
+
+### Common Pitfalls
+1. **Mixing conventions**: Using Y as +Z in some places and -Z in others creates 180° flips
+2. **Forgetting negation**: GIS North (positive Y) must become negative Z in Three.js
+3. **Wrong rotation order**: Rotating around wrong axis changes the mapping
+
+### Debugging Tips
+- Add color-coded axes (Red=X, Green=Y, Blue=Z) to visualize orientation
+- Check that all geometry uses same transformation (walls, floors, roofs)
+- Verify building appears correct from multiple angles
 
 ### Data & Language Rules
 - **Never use mockdata** without clearly labelling it, and only in development

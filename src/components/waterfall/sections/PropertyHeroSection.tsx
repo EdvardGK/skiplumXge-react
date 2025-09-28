@@ -1,16 +1,19 @@
 'use client';
 
 import { motion, useInView } from "framer-motion";
-import { useRef, Suspense, useState } from "react";
+import { useRef, Suspense, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Building,
   CheckCircle,
   AlertTriangle,
   MapPin,
   Thermometer,
-  Zap
+  Zap,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment } from "@react-three/drei";
@@ -38,6 +41,46 @@ interface PropertyHeroSectionProps {
 export default function PropertyHeroSection({ buildingData, realEnergyData, energyAnalysis }: PropertyHeroSectionProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-20%" });
+
+  // State for selected 3D component
+  const [selectedComponent, setSelectedComponent] = useState<{ id: string | null; type?: string }>({ id: null });
+
+  // State for camera rotation (for north arrow)
+  const [cameraAzimuth, setCameraAzimuth] = useState<number>(0);
+
+  // State for fullscreen mode
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // State for sectioning
+  const [sectionPlane, setSectionPlane] = useState<{ active: boolean; axis: 'x' | 'y' | 'z'; position: number; normal?: [number, number, number]; intersectionPoint?: [number, number, number] } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; componentId: string; normal?: [number, number, number]; intersectionPoint?: [number, number, number] } | null>(null);
+
+  // State for floor visibility (including roof)
+  // numberOfFloors will be calculated later based on OSM data
+  const [visibleFloors, setVisibleFloors] = useState<Set<number>>(
+    new Set(Array.from({ length: 3 }, (_, i) => i)) // Default to 2 floors + roof
+  );
+
+  // Track shift key state
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  // Listen for shift key press/release
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftPressed(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') setIsShiftPressed(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // Use real Enova data when available
   const enovaResult = realEnergyData?.enovaResult;
@@ -116,113 +159,43 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
     ] : [[-5, -5], [5, -5], [5, 5], [-5, 5]];
 
   // Use OSM levels if available, otherwise estimate based on building age
-  const buildingHeight = buildingData.osmLevels ?
-    buildingData.osmLevels * 3.5 : // Approximately 3.5m per floor
-    buildingData.buildingYear ?
-      (new Date().getFullYear() - parseInt(buildingData.buildingYear) < 20 ? 12 : 8) : 10;
+  // Extract or estimate number of floors
+  const numberOfFloors = buildingData.osmLevels ?
+    buildingData.osmLevels :
+    buildingData.totalArea && parseInt(buildingData.totalArea) > 500 ? 3 : 2;
 
-  // Debug info for roof algorithm
-  const [showDebug, setShowDebug] = useState(true);
+  // Update visible floors when numberOfFloors changes
+  useEffect(() => {
+    setVisibleFloors(new Set(Array.from({ length: numberOfFloors + 1 }, (_, i) => i)));
+  }, [numberOfFloors]);
+
+  // Handle escape key to exit fullscreen
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [isFullscreen]);
+
+  // Let BuildingMesh calculate height based on building type and floors
+  // Only provide explicit height if we have OSM levels
+  const explicitHeight = buildingData.osmLevels ? buildingData.osmLevels * 3.5 : undefined;
+
 
   return (
     <section
       ref={ref}
       className="min-h-screen relative flex items-center justify-center px-4 py-20"
     >
-      {/* Debug Panel for Building Analysis */}
-      {showDebug && (
-        <div className="fixed top-20 right-4 z-50 bg-black/80 text-white p-4 rounded-lg max-w-md max-h-[80vh] overflow-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg">🔍 Building Debug Info</h3>
-            <button
-              onClick={() => setShowDebug(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
+      {/* Debug Panel - Removed for production */}
 
-          <div className="space-y-4 text-sm">
-            {/* OSM Data */}
-            <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">OSM Building Data</h4>
-              <div className="bg-white/10 p-2 rounded">
-                <div>Footprint Points: {buildingData.buildingFootprint ? buildingData.buildingFootprint.length : 'None'}</div>
-                <div>OSM Levels: {buildingData.osmLevels || 'N/A'}</div>
-                {buildingData.buildingFootprint && (
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-cyan-300">Raw Coordinates</summary>
-                    <pre className="text-xs mt-1 overflow-auto">
-                      {JSON.stringify(buildingData.buildingFootprint, null, 2)}
-                    </pre>
-                  </details>
-                )}
-              </div>
-            </div>
-
-            {/* Transformed Footprint */}
-            <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">Transformed to 3D Space</h4>
-              <div className="bg-white/10 p-2 rounded">
-                <div>Points: {buildingFootprint.length}</div>
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-cyan-300">3D Coordinates</summary>
-                  <pre className="text-xs mt-1 overflow-auto">
-                    {JSON.stringify(buildingFootprint, null, 2)}
-                  </pre>
-                </details>
-              </div>
-            </div>
-
-            {/* Building Dimensions */}
-            <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">Calculated Dimensions</h4>
-              <div className="bg-white/10 p-2 rounded">
-                <div>Height: {buildingHeight}m</div>
-                <div>Total Area: {buildingData.totalArea}m²</div>
-                <div>Heated Area: {buildingData.heatedArea}m²</div>
-              </div>
-            </div>
-
-            {/* Shape Detection */}
-            <div>
-              <h4 className="font-semibold text-cyan-400 mb-2">Shape Analysis</h4>
-              <div className="bg-white/10 p-2 rounded">
-                <div className="text-yellow-300">
-                  ⚠️ Check browser console for detailed roof algorithm analysis
-                </div>
-                <div className="mt-2 text-xs">
-                  <div>• Corner detection</div>
-                  <div>• Concave corners found</div>
-                  <div>• Shape type (Rectangle/L/T/Complex)</div>
-                  <div>• Rectangle decomposition</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowDebug(true)}
-            className="mt-4 w-full py-2 bg-cyan-600 hover:bg-cyan-500 rounded text-sm"
-          >
-            Refresh Analysis
-          </button>
-        </div>
-      )}
-
-      {/* Show Debug Button when hidden */}
-      {!showDebug && (
-        <button
-          onClick={() => setShowDebug(true)}
-          className="fixed top-20 right-4 z-50 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg"
-        >
-          🔍 Show Debug
-        </button>
-      )}
-
-      {/* Background Aurora - Northern Lights Theme */}
+      {/* Background Aurora - Dark Mode Theme */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900"
+        className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 2 }}
@@ -390,20 +363,66 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
         {/* Right Column - 3D Building Visualization */}
         <motion.div
-          className="relative h-96 lg:h-[600px]"
+          className={`${isFullscreen ? 'fixed inset-0 z-[100] bg-background' : 'relative h-96 lg:h-[600px]'}`}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : 50 }}
           transition={{ duration: 1, delay: 0.5 }}
+          onClick={() => setContextMenu(null)} // Close context menu on click outside
         >
-          <div className="w-full h-full bg-slate-900/30 rounded-2xl border border-white/10 backdrop-blur-sm overflow-hidden">
+          {/* Expand/Minimize Button */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-4 right-4 z-50 bg-background/90 backdrop-blur-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFullscreen(!isFullscreen);
+            }}
+            title={isFullscreen ? "Minimer" : "Utvid"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </Button>
+
+          {/* Fullscreen hint */}
+          {isFullscreen && (
+            <div className="absolute top-4 left-4 z-50 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-border">
+              <p className="text-sm text-muted-foreground">
+                Trykk <kbd className="px-1 py-0.5 text-xs bg-border rounded">ESC</kbd> for å avslutte fullskjerm
+              </p>
+            </div>
+          )}
+
+          <div
+            className={`w-full h-full ${isFullscreen ? '' : 'bg-background/30 rounded-2xl border border-border backdrop-blur-sm'} overflow-hidden`}
+            onWheel={(e) => {
+              // Check if shift is held for section control
+              if (e.shiftKey && sectionPlane?.active) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Update section position based on scroll
+                const delta = e.deltaY > 0 ? -0.5 : 0.5; // Scroll direction
+                setSectionPlane(prev => {
+                  if (!prev) return null;
+                  const newPosition = Math.max(-20, Math.min(20, prev.position + delta));
+                  return { ...prev, position: newPosition };
+                });
+              }
+            }}
+          >
             <Suspense fallback={
               <div className="w-full h-full flex items-center justify-center">
-                <div className="text-slate-400">Laster 3D modell...</div>
+                <div className="text-muted-foreground">Laster 3D modell...</div>
               </div>
             }>
               <Canvas
                 camera={{ position: [20, 20, 20], fov: 50 }}
                 className="w-full h-full"
+                gl={{ localClippingEnabled: true }} // Enable clipping planes
               >
                 <ambientLight intensity={0.4} />
                 <directionalLight
@@ -416,9 +435,21 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
                 <BuildingMesh
                   footprint={buildingFootprint}
-                  height={buildingHeight}
-                  buildingType={buildingData.buildingType || 'default'}
+                  height={explicitHeight}
+                  numberOfFloors={numberOfFloors}
+                  buildingType={buildingData.buildingType || 'Kontor'}
                   showHeatParticles={!isCompliant && energyConsumption !== null}
+                  onComponentSelect={(id, type) => setSelectedComponent({ id, type })}
+                  onContextMenu={(event, componentId) => {
+                    // Calculate screen position for context menu
+                    const x = event.nativeEvent.offsetX;
+                    const y = event.nativeEvent.offsetY;
+                    const normal = (event as any).normal || [0, 1, 0];
+                    const intersectionPoint = (event as any).intersectionPoint || [0, 0, 0];
+                    setContextMenu({ x, y, componentId, normal, intersectionPoint });
+                  }}
+                  sectionPlane={sectionPlane}
+                  visibleFloors={visibleFloors}
                 />
 
                 {/* Ground plane */}
@@ -428,10 +459,19 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                 </mesh>
 
                 <OrbitControls
-                  enableZoom={true}
-                  enablePan={false}
-                  maxPolarAngle={Math.PI / 2}
-                  minPolarAngle={Math.PI / 6}
+                  enableZoom={!(sectionPlane?.active && isShiftPressed)}
+                  enablePan={true}
+                  // Removed angle restrictions - can now orbit fully including below
+                  onChange={(e) => {
+                    if (e?.target) {
+                      // Calculate azimuth angle from camera position
+                      const azimuth = Math.atan2(
+                        e.target.object.position.x,
+                        e.target.object.position.z
+                      );
+                      setCameraAzimuth(azimuth);
+                    }
+                  }}
                 />
 
                 <Environment preset="night" />
@@ -439,15 +479,274 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
             </Suspense>
           </div>
 
+          {/* North Arrow Indicator */}
+          <motion.div
+            className="absolute top-4 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-2 border border-border/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isInView ? 1 : 0 }}
+            transition={{ delay: 1 }}
+          >
+            <div className="relative w-12 h-12">
+              {/* Compass circle */}
+              <div className="absolute inset-0 border-2 border-cyan-400/30 rounded-full" />
+              {/* Rotating arrow container */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  transform: `rotate(${-cameraAzimuth * 180 / Math.PI}deg)`,
+                  transition: 'transform 0.1s ease-out'
+                }}
+              >
+                {/* North arrow */}
+                <svg
+                  className="w-full h-full"
+                  viewBox="0 0 48 48"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  {/* Arrow pointing north (10% shorter) */}
+                  <path
+                    d="M24 11 L27 19 L24 17.5 L21 19 Z"
+                    fill="rgba(34, 211, 238, 0.8)"
+                    stroke="rgba(34, 211, 238, 1)"
+                    strokeWidth="1"
+                  />
+                  {/* South indicator (10% shorter) */}
+                  <path
+                    d="M24 37 L21 29 L24 30.5 L27 29 Z"
+                    fill="rgba(100, 116, 139, 0.5)"
+                    stroke="rgba(100, 116, 139, 0.8)"
+                    strokeWidth="1"
+                  />
+                </svg>
+              </div>
+              {/* Fixed cardinal directions (don't rotate) */}
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 text-[8px] text-cyan-400 font-bold">
+                N
+              </div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 text-[8px] text-slate-500">
+                S
+              </div>
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 text-[8px] text-slate-500">
+                V
+              </div>
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 text-[8px] text-slate-500">
+                Ø
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Floor Toggle Menu */}
+          <motion.div
+            className="absolute top-20 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isInView ? 1 : 0 }}
+            transition={{ delay: 1.2 }}
+          >
+            <div className="text-xs text-cyan-400 font-semibold mb-2">Etasjer</div>
+            <div className="space-y-1">
+              {/* Roof toggle */}
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5">
+                <input
+                  type="checkbox"
+                  checked={visibleFloors.has(numberOfFloors)}
+                  onChange={(e) => {
+                    const newVisible = new Set(visibleFloors);
+                    if (e.target.checked) {
+                      newVisible.add(numberOfFloors);
+                    } else {
+                      newVisible.delete(numberOfFloors);
+                    }
+                    setVisibleFloors(newVisible);
+                  }}
+                  className="w-3 h-3 accent-cyan-400"
+                />
+                <span className="text-[10px] text-slate-300">Tak</span>
+              </label>
+
+              {/* Floor toggles (reverse order - top to bottom) */}
+              {Array.from({ length: numberOfFloors }, (_, i) => numberOfFloors - 1 - i).map((floor) => (
+                <label key={floor} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={visibleFloors.has(floor)}
+                    onChange={(e) => {
+                      const newVisible = new Set(visibleFloors);
+                      if (e.target.checked) {
+                        newVisible.add(floor);
+                      } else {
+                        newVisible.delete(floor);
+                      }
+                      setVisibleFloors(newVisible);
+                    }}
+                    className="w-3 h-3 accent-cyan-400"
+                  />
+                  <span className="text-[10px] text-slate-300">
+                    {floor === 0 ? '1. etg' : `${floor + 1}. etg`}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </motion.div>
+
           {/* 3D Controls Hint */}
           <motion.div
-            className="absolute bottom-4 right-4 text-xs text-slate-400 bg-slate-900/50 px-2 py-1 rounded backdrop-blur-sm"
+            className="absolute bottom-4 right-4 text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 2 }}
           >
-            Dra for å rotere • Zoom med hjul
+            Dra for å rotere • Høyreklikk for panorering • Zoom med hjul
           </motion.div>
+
+          {/* Context Menu for Sectioning */}
+          {contextMenu && (
+            <div
+              className="absolute bg-background/95 backdrop-blur-sm rounded-lg p-2 border border-border shadow-lg z-50"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <button
+                className="block w-full text-left px-3 py-2 text-sm hover:bg-primary/10 rounded transition-colors"
+                onClick={() => {
+                  // Create section parallel to clicked surface
+                  const normal = contextMenu.normal || [0, 1, 0];
+                  const intersectionPoint = contextMenu.intersectionPoint || [0, 0, 0];
+
+                  // Determine primary axis based on normal and get position from intersection point
+                  let axis: 'x' | 'y' | 'z' = 'y';
+                  let position = 0;
+
+                  if (Math.abs(normal[0]) > Math.abs(normal[1]) && Math.abs(normal[0]) > Math.abs(normal[2])) {
+                    axis = 'x'; // Normal points mostly along X
+                    position = intersectionPoint[0]; // Use X coordinate of click point
+                  } else if (Math.abs(normal[2]) > Math.abs(normal[1])) {
+                    axis = 'z'; // Normal points mostly along Z
+                    position = intersectionPoint[2]; // Use Z coordinate of click point
+                  } else {
+                    axis = 'y'; // Normal points mostly along Y (up/down)
+                    position = intersectionPoint[1]; // Use Y coordinate of click point
+                  }
+
+                  setSectionPlane({ active: true, axis, position, normal, intersectionPoint });
+                  setContextMenu(null);
+                }}
+              >
+                ✂️ Lag snitt
+              </button>
+              {sectionPlane?.active && (
+                <button
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-red-500/10 rounded transition-colors text-red-400"
+                  onClick={() => {
+                    setSectionPlane(null);
+                    setContextMenu(null);
+                  }}
+                >
+                  ❌ Fjern snitt
+                </button>
+              )}
+              <button
+                className="block w-full text-left px-3 py-2 text-sm hover:bg-primary/10 rounded transition-colors text-muted-foreground"
+                onClick={() => setContextMenu(null)}
+              >
+                Avbryt
+              </button>
+            </div>
+          )}
+
+          {/* Section Plane Controls */}
+          {sectionPlane?.active && (
+            <motion.div
+              className="absolute bottom-20 left-4 bg-background/95 backdrop-blur-sm rounded-lg p-3 border border-border shadow-xl"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <div className="space-y-2.5">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-cyan-400 font-semibold">✂️ Snittplan aktivt</div>
+                  <button
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-1"
+                    onClick={() => setSectionPlane(null)}
+                    title="Lukk snittplan"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Position display */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-300">
+                    {sectionPlane.axis === 'y' ? 'Høyde' :
+                     sectionPlane.axis === 'x' ? 'X-pos' : 'Z-pos'}:
+                  </span>
+                  <span className="text-sm font-mono text-white bg-black/30 px-2 py-0.5 rounded">
+                    {sectionPlane.position.toFixed(1)}m
+                  </span>
+                </div>
+
+                {/* Control hint with visual keyboard */}
+                <div className="bg-primary/10 rounded-md p-2 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <kbd className="px-2 py-1 text-[11px] bg-background rounded border border-border font-mono shadow-sm">
+                      ⇧ Shift
+                    </kbd>
+                    <span className="text-[11px] text-slate-400">+</span>
+                    <div className="flex flex-col items-center">
+                      <div className="text-[10px] text-slate-500">▲</div>
+                      <div className="px-2 py-0.5 text-[11px] bg-background rounded border border-border">
+                        Scroll
+                      </div>
+                      <div className="text-[10px] text-slate-500">▼</div>
+                    </div>
+                    <span className="text-[11px] text-slate-300 ml-1">flytt snitt</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Selected Component Info */}
+          {selectedComponent.id && (
+            <motion.div
+              className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm rounded-lg p-3 border border-border"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <div className="text-xs text-muted-foreground mb-1">Valgt komponent</div>
+              <div className="text-sm font-medium text-foreground">{selectedComponent.type || 'Komponent'}</div>
+              <div className="text-xs text-primary mt-1">{selectedComponent.id}</div>
+              {selectedComponent.id.includes('roof') && (
+                <div className="text-xs text-muted-foreground mt-2">
+                  Klikk for å se varmetapsdata
+                </div>
+              )}
+              {selectedComponent.id.includes('window') && (
+                <div className="text-xs text-muted-foreground mt-2">
+                  U-verdi: 1.2 W/m²K
+                </div>
+              )}
+              {selectedComponent.id.includes('wall') && (
+                <div className="text-xs text-muted-foreground mt-2">
+                  Isolasjon: 600mm mineralull<br/>
+                  U-verdi: 0.18 W/m²K
+                </div>
+              )}
+              {selectedComponent.id.includes('floor') && (
+                <div className="text-xs text-muted-foreground mt-2">
+                  {selectedComponent.id.includes('divider')
+                    ? 'Betongdekke 250mm'
+                    : 'Gulvisolasjon: 250mm'}
+                </div>
+              )}
+              {selectedComponent.id.includes('door') && (
+                <div className="text-xs text-muted-foreground mt-2">
+                  U-verdi: 1.5 W/m²K<br/>
+                  Hovedinngang
+                </div>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       </div>
 

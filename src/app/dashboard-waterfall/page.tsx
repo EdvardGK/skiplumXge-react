@@ -23,12 +23,12 @@ import DashboardToggle from "@/components/DashboardToggle";
 // Loading component
 function WaterfallLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-background">
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <Zap className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
-          <h1 className="text-2xl font-bold text-white mb-2">Laster energihistorie...</h1>
-          <p className="text-slate-400">Forbereder din bygnings energireise</p>
+          <Zap className="w-16 h-16 text-primary mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Laster energihistorie...</h1>
+          <p className="text-muted-foreground">Forbereder din bygnings energireise</p>
         </div>
       </div>
     </div>
@@ -42,6 +42,21 @@ function WaterfallContent() {
   // Email modal state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
+  // Section management state
+  const [visibleSections, setVisibleSections] = useState([
+    'property-hero',
+    'heat-loss',
+    'seasonal',
+    'investment',
+    'comparison',
+    'action'
+  ]);
+
+  // Handle section deletion
+  const handleDeleteSection = (sectionId: string) => {
+    setVisibleSections(prev => prev.filter(id => id !== sectionId));
+  };
+
   // Scroll progress tracking
   const { scrollYProgress } = useScroll();
   const backgroundOpacity = useTransform(scrollYProgress, [0, 1], [1, 0.3]);
@@ -50,8 +65,8 @@ function WaterfallContent() {
   if (!addressParam) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center text-slate-400">
-          <h1 className="text-2xl font-bold text-white mb-2">Mangler adresseinformasjon</h1>
+        <div className="text-center text-muted-foreground">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Mangler adresseinformasjon</h1>
           <p className="mb-4">Gå tilbake til søket for å starte energianalysen.</p>
           <Button
             variant="outline"
@@ -147,10 +162,10 @@ function WaterfallContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 relative overflow-x-hidden">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
       {/* Aurora Background */}
       <motion.div
-        className="fixed inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900"
+        className="fixed inset-0 bg-gradient-to-br from-background via-background/90 to-background"
         style={{ opacity: backgroundOpacity }}
       />
 
@@ -186,27 +201,27 @@ function WaterfallContent() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-lg border-b border-slate-700/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-slate-300 hover:text-white px-2 py-1"
+                className="text-muted-foreground hover:text-foreground px-2 py-1"
                 onClick={() => window.history.back()}
               >
                 <ArrowLeft className="w-3 h-3 mr-1" />
                 Tilbake
               </Button>
               <div className="flex items-center space-x-2">
-                <Zap className="w-6 h-6 text-cyan-400" />
-                <span className="text-xl font-bold text-white">SkiplumXGE</span>
+                <Zap className="w-6 h-6 text-primary" />
+                <span className="text-xl font-bold text-foreground">SkiplumXGE</span>
               </div>
               {addressParam && (
                 <div className="ml-6 flex items-center space-x-2">
-                  <span className="text-slate-400">•</span>
-                  <span className="text-cyan-400 font-medium">{addressParam}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-primary font-medium">{addressParam}</span>
                   <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
                     Waterfall View
                   </span>
@@ -247,42 +262,54 @@ function WaterfallContent() {
       {/* Waterfall Sections */}
       <main className="relative z-10">
         {/* Act 1: The Cold Open - Your Building's Energy Portrait */}
-        <PropertyHeroSection
-          buildingData={buildingData}
-          realEnergyData={realEnergyDataFromHook}
-          energyAnalysis={realEnergyData}
-        />
+        {visibleSections.includes('property-hero') && (
+          <PropertyHeroSection
+            buildingData={buildingData}
+            realEnergyData={realEnergyDataFromHook}
+            energyAnalysis={realEnergyData}
+          />
+        )}
 
         {/* Act 2: The Heat Map - Where Your Energy Escapes */}
-        <HeatLossSection
-          buildingData={buildingData}
-          energyAnalysis={realEnergyData}
-        />
+        {visibleSections.includes('heat-loss') && (
+          <HeatLossSection
+            buildingData={buildingData}
+            energyAnalysis={realEnergyData}
+          />
+        )}
 
         {/* Act 3: The Seasons Cycle - Energy Through Norwegian Seasons */}
-        <SeasonalSection
-          buildingData={buildingData}
-          realEnergyData={realEnergyDataFromHook}
-        />
+        {visibleSections.includes('seasonal') && (
+          <SeasonalSection
+            buildingData={buildingData}
+            realEnergyData={realEnergyDataFromHook}
+          />
+        )}
 
         {/* Act 4: The Money Waterfall - From Waste to Wealth */}
-        <InvestmentSection
-          buildingData={buildingData}
-          energyAnalysis={realEnergyData}
-          realEnergyData={realEnergyDataFromHook}
-        />
+        {visibleSections.includes('investment') && (
+          <InvestmentSection
+            buildingData={buildingData}
+            energyAnalysis={realEnergyData}
+            realEnergyData={realEnergyDataFromHook}
+          />
+        )}
 
         {/* Act 5: The Comparison - You're Not Alone */}
-        <ComparisonSection
-          buildingData={buildingData}
-          realEnergyData={realEnergyDataFromHook}
-        />
+        {visibleSections.includes('comparison') && (
+          <ComparisonSection
+            buildingData={buildingData}
+            realEnergyData={realEnergyDataFromHook}
+          />
+        )}
 
         {/* Act 6: The Action Plan - Path to Excellence */}
-        <ActionSection
-          buildingData={buildingData}
-          energyAnalysis={realEnergyData}
-        />
+        {visibleSections.includes('action') && (
+          <ActionSection
+            buildingData={buildingData}
+            energyAnalysis={realEnergyData}
+          />
+        )}
       </main>
 
       {/* Scroll Progress Indicator */}

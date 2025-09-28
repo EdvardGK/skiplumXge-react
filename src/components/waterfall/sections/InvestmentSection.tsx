@@ -279,7 +279,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
 
                     {/* Progress bar showing investment vs. room */}
                     <div className="mt-4">
-                      <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <motion.div
                           className={`h-2 rounded-full bg-gradient-to-r ${option.color}`}
                           initial={{ width: 0 }}

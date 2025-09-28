@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar, Map, FormInput } from "lucide-react";
 import { MapDataService } from "@/services/map-data.service";
-import { BuildingDataForm } from "@/components/BuildingDataForm";
+import { BuildingDataFormModal } from "@/components/BuildingDataFormModal";
 import dynamic from 'next/dynamic';
 
 // Dynamically import react-leaflet components to avoid SSR issues
@@ -997,21 +997,10 @@ function SelectBuildingContent() {
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {showForm ? (
-                      // Building Data Form
-                      <BuildingDataForm
-                        address={address || ''}
-                        lat={lat || ''}
-                        lon={lon || ''}
-                        municipality={municipality || ''}
-                        municipalityNumber={municipalityNumber || ''}
-                        postalCode={postalCode || ''}
-                        gnr={gnr || ''}
-                        bnr={bnr || ''}
-                        bygningsnummer={selectedCertificate || ''}
-                        onSubmit={handleFormSubmit}
-                        isSubmitting={isSubmittingForm}
-                        onResetRequest={() => {/* Handled by global function */}}
-                      />
+                      // Empty state - form is now shown in modal
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-slate-400">Fyller ut bygningsdata...</p>
+                      </div>
                     ) : !showCertificates ? (
                       // Building List - Show all buildings, selected first
                       <>
@@ -1243,6 +1232,23 @@ function SelectBuildingContent() {
         )}
 
       </div>
+
+      {/* Building Data Form Modal */}
+      <BuildingDataFormModal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        address={address || ''}
+        lat={lat || ''}
+        lon={lon || ''}
+        municipality={municipality || ''}
+        municipalityNumber={municipalityNumber || ''}
+        postalCode={postalCode || ''}
+        gnr={gnr || ''}
+        bnr={bnr || ''}
+        bygningsnummer={selectedCertificate || ''}
+        onSubmit={handleFormSubmit}
+        isSubmitting={isSubmittingForm}
+      />
     </div>
   );
 }

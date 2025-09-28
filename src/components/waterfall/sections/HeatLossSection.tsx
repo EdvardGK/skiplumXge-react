@@ -67,7 +67,7 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
     >
       {/* Background gradient - Northern Lights Theme */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-purple-900/20 to-blue-900/30"
+        className="absolute inset-0 bg-gradient-to-br from-background/50 via-secondary/10 to-primary/20"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 1.5 }}
@@ -142,7 +142,7 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
                           </div>
                           <span className="text-white font-bold text-lg">{item.value}</span>
                         </div>
-                        <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
+                        <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                           <motion.div
                             className={`h-full ${item.color}`}
                             initial={{ width: 0 }}

@@ -59,7 +59,7 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
     >
       {/* Northern Lights background */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-cyan-900/20 to-purple-900/20"
+        className="absolute inset-0 bg-gradient-to-br from-background/50 via-primary/10 to-secondary/10"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 2 }}
