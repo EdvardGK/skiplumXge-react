@@ -5,6 +5,7 @@ import { useMemo, Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmailCaptureModal } from "@/components/email-capture-modal";
+import DataEditingOverlay from "@/components/DataEditingOverlay";
 import {
   Building,
   Zap,
@@ -240,6 +241,9 @@ function DashboardContent() {
 
   // Email capture modal state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+  // Data editing overlay state
+  const [isEditingOverlayOpen, setIsEditingOverlayOpen] = useState(false);
 
   const directCertificateData = useMemo(() => {
     if (!energyClass && !energyConsumptionParam) return null;
@@ -770,10 +774,7 @@ function DashboardContent() {
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={() => {
-                  // TODO: Implement editing overlay
-                  console.log('Edit data clicked - overlay not yet implemented');
-                }}
+                onClick={() => setIsEditingOverlayOpen(true)}
               >
                 {hasRealBuildingData ? "Rediger data" : "Legg til data"}
               </Button>
@@ -831,6 +832,26 @@ function DashboardContent() {
         }
       />
 
+      {/* Data Editing Overlay */}
+      <DataEditingOverlay
+        isOpen={isEditingOverlayOpen}
+        onClose={() => setIsEditingOverlayOpen(false)}
+        onSave={(data) => {
+          console.log('Saving data:', data);
+          setIsEditingOverlayOpen(false);
+          // TODO: Update URL params with new data
+        }}
+        buildingData={{
+          buildingType: buildingType || '',
+          totalArea: totalArea ? parseInt(totalArea) : 0,
+          heatedArea: heatedArea ? parseInt(heatedArea) : 0,
+          buildingYear: buildingYear ? parseInt(buildingYear) : 0,
+          heatingSystem: heatingSystem || '',
+          lightingSystem: lightingSystem || '',
+          ventilationSystem: ventilationSystem || '',
+          hotWaterSystem: hotWaterSystem || '',
+        }}
+      />
 
       {/* Dashboard ready indicator for screenshot capture */}
       <div data-dashboard-ready="true" className="hidden" />

@@ -65,7 +65,20 @@ Color-coded axes for visualization:
 ## Time Invested
 ~4 hours total (debugging + fixing + documentation)
 
+## Working Perfectly
+- **Clipping planes in section tool**: The section cutting functionality is working perfectly with the coordinate fixes!
+
+## Known Issues
+- **"Rediger data" button not working in production**: Button click only logs to console, doesn't open advanced form overlay. The editing overlay component and state management were not fully implemented.
+
+## UX Improvements Needed
+- **Invert scroll direction for section plane**: Currently feels backwards
+  - Scrolling UP should push the section plane away (into the building)
+  - Scrolling DOWN should pull it toward the user
+  - This matches natural scroll expectations
+
 ## Next Steps
+- Fix "Rediger data" button - implement proper editing overlay/form
 - Fix roof algorithm (coordinate system alignment)
 - Fix waterfall design (UI/UX improvements)
 
