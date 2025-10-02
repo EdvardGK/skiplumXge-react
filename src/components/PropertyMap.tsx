@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import {
+  fetchPropertyBoundaries,
+  parsePropertyBoundaries,
+  calculatePolygonArea,
+} from '@/lib/geonorge-api';
+import type { PropertyBoundary } from '@/types/geonorge';
 
 interface PropertyMapProps {
   address?: string | null;
@@ -34,18 +40,117 @@ interface NorwegianBuilding {
   climateZone: string;
 }
 
-// Simulate Norwegian building registry API call
+// Load property boundaries from Geonorge API
+const loadPropertyBoundaries = async (
+  map: L.Map,
+  centerCoords: { lat: number; lon: number },
+  focusAddress?: string | null
+) => {
+  try {
+    // Fetch real property boundaries from Geonorge
+    const response = await fetchPropertyBoundaries(
+      centerCoords.lat,
+      centerCoords.lon,
+      10 // 10m radius to find nearest property
+    );
+
+    if (!response) {
+      console.warn('[PropertyMap] No property boundaries found');
+      // Fallback: show marker only
+      const marker = L.marker([centerCoords.lat, centerCoords.lon]).addTo(map);
+      marker.bindPopup(`<b>${focusAddress || 'Ukjent adresse'}</b><br/>Eiendomsdata ikke tilgjengelig`);
+      return;
+    }
+
+    const properties = parsePropertyBoundaries(response);
+
+    if (properties.length === 0) {
+      console.warn('[PropertyMap] No properties parsed from boundaries');
+      return;
+    }
+
+    console.log(`[PropertyMap] Rendering ${properties.length} property boundaries`);
+
+    // Render each property boundary
+    properties.forEach((property, index) => {
+      const isFocusProperty = index === 0; // First property is typically the closest match
+
+      // Convert GeoJSON coordinates to Leaflet format
+      // GeoJSON is [lon, lat], Leaflet is [lat, lon]
+      const outerRing = property.coordinates[0];
+      const leafletCoords: [number, number][] = outerRing.map((coord) => [coord[1], coord[0]]);
+
+      // Calculate area
+      const area = calculatePolygonArea(outerRing, centerCoords.lat);
+
+      // Get CSS variable colors from document
+      const warningColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--warning').trim() || '#f59e0b';
+      const warningLightColor =
+        getComputedStyle(document.documentElement).getPropertyValue('--warning-foreground').trim() || '#fbbf24';
+
+      // Add property boundary polygon
+      const boundaryPolygon = L.polygon(leafletCoords, {
+        color: isFocusProperty ? warningColor : warningLightColor,
+        fillColor: isFocusProperty ? warningColor : warningLightColor,
+        fillOpacity: isFocusProperty ? 0.15 : 0.08,
+        weight: 2,
+        dashArray: '5, 10', // Dashed line for property boundaries
+      }).addTo(map);
+
+      // Build matrikkel identifier
+      const matrikkelId = `${property.matrikkel.kommunenummer}/${property.matrikkel.gardsnummer}/${property.matrikkel.bruksnummer}`;
+
+      // Create popup with actual matrikkel data
+      const popupContent = `
+        <div class="p-2">
+          <h3 class="font-bold text-sm mb-2 text-warning">
+            🏡 ${isFocusProperty ? 'Eiendomsgrense (valgt)' : 'Nabo eiendom'}
+          </h3>
+          <div class="space-y-1 text-xs">
+            <div><strong>Matrikkel:</strong> ${matrikkelId}</div>
+            <div><strong>Tomteareal:</strong> ~${Math.round(area)} m²</div>
+            ${isFocusProperty && focusAddress ? `<div><strong>Adresse:</strong> ${focusAddress}</div>` : ''}
+            <div class="text-text-tertiary mt-1">Kilde: Kartverket</div>
+          </div>
+        </div>
+      `;
+
+      boundaryPolygon.bindPopup(popupContent);
+
+      // Auto-open popup for focus property
+      if (isFocusProperty) {
+        boundaryPolygon.openPopup();
+      }
+    });
+
+    // Add marker at exact address coordinates
+    const marker = L.marker([centerCoords.lat, centerCoords.lon], {
+      icon: L.icon({
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+      }),
+    }).addTo(map);
+
+    marker.bindPopup(`<b>${focusAddress || 'Valgt adresse'}</b>`);
+  } catch (error) {
+    console.error('[PropertyMap] Failed to load property boundaries:', error);
+    // Fallback: show marker
+    const marker = L.marker([centerCoords.lat, centerCoords.lon]).addTo(map);
+    marker.bindPopup(`<b>${focusAddress || 'Ukjent adresse'}</b><br/>Kunne ikke hente eiendomsdata`);
+  }
+};
+
+// Mock Norwegian building data (in production, this would call Kartverket building registry)
 const loadNorwegianBuildingData = async (
   map: L.Map,
   centerCoords: { lat: number; lon: number },
   focusAddress?: string | null
 ) => {
   try {
-    // In production, this would be multiple API calls to:
-    // 1. Kartverket building registry (bygningsregisteret)
-    // 2. SSB municipality data
-    // 3. Climate zone API
-
     // Mock building footprints within 100m radius
     const mockBuildings: NorwegianBuilding[] = [
       // Focus building (actual searched address)
@@ -63,40 +168,11 @@ const loadNorwegianBuildingData = async (
         municipality: 'Oslo',
         climateZone: 'Sone 1'
       },
-      // Neighbor buildings (within 100m)
-      {
-        id: 'neighbor-1',
-        buildingType: 'Flerbolig',
-        coordinates: [
-          [centerCoords.lat - 0.0005, centerCoords.lon - 0.0003],
-          [centerCoords.lat - 0.0002, centerCoords.lon - 0.0003],
-          [centerCoords.lat - 0.0002, centerCoords.lon + 0.0001],
-          [centerCoords.lat - 0.0005, centerCoords.lon + 0.0001]
-        ],
-        area: 2400,
-        stories: 6,
-        municipality: 'Oslo',
-        climateZone: 'Sone 1'
-      },
-      {
-        id: 'neighbor-2',
-        buildingType: 'Småhus',
-        coordinates: [
-          [centerCoords.lat + 0.0003, centerCoords.lon - 0.0004],
-          [centerCoords.lat + 0.0005, centerCoords.lon - 0.0004],
-          [centerCoords.lat + 0.0005, centerCoords.lon - 0.0001],
-          [centerCoords.lat + 0.0003, centerCoords.lon - 0.0001]
-        ],
-        area: 180,
-        stories: 2,
-        municipality: 'Oslo',
-        climateZone: 'Sone 1'
-      }
     ];
 
     // Add building polygons to map
     mockBuildings.forEach((building, index) => {
-      const isFocus = building.id === 'focus-building';
+      const isFocus = index === 0; // First building is focus building
       const style = isFocus ? BUILDING_COLORS.focus : BUILDING_COLORS.neighbor;
 
       // Add building footprint
@@ -104,33 +180,6 @@ const loadNorwegianBuildingData = async (
         ...style,
         weight: 2
       }).addTo(map);
-
-      // Add property boundary for focus building (larger than building footprint)
-      if (isFocus) {
-        const propertyBoundary: [number, number][] = [
-          [centerCoords.lat - 0.0003, centerCoords.lon - 0.0004],
-          [centerCoords.lat + 0.0003, centerCoords.lon - 0.0004],
-          [centerCoords.lat + 0.0003, centerCoords.lon + 0.0004],
-          [centerCoords.lat - 0.0003, centerCoords.lon + 0.0004]
-        ];
-
-        L.polygon(propertyBoundary, {
-          color: '#f59e0b', // Amber color for property boundary
-          fillColor: '#f59e0b',
-          fillOpacity: 0.1,
-          weight: 2,
-          dashArray: '5, 10' // Dashed line for property boundary
-        }).addTo(map).bindPopup(`
-          <div class="p-2">
-            <h3 class="font-bold text-sm mb-2 text-amber-600">🏡 Eiendomsgrense</h3>
-            <div class="space-y-1 text-xs">
-              <div><strong>Matrikkel:</strong> 301/47/0</div>
-              <div><strong>Tomteareal:</strong> ~800 m²</div>
-              <div><strong>Status:</strong> Privat eiendom</div>
-            </div>
-          </div>
-        `);
-      }
 
       // Create detailed popup for each building
       const popupContent = `
@@ -213,10 +262,12 @@ export function PropertyMap({ address, coordinates, className = '' }: PropertyMa
       maxZoom: 20,
     }).addTo(map);
 
-    // Add buildings if we have coordinates
+    // Add property boundaries and buildings if we have coordinates
     if (coordinates) {
-      // Load Norwegian building data
-      loadNorwegianBuildingData(map, coordinates, address);
+      // Load real property boundaries from Geonorge API
+      loadPropertyBoundaries(map, coordinates, address);
+      // Optionally: load mock building data (will be replaced with real building API later)
+      // loadNorwegianBuildingData(map, coordinates, address);
     } else if (address) {
       // Fallback: show marker at default location with note about missing coordinates
       const marker = L.marker(mapCenter).addTo(map);

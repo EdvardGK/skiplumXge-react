@@ -94,10 +94,10 @@ function getRankingLabel(ranking: 'primary' | 'secondary' | 'tertiary'): string 
 
 function getRankingColor(ranking: 'primary' | 'secondary' | 'tertiary'): string {
   switch (ranking) {
-    case 'primary': return 'text-emerald-400 border-emerald-400'
-    case 'secondary': return 'text-cyan-400 border-cyan-400'
-    case 'tertiary': return 'text-slate-400 border-slate-400'
-    default: return 'text-slate-400 border-slate-400'
+    case 'primary': return 'text-success border-success'
+    case 'secondary': return 'text-accent border-accent'
+    case 'tertiary': return 'text-text-tertiary border-text-tertiary'
+    default: return 'text-text-tertiary border-text-tertiary'
   }
 }
 
@@ -374,7 +374,7 @@ export function RankedMultiSelect({
           {showPercentageTotal && totalPercentage !== 100 && (
             <span className={cn(
               "text-xs min-w-[60px] text-right",
-              totalPercentage > 100 ? "text-red-400" : "text-yellow-400"
+              totalPercentage > 100 ? "text-destructive" : "text-warning"
             )}>
               Total: {totalPercentage}%
             </span>
@@ -390,11 +390,11 @@ export function RankedMultiSelect({
           return (
             <div
               key={selection.value}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 rounded-lg border border-white/20 bg-white/5"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 rounded-lg border border-border bg-muted/30"
             >
               {!useQuantityYear && !useThicknessUValue && !useQuantityUValue && !useQuantityPower && (
                 <>
-                  <GripVertical className="w-4 h-4 text-slate-500 cursor-move hidden sm:block" />
+                  <GripVertical className="w-4 h-4 text-text-muted cursor-move hidden sm:block" />
                   {selection.ranking && (
                     <Badge
                       variant="outline"
@@ -416,7 +416,7 @@ export function RankedMultiSelect({
                   onValueChange={(value) => handleSelectionChange(index, value)}
                   disabled={disabled}
                 >
-                  <SelectTrigger className="h-8 border-none bg-transparent text-sm font-medium px-2 py-1 hover:bg-white/5 focus:ring-0 focus:ring-offset-0 [&>svg]:hidden flex-1">
+                  <SelectTrigger className="h-8 border-none bg-transparent text-sm font-medium px-2 py-1 hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 [&>svg]:hidden flex-1">
                     <SelectValue className="text-sm font-medium">
                       {option?.label || selection.value}
                     </SelectValue>
@@ -463,12 +463,12 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-16 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-16 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       disabled={disabled}
                       placeholder="1"
                     />
-                    <span className="text-sm text-slate-400">stk</span>
+                    <span className="text-sm text-text-tertiary">stk</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -493,16 +493,16 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-20 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-20 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       max="5"
                       disabled={disabled}
                       placeholder="0.80"
                     />
-                    <span className="text-sm text-slate-400">W/m²K</span>
+                    <span className="text-sm text-text-tertiary">W/m²K</span>
                   </div>
                   {uValueLabel && (
-                    <span className="text-xs text-emerald-400 sm:ml-2">
+                    <span className="text-xs text-success sm:ml-2">
                       {uValueLabel}
                     </span>
                   )}
@@ -531,12 +531,12 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-20 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-20 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       disabled={disabled}
                       placeholder="200"
                     />
-                    <span className="text-sm text-slate-400">mm</span>
+                    <span className="text-sm text-text-tertiary">mm</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -561,16 +561,16 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-20 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-20 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       max="5"
                       disabled={disabled}
                       placeholder="0.18"
                     />
-                    <span className="text-sm text-slate-400">W/m²K</span>
+                    <span className="text-sm text-text-tertiary">W/m²K</span>
                   </div>
                   {uValueLabel && (
-                    <span className="text-xs text-emerald-400 sm:ml-2">
+                    <span className="text-xs text-success sm:ml-2">
                       {uValueLabel}
                     </span>
                   )}
@@ -599,12 +599,12 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-16 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-16 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       disabled={disabled}
                       placeholder="1"
                     />
-                    <span className="text-sm text-slate-400">stk</span>
+                    <span className="text-sm text-text-tertiary">stk</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -628,14 +628,14 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-20 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-20 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       max="10000"
                       step="10"
                       disabled={disabled}
                       placeholder="100"
                     />
-                    <span className="text-sm text-slate-400">W/stk</span>
+                    <span className="text-sm text-text-tertiary">W/stk</span>
                   </div>
                 </div>
               ) : useQuantityYear ? (
@@ -662,12 +662,12 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-16 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-16 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="0"
                       disabled={disabled}
                       placeholder="1"
                     />
-                    <span className="text-sm text-slate-400">stk</span>
+                    <span className="text-sm text-text-tertiary">stk</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Input
@@ -691,13 +691,13 @@ export function RankedMultiSelect({
                           e.currentTarget.blur()
                         }
                       }}
-                      className="w-20 h-8 text-center bg-white/5 border-white/20 text-white"
+                      className="w-20 h-8 text-center bg-input border-input-border text-input-foreground"
                       min="1900"
                       max="2100"
                       disabled={disabled}
                       placeholder={new Date().getFullYear().toString()}
                     />
-                    <span className="text-sm text-slate-400">år</span>
+                    <span className="text-sm text-text-tertiary">år</span>
                   </div>
                 </div>
               ) : (
@@ -718,11 +718,11 @@ export function RankedMultiSelect({
                         e.currentTarget.blur() // Trigger blur to save the value
                       }
                     }}
-                    className="w-16 h-8 text-center bg-white/5 border-white/20 text-white"
+                    className="w-16 h-8 text-center bg-input border-input-border text-input-foreground"
                     disabled={disabled}
                     placeholder="0"
                   />
-                  <span className="text-sm text-slate-400">%</span>
+                  <span className="text-sm text-text-tertiary">%</span>
                 </div>
               )}
 
@@ -734,7 +734,7 @@ export function RankedMultiSelect({
                 disabled={disabled}
                 className="h-8 w-8 p-0 self-start sm:self-center mt-0"
               >
-                <Trash2 className="w-4 h-4 text-red-400" />
+                <Trash2 className="w-4 h-4 text-destructive" />
               </Button>
             </div>
           )
@@ -782,9 +782,9 @@ export function RankedMultiSelect({
         )}
       </div>
 
-      {selections.length === 0 && (
+      {selections.length === 0 && emptyStateText && (
         <p className="text-sm text-muted-foreground text-center py-4 border border-dashed border-white/20 rounded-lg">
-          {emptyStateText || "Ingen valgt ennå"}
+          {emptyStateText}
         </p>
       )}
     </div>

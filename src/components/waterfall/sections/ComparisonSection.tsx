@@ -89,7 +89,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
       category: 'Din bygning',
       consumption: 'Input building consumption',
       grade: 'Input energy grade',
-      color: 'text-yellow-400',
+      color: 'text-warning',
       bgColor: 'bg-yellow-900/20 border-yellow-500/30',
       icon: '🏠',
       isUser: true
@@ -98,7 +98,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
       category: 'Nabolaget snitt',
       consumption: 'Input neighborhood average',
       grade: 'Input neighborhood grade',
-      color: 'text-blue-400',
+      color: 'text-info',
       bgColor: 'bg-blue-900/20 border-blue-500/30',
       icon: '🏘️',
       isUser: false
@@ -107,7 +107,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
       category: 'Beste i området',
       consumption: 'Input best in area',
       grade: 'Input best grade',
-      color: 'text-emerald-400',
+      color: 'text-success',
       bgColor: 'bg-emerald-900/20 border-emerald-500/30',
       icon: '⭐',
       isUser: false
@@ -116,7 +116,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
       category: 'TEK17 krav',
       consumption: 'Input TEK17 requirement',
       grade: '-',
-      color: 'text-purple-400',
+      color: 'text-aurora-purple',
       bgColor: 'bg-purple-900/20 border-purple-500/30',
       icon: '📋',
       isUser: false
@@ -145,7 +145,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           transition={{ duration: 1 }}
         >
           <motion.div
-            className="flex items-center justify-center space-x-2 text-purple-400 mb-4"
+            className="flex items-center justify-center space-x-2 text-aurora-purple mb-4"
             initial={{ scale: 0 }}
             animate={{ scale: isInView ? 1 : 0 }}
             transition={{ delay: 0.2, type: "spring" }}
@@ -155,7 +155,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           </motion.div>
 
           <motion.h2
-            className="text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="text-4xl lg:text-5xl font-bold text-foreground mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.4 }}
@@ -164,7 +164,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           </motion.h2>
 
           <motion.p
-            className="text-xl text-slate-300 max-w-2xl mx-auto"
+            className="text-xl text-text-secondary max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.6 }}
@@ -209,7 +209,7 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
                   </Canvas>
                 </Suspense>
 
-                <div className="absolute bottom-4 left-4 text-xs text-slate-400">
+                <div className="absolute bottom-4 left-4 text-xs text-text-tertiary">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-yellow-400 rounded"></div>
@@ -250,14 +250,14 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
                         <div className="text-2xl">{item.icon}</div>
                         <div>
                           <h3 className={`font-bold ${item.color}`}>{item.category}</h3>
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-text-tertiary">
                             {item.isUser ? 'Det er deg!' : 'Sammenligning'}
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-lg font-bold text-white">
+                        <div className="text-lg font-bold text-foreground">
                           {item.consumption}
                         </div>
                         <div className={`text-sm font-medium ${item.color}`}>
@@ -296,14 +296,14 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           <Card className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border-emerald-500/30 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Star className="w-6 h-6 text-emerald-400" />
-                <h3 className="text-lg font-bold text-white">Suksesshistorie</h3>
+                <Star className="w-6 h-6 text-success" />
+                <h3 className="text-lg font-bold text-foreground">Suksesshistorie</h3>
               </div>
-              <p className="text-slate-300 text-sm mb-3">
-                <strong className="text-white">Storgata 15</strong> gikk fra klasse D til A
+              <p className="text-text-secondary text-sm mb-3">
+                <strong className="text-foreground">Storgata 15</strong> gikk fra klasse D til A
                 med varmepumpe og isolering. Sparer nå 45.000 kr årlig.
               </p>
-              <div className="text-emerald-400 text-sm font-medium">
+              <div className="text-success text-sm font-medium">
                 Tilbakebetaling: 6,2 år
               </div>
             </CardContent>
@@ -312,14 +312,14 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/30 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <TrendingUp className="w-6 h-6 text-blue-400" />
-                <h3 className="text-lg font-bold text-white">Området ditt</h3>
+                <TrendingUp className="w-6 h-6 text-info" />
+                <h3 className="text-lg font-bold text-foreground">Området ditt</h3>
               </div>
-              <p className="text-slate-300 text-sm mb-3">
-                <strong className="text-white">72% av naboene</strong> har gjennomført
+              <p className="text-text-secondary text-sm mb-3">
+                <strong className="text-foreground">72% av naboene</strong> har gjennomført
                 energitiltak de siste 5 årene. Gjennomsnittlig besparelse: 28%.
               </p>
-              <div className="text-blue-400 text-sm font-medium">
+              <div className="text-info text-sm font-medium">
                 Du kan også oppnå dette!
               </div>
             </CardContent>
@@ -333,10 +333,10 @@ export default function ComparisonSection({ buildingData, realEnergyData }: Comp
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 2.5 }}
         >
-          <p className="text-slate-400 text-sm mb-4">
+          <p className="text-text-tertiary text-sm mb-4">
             Klar for å bli en av suksesshistoriene?
           </p>
-          <ArrowDown className="w-6 h-6 text-cyan-400 mx-auto animate-bounce" />
+          <ArrowDown className="w-6 h-6 text-aurora-cyan mx-auto animate-bounce" />
         </motion.div>
       </div>
     </section>

@@ -22,37 +22,39 @@ if (!supabaseUrl || !supabaseAnonKey) {
     NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (client-side)`)
 }
 
-// Create Supabase client for server-side operations
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-
-// Singleton instance for client-side operations
+// Single unified client instance
 let clientInstance: ReturnType<typeof createClient<Database>> | null = null
 
-// Create client-safe Supabase instance
-export const createClientSupabase = () => {
-  const clientUrl = publicSupabaseUrl || supabaseUrl
-  const clientKey = publicSupabaseAnonKey || supabaseAnonKey
-
-  if (!clientUrl || !clientKey) {
-    throw new Error('Client-side Supabase configuration missing. Ensure NEXT_PUBLIC_* variables are set.')
+// Get or create Supabase client (singleton)
+function getSupabaseClient() {
+  if (clientInstance) {
+    return clientInstance
   }
 
-  return createClient<Database>(clientUrl, clientKey)
+  // Determine which credentials to use
+  const url = (typeof window !== 'undefined' ? publicSupabaseUrl : supabaseUrl) || supabaseUrl
+  const key = (typeof window !== 'undefined' ? publicSupabaseAnonKey : supabaseAnonKey) || supabaseAnonKey
+
+  if (!url || !key) {
+    throw new Error('Supabase configuration missing')
+  }
+
+  // Create single instance with unique storage key
+  clientInstance = createClient<Database>(url, key, {
+    auth: {
+      persistSession: typeof window !== 'undefined',
+      storageKey: 'skiplum-energi-auth',
+      autoRefreshToken: typeof window !== 'undefined',
+      detectSessionInUrl: typeof window !== 'undefined',
+    }
+  })
+
+  return clientInstance
 }
 
-// Default client instance for client-side operations (singleton pattern)
-export const supabaseClient = (() => {
-  if (typeof window === 'undefined') {
-    // Server-side: use the server instance
-    return supabase
-  }
-
-  // Client-side: use singleton pattern to avoid multiple instances
-  if (!clientInstance) {
-    clientInstance = createClientSupabase()
-  }
-  return clientInstance
-})()
+// Export single client for both server and client use
+export const supabase = getSupabaseClient()
+export const supabaseClient = supabase
 
 // Session management helpers
 export const setSessionContext = async (sessionId: string) => {

@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MapDataService from '@/services/map-data.service';
 import { Loader2 } from 'lucide-react';
+import { usePolygonColors, useThemeColors } from '@/hooks/useThemeColors';
 
 interface BuildingData {
   id: string;
@@ -33,28 +34,6 @@ interface PropertyMapProps {
 // Default coordinates for Oslo center if no address
 const DEFAULT_COORDS: [number, number] = [59.9139, 10.7522];
 
-// Building colors for new selection system
-const BUILDING_COLORS = {
-  selected: {
-    color: '#e879f9',     // fuchsia-400 - magenta for selected building
-    fillColor: '#d946ef',  // fuchsia-500
-    fillOpacity: 0.6,
-    weight: 3
-  },
-  target: {
-    color: '#14b8a6',     // teal-500 - teal for buildings from searched address
-    fillColor: '#0d9488',  // teal-600
-    fillOpacity: 0.4,
-    weight: 2
-  },
-  neighbor: {
-    color: '#22c55e',     // green-500 - green for neighbor buildings
-    fillColor: '#16a34a',  // green-600
-    fillOpacity: 0.3,
-    weight: 2
-  }
-};
-
 // Building type icons for popups
 const BUILDING_ICONS = {
   'Kontor': '🏢',
@@ -80,12 +59,17 @@ export function PropertyMapWithRealData({
 }: PropertyMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [buildingCount, setBuildingCount] = useState(0);
   const [targetBuildings, setTargetBuildings] = useState<BuildingData[]>([]);
   const [neighborBuildings, setNeighborBuildings] = useState<BuildingData[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingData | null>(null);
   const buildingLayersRef = useRef<Map<string, L.Polygon>>(new Map());
+
+  // Get theme-aware polygon colors and theme mode from design token system
+  const BUILDING_COLORS = usePolygonColors();
+  const themeColors = useThemeColors();
 
   const loadRealBuildingData = useCallback(async (
     map: L.Map,
@@ -269,12 +253,14 @@ export function PropertyMapWithRealData({
     }).setView(mapCenter, zoomLevel);
     mapInstanceRef.current = map;
 
-    // Add dark-themed tile layer to match app design
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Add theme-aware tile layer to match app design
+    const tileTheme = themeColors.mode === 'dark' ? 'dark_all' : 'light_all';
+    const tileLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${tileTheme}/{z}/{x}/{y}{r}.png`, {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 20,
     }).addTo(map);
+    tileLayerRef.current = tileLayer;
 
     // Fix for default marker icons
     delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -300,8 +286,34 @@ export function PropertyMapWithRealData({
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
+      if (tileLayerRef.current) {
+        tileLayerRef.current = null;
+      }
     };
   }, [address, coordinates, loadRealBuildingData]);
+
+  // Handle theme changes by updating tile layer without recreating the map
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const oldTileLayer = tileLayerRef.current;
+
+    if (!map) return;
+
+    // Remove old tile layer
+    if (oldTileLayer) {
+      map.removeLayer(oldTileLayer);
+    }
+
+    // Add new tile layer with current theme
+    const tileTheme = themeColors.mode === 'dark' ? 'dark_all' : 'light_all';
+    const newTileLayer = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${tileTheme}/{z}/{x}/{y}{r}.png`, {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
+    }).addTo(map);
+
+    tileLayerRef.current = newTileLayer;
+  }, [themeColors.mode]);
 
   // Handle external building selection changes
   useEffect(() => {
@@ -336,20 +348,20 @@ export function PropertyMapWithRealData({
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="absolute top-2 left-2 bg-slate-900/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg flex items-center gap-2 border border-fuchsia-400/20">
-          <Loader2 className="w-4 h-4 animate-spin text-fuchsia-400" />
-          <span className="text-sm text-slate-300">Laster bygningsdata...</span>
+        <div className="absolute top-2 left-2 bg-popover backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg flex items-center gap-2 border border-aurora-purple/20">
+          <Loader2 className="w-4 h-4 animate-spin text-aurora-purple" />
+          <span className="text-sm text-text-secondary">Laster bygningsdata...</span>
         </div>
       )}
 
       {/* Map controls info */}
-      <div className="absolute bottom-2 right-2 bg-slate-900/90 backdrop-blur-sm border border-white/20 text-slate-300 p-2 rounded text-xs shadow-lg">
-        <div className="font-medium text-white">Kartnavigering</div>
+      <div className="absolute bottom-2 right-2 bg-popover backdrop-blur-sm border border-border text-text-secondary p-2 rounded text-xs shadow-lg">
+        <div className="font-medium text-foreground">Kartnavigering</div>
         <div>Zoom: Scroll • Pan: Dra • Klikk bygninger for info</div>
       </div>
 
       {/* Data source badge */}
-      <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-400 to-emerald-400 text-slate-900 px-2 py-1 rounded text-xs font-bold shadow-lg">
+      <div className="absolute top-2 right-2 bg-gradient-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold shadow-lg">
         LIVE DATA
       </div>
     </div>

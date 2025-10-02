@@ -74,7 +74,7 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           transition={{ duration: 1 }}
         >
           <motion.div
-            className="flex items-center justify-center space-x-2 text-cyan-400 mb-4"
+            className="flex items-center justify-center space-x-2 text-aurora-cyan mb-4"
             initial={{ scale: 0 }}
             animate={{ scale: isInView ? 1 : 0 }}
             transition={{ delay: 0.2, type: "spring" }}
@@ -84,7 +84,7 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           </motion.div>
 
           <motion.h2
-            className="text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="text-4xl lg:text-5xl font-bold text-foreground mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.4 }}
@@ -93,7 +93,7 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           </motion.h2>
 
           <motion.p
-            className="text-xl text-slate-300 max-w-2xl mx-auto"
+            className="text-xl text-text-secondary max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.6 }}
@@ -112,15 +112,15 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           {/* Winter */}
           <Card className="bg-blue-900/20 border-blue-500/30 backdrop-blur-sm">
             <CardContent className="p-6 text-center">
-              <Snowflake className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-blue-400 mb-2">Vinter</h3>
-              <div className="text-3xl font-bold text-white mb-2">
+              <Snowflake className="w-12 h-12 text-info mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-info mb-2">Vinter</h3>
+              <div className="text-3xl font-bold text-foreground mb-2">
                 {hasEnergyData ? `${winterConsumption} kWh/m²` : 'Krever: Bygningsdata'}
               </div>
-              <p className="text-slate-300 text-sm">
+              <p className="text-text-secondary text-sm">
                 Høyeste forbruk på grunn av oppvarming
               </p>
-              <div className="text-xs text-slate-500 mt-2">
+              <div className="text-xs text-muted-foreground mt-2">
                 Kilde: {hasEnergyData ? 'NS 3031 klimadata' : dataSource}
               </div>
             </CardContent>
@@ -129,15 +129,15 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           {/* Summer */}
           <Card className="bg-yellow-900/20 border-yellow-500/30 backdrop-blur-sm">
             <CardContent className="p-6 text-center">
-              <Sun className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-yellow-400 mb-2">Sommer</h3>
-              <div className="text-3xl font-bold text-white mb-2">
+              <Sun className="w-12 h-12 text-warning mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-warning mb-2">Sommer</h3>
+              <div className="text-3xl font-bold text-foreground mb-2">
                 {hasEnergyData ? `${summerConsumption} kWh/m²` : 'Krever: Bygningsdata'}
               </div>
-              <p className="text-slate-300 text-sm">
+              <p className="text-text-secondary text-sm">
                 Laveste forbruk - kun varmtvann og ventilasjon
               </p>
-              <div className="text-xs text-slate-500 mt-2">
+              <div className="text-xs text-muted-foreground mt-2">
                 Kilde: {hasEnergyData ? 'NS 3031 klimadata' : dataSource}
               </div>
             </CardContent>
@@ -147,14 +147,14 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           <Card className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border-cyan-500/30 backdrop-blur-sm">
             <CardContent className="p-6 text-center">
               <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-bold text-cyan-400 mb-2">Årlig variasjon</h3>
-              <div className="text-3xl font-bold text-white mb-2">
+              <h3 className="text-xl font-bold text-aurora-cyan mb-2">Årlig variasjon</h3>
+              <div className="text-3xl font-bold text-foreground mb-2">
                 {hasEnergyData ? variationRatio : 'Krever: Data'}
               </div>
-              <p className="text-slate-300 text-sm">
+              <p className="text-text-secondary text-sm">
                 Mellom sommer og vinter
               </p>
-              <div className="text-xs text-slate-500 mt-2">
+              <div className="text-xs text-muted-foreground mt-2">
                 {priceZone} • {electricityPrice.toFixed(2)} kr/kWh
               </div>
             </CardContent>
@@ -168,13 +168,13 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 1.5 }}
         >
-          <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+          <Card className="bg-card/50 border-border backdrop-blur-sm">
             <CardContent className="p-6">
-              <p className="text-slate-300 text-lg mb-4">
-                <strong className="text-white">Vinterforbruket</strong> utgjør 60{'%'} av årsforbruket.
+              <p className="text-text-secondary text-lg mb-4">
+                <strong className="text-foreground">Vinterforbruket</strong> utgjør 60{'%'} av årsforbruket.
                 Bedre isolasjon kan redusere dette dramatisk.
               </p>
-              <div className="text-cyan-400 font-semibold">
+              <div className="text-aurora-cyan font-semibold">
                 Potensial for 40-50{'%'} reduksjon i vinterforbruk
               </div>
             </CardContent>
@@ -188,10 +188,10 @@ export default function SeasonalSection({ buildingData, realEnergyData }: Season
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 2 }}
         >
-          <p className="text-slate-400 text-sm mb-4">
+          <p className="text-text-tertiary text-sm mb-4">
             Hva betyr dette for lommeboka?
           </p>
-          <ArrowDown className="w-6 h-6 text-cyan-400 mx-auto animate-bounce" />
+          <ArrowDown className="w-6 h-6 text-aurora-cyan mx-auto animate-bounce" />
         </motion.div>
       </div>
     </section>

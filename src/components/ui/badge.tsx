@@ -15,6 +15,21 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: "text-foreground",
+        // Energy grade variants (A = best, G = worst)
+        "grade-A":
+          "border-success/30 bg-success/20 text-success font-bold",
+        "grade-B":
+          "border-success/30 bg-success/20 text-success font-bold",
+        "grade-C":
+          "border-warning/30 bg-warning/20 text-warning font-bold",
+        "grade-D":
+          "border-warning/30 bg-warning/20 text-warning font-bold",
+        "grade-E":
+          "border-destructive/30 bg-destructive/20 text-destructive font-bold",
+        "grade-F":
+          "border-destructive/30 bg-destructive/20 text-destructive font-bold",
+        "grade-G":
+          "border-destructive/30 bg-destructive/20 text-destructive font-bold",
       },
     },
     defaultVariants: {

@@ -133,21 +133,21 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
       />
 
       {/* Modal */}
-      <div className="relative bg-[#0c0c0e] border border-gray-800/50 rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-popover border border-border rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-[#0c0c0e] border-b border-gray-800/50 p-6 pb-4">
+        <div className="sticky top-0 bg-popover border-b border-border p-6 pb-4">
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="absolute right-4 top-4 p-2 hover:bg-muted rounded-lg transition-colors"
             aria-label="Lukk"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-text-muted" />
           </button>
 
-          <h2 className="text-2xl font-bold text-white mb-1">
+          <h2 className="text-2xl font-bold text-foreground mb-1">
             Kontakt oss
           </h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-text-tertiary text-sm">
             La oss hjelpe deg med å redusere energikostnadene
           </p>
         </div>
@@ -156,7 +156,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Customer Type */}
           <div className="space-y-2">
-            <Label className="text-gray-300">
+            <Label className="text-text-secondary">
               Type kunde
             </Label>
             <div className="grid grid-cols-2 gap-3">
@@ -165,8 +165,8 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                 onClick={() => handleChange('customerType', 'privat')}
                 className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg border transition-all ${
                   formData.customerType === 'privat'
-                    ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white'
-                    : 'border-gray-700/50 bg-gray-900/50 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                    ? 'border-primary bg-primary-muted text-foreground'
+                    : 'border-border/50 bg-card/50 text-text-secondary hover:border-border hover:text-foreground hover:bg-card backdrop-blur-sm'
                 }`}
               >
                 <User className="w-4 h-4" />
@@ -177,8 +177,8 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                 onClick={() => handleChange('customerType', 'bedrift')}
                 className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg border transition-all ${
                   formData.customerType === 'bedrift'
-                    ? 'border-emerald-400 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white'
-                    : 'border-gray-700/50 bg-gray-900/50 text-gray-400 hover:border-gray-600 hover:text-gray-300'
+                    ? 'border-primary bg-primary-muted text-foreground'
+                    : 'border-border/50 bg-card/50 text-text-secondary hover:border-border hover:text-foreground hover:bg-card backdrop-blur-sm'
                 }`}
               >
                 <Briefcase className="w-4 h-4" />
@@ -190,7 +190,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
           {/* Name and Email Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-300">
+              <Label htmlFor="name" className="text-text-secondary">
                 Navn *
               </Label>
               <Input
@@ -199,13 +199,13 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                 required
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
-                className="bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-500 focus:border-emerald-400/50"
+                className="bg-input border-input-border text-input-foreground placeholder-input-placeholder focus:border-input-border-focus"
                 placeholder="Ola Nordmann"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">
+              <Label htmlFor="email" className="text-text-secondary">
                 E-post *
               </Label>
               <Input
@@ -214,7 +214,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                 required
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className="bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-500 focus:border-emerald-400/50"
+                className="bg-input border-input-border text-input-foreground placeholder-input-placeholder focus:border-input-border-focus"
                 placeholder="ola@eksempel.no"
               />
             </div>
@@ -223,7 +223,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
           {/* Phone and Company Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-300">
+              <Label htmlFor="phone" className="text-text-secondary">
                 Telefon
               </Label>
               <Input
@@ -231,14 +231,14 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
-                className="bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-500 focus:border-emerald-400/50"
+                className="bg-input border-input-border text-input-foreground placeholder-input-placeholder focus:border-input-border-focus"
                 placeholder="+47 123 45 678"
               />
             </div>
 
             {formData.customerType === 'bedrift' && (
               <div className="space-y-2">
-                <Label htmlFor="orgNumber" className="text-gray-300">
+                <Label htmlFor="orgNumber" className="text-text-secondary">
                   Organisasjonsnummer
                 </Label>
                 <div>
@@ -247,12 +247,12 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
                     type="text"
                     value={formData.orgNumber}
                     onChange={(e) => handleChange('orgNumber', e.target.value)}
-                    className="bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-500 focus:border-emerald-400/50"
+                    className="bg-input border-input-border text-input-foreground placeholder-input-placeholder focus:border-input-border-focus"
                     placeholder="999 999 999"
                     maxLength={11}
                   />
                   {isValidatingOrg && (
-                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 pl-3">
+                    <p className="text-xs text-text-tertiary mt-1 flex items-center gap-1 pl-3">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       Sjekker...
                     </p>
@@ -269,27 +269,27 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
 
           {/* Subject */}
           <div className="space-y-2">
-            <Label htmlFor="subject" className="text-gray-300">
+            <Label htmlFor="subject" className="text-text-secondary">
               Hva gjelder henvendelsen?
             </Label>
             <Select
               value={formData.subject}
               onValueChange={(value) => handleChange('subject', value)}
             >
-              <SelectTrigger className="w-full bg-gray-900/50 border-gray-700/50 text-white hover:bg-gray-800/50 focus:border-emerald-400/50">
+              <SelectTrigger className="w-full bg-input border-input-border text-input-foreground hover:bg-secondary-hover focus:border-input-border-focus">
                 <SelectValue placeholder="Velg emne for henvendelsen" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0c0c0e] border-gray-700/50" style={{ zIndex: 9999 }}>
-                <SelectItem value="energianalyse" className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer">
+              <SelectContent className="bg-popover border-border" style={{ zIndex: 9999 }}>
+                <SelectItem value="energianalyse" className="text-text-secondary hover:bg-secondary hover:text-foreground focus:bg-secondary-hover focus:text-foreground cursor-pointer">
                   Jeg vil bestille energianalyse/rådgivning
                 </SelectItem>
-                <SelectItem value="kamera" className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer">
+                <SelectItem value="kamera" className="text-text-secondary hover:bg-secondary hover:text-foreground focus:bg-secondary-hover focus:text-foreground cursor-pointer">
                   Jeg vil låne termisk kamera
                 </SelectItem>
-                <SelectItem value="tilbakemelding" className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer">
+                <SelectItem value="tilbakemelding" className="text-text-secondary hover:bg-secondary hover:text-foreground focus:bg-secondary-hover focus:text-foreground cursor-pointer">
                   Jeg har tilbakemelding om appen
                 </SelectItem>
-                <SelectItem value="annet" className="text-gray-300 hover:bg-gray-800 hover:text-white focus:bg-gray-800 focus:text-white cursor-pointer">
+                <SelectItem value="annet" className="text-text-secondary hover:bg-secondary hover:text-foreground focus:bg-secondary-hover focus:text-foreground cursor-pointer">
                   Annet
                 </SelectItem>
               </SelectContent>
@@ -298,7 +298,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
 
           {/* Message */}
           <div className="space-y-2">
-            <Label htmlFor="message" className="text-gray-300">
+            <Label htmlFor="message" className="text-text-secondary">
               Melding *
             </Label>
             <Textarea
@@ -307,7 +307,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
               rows={4}
               value={formData.message}
               onChange={(e) => handleChange('message', e.target.value)}
-              className="bg-gray-900/50 border-gray-700/50 text-white placeholder-gray-500 focus:border-emerald-400/50 resize-none"
+              className="bg-gray-900/50 border-gray-700/50 text-foreground placeholder-gray-500 focus:border-emerald-400/50 resize-none"
               placeholder="Fortell oss om ditt prosjekt og hva du ønsker hjelp med..."
             />
           </div>
@@ -317,7 +317,7 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium h-11"
+            className="w-full bg-gradient-to-r bg-gradient-primary hover:from-emerald-600 hover:to-cyan-600 text-foreground font-medium h-11"
           >
             {isSubmitting ? (
               <>
@@ -333,21 +333,21 @@ export function ContactFormModal({ isOpen, onClose, propertyAddress }: ContactFo
           </Button>
 
           {/* Contact Info */}
-          <div className="pt-4 border-t border-gray-800/50 space-y-2">
-            <p className="text-xs text-gray-500 text-center">
+          <div className="pt-4 border-t border-border space-y-2">
+            <p className="text-xs text-text-muted text-center">
               Eller kontakt oss direkte
             </p>
             <div className="flex justify-center space-x-6 text-xs">
               <a
                 href="tel:+4799265242"
-                className="flex items-center text-gray-400 hover:text-emerald-400 transition-colors"
+                className="flex items-center text-text-tertiary hover:text-primary transition-colors"
               >
                 <Phone className="w-3 h-3 mr-1" />
                 +47 992 65 242
               </a>
               <a
                 href="mailto:iver.grytting@skiplum.no"
-                className="flex items-center text-gray-400 hover:text-emerald-400 transition-colors"
+                className="flex items-center text-text-tertiary hover:text-primary transition-colors"
               >
                 <Mail className="w-3 h-3 mr-1" />
                 iver.grytting@skiplum.no

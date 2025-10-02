@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { QueryProvider } from "@/providers/query-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { AddressDataProvider } from "@/contexts/AddressDataContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,13 +33,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nb" className="dark">
+    <html lang="nb" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <QueryProvider>
-          {children}
-        </QueryProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <QueryProvider>
+            <AddressDataProvider>
+              {children}
+            </AddressDataProvider>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

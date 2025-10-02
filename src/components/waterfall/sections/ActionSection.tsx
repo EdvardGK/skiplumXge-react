@@ -79,7 +79,7 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
       description: '30 min telefonsamtale med ekspert',
       icon: Phone,
       action: () => console.log('Book consultation'),
-      color: 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+      color: 'bg-gradient-to-r bg-gradient-primary'
     },
     {
       title: 'Send til e-post',
@@ -122,7 +122,7 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
           transition={{ duration: 1 }}
         >
           <motion.div
-            className="flex items-center justify-center space-x-2 text-emerald-400 mb-4"
+            className="flex items-center justify-center space-x-2 text-success mb-4"
             initial={{ scale: 0 }}
             animate={{ scale: isInView ? 1 : 0 }}
             transition={{ delay: 0.2, type: "spring" }}
@@ -132,7 +132,7 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
           </motion.div>
 
           <motion.h2
-            className="text-4xl lg:text-6xl font-bold text-white mb-6"
+            className="text-4xl lg:text-6xl font-bold text-foreground mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.4 }}
@@ -141,7 +141,7 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
           </motion.h2>
 
           <motion.p
-            className="text-xl text-slate-300 max-w-2xl mx-auto"
+            className="text-xl text-text-secondary max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.6 }}
@@ -157,7 +157,7 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
           animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 50 }}
           transition={{ delay: 0.8 }}
         >
-          <h3 className="text-2xl font-bold text-white text-center mb-8">
+          <h3 className="text-2xl font-bold text-foreground text-center mb-8">
             3-stegs prosess til energisuksess
           </h3>
 
@@ -176,26 +176,26 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
                 <Card className={`${
                   selectedAction === step.id
                     ? 'bg-white/10 border-white/30'
-                    : 'bg-white/5 border-white/10'
+                    : 'bg-card/50 border-border'
                 } backdrop-blur-sm transition-colors`}>
                   <CardContent className="p-6">
                     {/* Phase indicator */}
                     <div className="flex items-center space-x-3 mb-4">
-                      <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center text-white font-bold`}>
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center text-foreground font-bold`}>
                         {step.phase}
                       </div>
-                      <step.icon className="w-6 h-6 text-white" />
+                      <step.icon className="w-6 h-6 text-foreground" />
                     </div>
 
-                    <h4 className="text-lg font-bold text-white mb-2">
+                    <h4 className="text-lg font-bold text-foreground mb-2">
                       {step.title}
                     </h4>
 
-                    <p className="text-slate-300 text-sm mb-4">
+                    <p className="text-text-secondary text-sm mb-4">
                       {step.description}
                     </p>
 
-                    <div className="flex justify-between text-xs text-slate-400 mb-4">
+                    <div className="flex justify-between text-xs text-text-tertiary mb-4">
                       <span>Tid: {step.duration}</span>
                       <span>Kostnad: {step.cost}</span>
                     </div>
@@ -210,10 +210,10 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="space-y-2 pt-4 border-t border-white/10">
+                      <div className="space-y-2 pt-4 border-t border-border">
                         {step.benefits.map((benefit, i) => (
-                          <div key={i} className="flex items-center space-x-2 text-sm text-slate-300">
-                            <CheckCircle className="w-4 h-4 text-emerald-400" />
+                          <div key={i} className="flex items-center space-x-2 text-sm text-text-secondary">
+                            <CheckCircle className="w-4 h-4 text-success" />
                             <span>{benefit}</span>
                           </div>
                         ))}
@@ -240,17 +240,17 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
               animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 20 }}
               transition={{ delay: 2.2 + index * 0.1 }}
             >
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors group cursor-pointer">
+              <Card className="bg-card/50 border-border backdrop-blur-sm hover:bg-white/10 transition-colors group cursor-pointer">
                 <CardContent className="p-6 text-center">
                   <div className={`w-16 h-16 ${action.color} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
-                    <action.icon className="w-8 h-8 text-white" />
+                    <action.icon className="w-8 h-8 text-foreground" />
                   </div>
 
-                  <h4 className="text-lg font-bold text-white mb-2">
+                  <h4 className="text-lg font-bold text-foreground mb-2">
                     {action.title}
                   </h4>
 
-                  <p className="text-slate-300 text-sm mb-4">
+                  <p className="text-text-secondary text-sm mb-4">
                     {action.description}
                   </p>
 
@@ -278,20 +278,20 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
         >
           <Card className="bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-purple-500/20 border-gradient-to-r from-emerald-500/50 to-purple-500/50 backdrop-blur-sm inline-block">
             <CardContent className="p-8">
-              <div className="flex items-center justify-center space-x-2 text-emerald-400 mb-4">
+              <div className="flex items-center justify-center space-x-2 text-success mb-4">
                 <Star className="w-6 h-6" />
                 <span className="font-semibold">Eksklusivt tilbud</span>
                 <Star className="w-6 h-6" />
               </div>
 
-              <h3 className="text-3xl font-bold text-white mb-4">
+              <h3 className="text-3xl font-bold text-foreground mb-4">
                 Gratis energikartlegging
               </h3>
 
-              <p className="text-slate-300 mb-6 max-w-lg">
+              <p className="text-text-secondary mb-6 max-w-lg">
                 Verdi: 15.000 kr - helt gratis for de første 50 som booker.
                 <br />
-                <strong className="text-white">Kun 23 plasser igjen!</strong>
+                <strong className="text-foreground">Kun 23 plasser igjen!</strong>
               </p>
 
               <motion.div
@@ -300,14 +300,14 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
               >
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-bold px-8 py-4 text-lg"
+                  className="bg-gradient-to-r bg-gradient-primary hover:from-emerald-600 hover:to-cyan-600 text-foreground font-bold px-8 py-4 text-lg"
                 >
                   <Phone className="w-5 h-5 mr-2" />
                   Book din gratis kartlegging nå
                 </Button>
               </motion.div>
 
-              <p className="text-slate-400 text-xs mt-4">
+              <p className="text-text-tertiary text-xs mt-4">
                 Ingen forpliktelser • 30-dagers pengene-tilbake-garanti
               </p>
             </CardContent>
@@ -321,10 +321,10 @@ export default function ActionSection({ buildingData, energyAnalysis }: ActionSe
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 3.5 }}
         >
-          <p className="text-slate-400 text-lg">
+          <p className="text-text-tertiary text-lg">
             Takk for at du utforsket din bygnings energipotensial
           </p>
-          <p className="text-cyan-400 text-sm mt-2">
+          <p className="text-aurora-cyan text-sm mt-2">
             Sammen bygger vi en mer energieffektiv fremtid 🌟
           </p>
         </motion.div>

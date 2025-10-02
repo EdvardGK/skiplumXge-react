@@ -1,12 +1,18 @@
 'use client';
 
-import { useRef, useMemo, useState, useEffect } from 'react';
-import { useFrame, ThreeEvent } from '@react-three/fiber';
-import { Mesh, Shape, ExtrudeGeometry, Vector2, Plane, Vector3 } from 'three';
-import { generateRoofSections, generateRoof3DGeometry } from '@/lib/roof-algorithm';
+import { useRef, useMemo, useState } from 'react';
+import { ThreeEvent } from '@react-three/fiber';
+import { Mesh, Shape, Plane, Vector3, BoxGeometry } from 'three';
+import * as THREE from 'three';
+import WallSegments from './WallSegments';
+import FloorComponents from './FloorComponents';
+import WindowDoorComponents from './WindowDoorComponents';
+import RoofComponent from './RoofComponent';
+import { PropertyBoundaries } from './PropertyBoundary';
+import type { PropertyBoundary } from '@/types/geonorge';
 
 interface InsulationData {
-  walls?: { thickness: number; uValue: number };  // thickness in mm
+  walls?: { thickness: number; uValue: number };
   roof?: { thickness: number; uValue: number };
   floor?: { thickness: number; uValue: number };
 }
@@ -18,28 +24,34 @@ interface OpeningsData {
 
 interface BuildingMeshProps {
   footprint: [number, number][];
-  height?: number;  // Optional - will be calculated if not provided
+  height?: number;
   numberOfFloors?: number;
   buildingType: string;
-  showHeatParticles?: boolean;
   insulation?: InsulationData;
   openings?: OpeningsData;
-  onComponentSelect?: (componentId: string | null, componentType?: string) => void;
+  onComponentSelect?: (componentId: string | null, componentType?: string, additionalInfo?: any) => void;
   onContextMenu?: (event: ThreeEvent<MouseEvent>, componentId: string) => void;
   sectionPlane?: { active: boolean; axis: 'x' | 'y' | 'z'; position: number; normal?: [number, number, number] } | null;
-  visibleFloors?: Set<number>;  // Which floors are visible (includes roof as last floor)
+  visibleFloors?: Set<number>;
+  showFootprint?: boolean;
+  showAxes?: boolean;
+  showBoundingBox?: boolean;
+  roofPlacementFloor?: number | null;
+  // Property boundary data (optional)
+  propertyBoundaries?: PropertyBoundary[];
+  propertyCenter?: { lat: number; lon: number };
+  showPropertyBoundaries?: boolean;
 }
 
 export default function BuildingMesh({
   footprint,
   height: providedHeight,
-  numberOfFloors = 2,  // Default 2 floors
+  numberOfFloors = 2,
   buildingType,
-  showHeatParticles = false,
   insulation = {
-    walls: { thickness: 200, uValue: 0.18 },  // Default 200mm wall insulation
-    roof: { thickness: 300, uValue: 0.13 },   // Default 300mm roof insulation
-    floor: { thickness: 250, uValue: 0.15 }   // Default 250mm floor insulation
+    walls: { thickness: 200, uValue: 0.18 },
+    roof: { thickness: 300, uValue: 0.13 },
+    floor: { thickness: 250, uValue: 0.15 }
   },
   openings = {
     windows: { count: 8, uValue: 1.2 },
@@ -48,12 +60,16 @@ export default function BuildingMesh({
   onComponentSelect,
   onContextMenu,
   sectionPlane,
-  visibleFloors = new Set(Array.from({ length: (numberOfFloors || 2) + 1 }, (_, i) => i)) // Default all visible
+  visibleFloors = new Set(Array.from({ length: (numberOfFloors || 2) + 1 }, (_, i) => i)),
+  showFootprint = true,
+  showAxes = false,
+  showBoundingBox = true,
+  roofPlacementFloor = null,
+  propertyBoundaries,
+  propertyCenter,
+  showPropertyBoundaries = true,
 }: BuildingMeshProps) {
   const meshRef = useRef<Mesh>(null);
-  const particlesRef = useRef<Mesh[]>([]);
-
-  // Selection state for different components
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null);
   const [hoveredComponent, setHoveredComponent] = useState<string | null>(null);
 
@@ -64,23 +80,14 @@ export default function BuildingMesh({
     const plane = new Plane();
     const normal = new Vector3();
 
-    // If we have a surface normal, use it directly (not inverted)
     if (sectionPlane.normal) {
-      // Use the normal as-is so the plane cuts from the clicked surface inward
-      // This hides what's in front of the surface (positive side) and shows what's behind (negative side)
       normal.set(sectionPlane.normal[0], sectionPlane.normal[1], sectionPlane.normal[2]);
     } else {
-      // Fallback to axis-based normal
-      if (sectionPlane.axis === 'x') {
-        normal.set(1, 0, 0);  // Hide positive X
-      } else if (sectionPlane.axis === 'y') {
-        normal.set(0, 1, 0);  // Hide positive Y
-      } else if (sectionPlane.axis === 'z') {
-        normal.set(0, 0, 1);  // Hide positive Z
-      }
+      if (sectionPlane.axis === 'x') normal.set(1, 0, 0);
+      else if (sectionPlane.axis === 'y') normal.set(0, 1, 0);
+      else if (sectionPlane.axis === 'z') normal.set(0, 0, 1);
     }
 
-    // Set plane from normal and position
     plane.setFromNormalAndCoplanarPoint(normal, new Vector3(
       sectionPlane.axis === 'x' ? sectionPlane.position : 0,
       sectionPlane.axis === 'y' ? sectionPlane.position : 0,
@@ -90,189 +97,78 @@ export default function BuildingMesh({
     return [plane];
   }, [sectionPlane]);
 
-  // Calculate building height based on type and floors if not provided
+  // Calculate building height
   const height = useMemo(() => {
     if (providedHeight) return providedHeight;
 
-    // Floor heights based on building type
     let floorHeight: number;
     switch (buildingType.toLowerCase()) {
       case 'bolig':
       case 'enebolig':
       case 'småhus':
       case 'rekkehus':
-        floorHeight = 2.7; // Residential: 2.7m per floor
+        floorHeight = 2.7;
         break;
       case 'kontor':
       case 'butikk':
       case 'skole':
-        floorHeight = 3.0; // Commercial/Office: 3.0m per floor
+        floorHeight = 3.0;
         break;
       case 'industri':
       case 'lager':
       case 'sykehus':
-        floorHeight = 4.5; // Industrial/Special: 4.5m per floor
+        floorHeight = 4.5;
         break;
       default:
-        floorHeight = 3.0; // Default 3.0m
+        floorHeight = 3.0;
     }
 
     return numberOfFloors * floorHeight;
   }, [providedHeight, buildingType, numberOfFloors]);
 
-  // Use intelligent roof algorithm to analyze building and generate roof sections
-  const roofData = useMemo(() => {
-    if (!footprint || footprint.length === 0) {
-      // Default fallback for empty footprint
-      return {
-        sections: [],
-        intersections: [],
-        geometry3D: [],
-        bounds: { minX: -10, maxX: 10, minY: -8, maxY: 8, centerX: 0, centerY: 0, width: 20, depth: 16 }
-      };
-    }
-
-    try {
-      // Generate roof sections using the intelligent algorithm
-      const { sections, intersections } = generateRoofSections(footprint);
-
-      // Generate 3D geometry for rendering
-      const geometry3D = generateRoof3DGeometry(sections, intersections);
-
-      // Calculate overall bounds for fallback
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-
-      footprint.forEach(([x, y]) => {
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-      });
-
-      const bounds = {
-        minX, maxX, minY, maxY,
-        centerX: (minX + maxX) / 2,
-        centerY: (minY + maxY) / 2,
-        width: maxX - minX,
-        depth: maxY - minY
-      };
-
-      return {
-        sections,
-        intersections,
-        geometry3D,
-        bounds
-      };
-    } catch (error) {
-      console.warn('Roof generation failed, using simple fallback:', error);
-
-      // Fallback to simple single-section roof
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
-
-      footprint.forEach(([x, y]) => {
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minY = Math.min(minY, y);
-        maxY = Math.max(maxY, y);
-      });
-
-      const bounds = {
-        minX, maxX, minY, maxY,
-        centerX: (minX + maxX) / 2,
-        centerY: (minY + maxY) / 2,
-        width: maxX - minX,
-        depth: maxY - minY
-      };
-
-      return {
-        sections: [],
-        intersections: [],
-        geometry3D: [],
-        bounds
-      };
-    }
-  }, [footprint]);
-
-
-  // Building color based on type - Northern lights palette
+  // Building color based on type
   const buildingColor = useMemo(() => {
-    if (showHeatParticles) {
-      return '#a855f7'; // Purple for inefficient (northern lights)
-    }
-
     switch (buildingType.toLowerCase()) {
       case 'kontor':
-        return '#0891b2'; // Cyan for office
+        return '#0891b2';
       case 'bolig':
-        return '#10b981'; // Emerald for residential
+        return '#10b981';
       case 'barnehage':
-        return '#06b6d4'; // Cyan variant
+        return '#06b6d4';
       case 'sykehus':
-        return '#8b5cf6'; // Purple for hospital
+        return '#8b5cf6';
       default:
-        return '#0ea5e9'; // Sky blue for other
+        return '#0ea5e9';
     }
-  }, [buildingType, showHeatParticles]);
-
-  // Animation loop
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-      // Subtle building pulse for inefficient buildings
-      if (showHeatParticles) {
-        meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 2) * 0.02);
-      }
-    }
-
-    // Animate heat particles
-    if (showHeatParticles) {
-      particlesRef.current.forEach((particle, i) => {
-        if (particle) {
-          particle.position.y += delta * 2;
-          particle.position.x += Math.sin(state.clock.elapsedTime + i) * delta * 0.5;
-          particle.position.z += Math.cos(state.clock.elapsedTime + i * 0.5) * delta * 0.5;
-
-          if (particle.position.y > height + 5) {
-            particle.position.y = 0;
-            particle.position.x = (Math.random() - 0.5) * 10;
-            particle.position.z = (Math.random() - 0.5) * 10;
-          }
-        }
-      });
-    }
-  });
+  }, [buildingType]);
 
   // Handle component clicks
   const handleClick = (event: ThreeEvent<MouseEvent>, componentId: string) => {
     event.stopPropagation();
     setSelectedComponent(componentId);
 
-    // Notify parent component
     if (onComponentSelect) {
-      const componentType = componentId.includes('roof') ? 'Tak' :
-                           componentId.includes('window') ? 'Vindu' :
-                           componentId.includes('door') ? 'Dør' :
-                           componentId.includes('wall') ? `Vegg ${componentId.split('-')[1]}` :
-                           componentId.includes('floor-divider') ? `Etasje ${parseInt(componentId.split('-')[2]) + 1}` :
-                           componentId.includes('floor') ? 'Gulv' : 'Komponent';
-      onComponentSelect(componentId, componentType);
+      let componentType = '';
+      componentType = componentId.includes('roof') ? 'Tak' :
+                     componentId.includes('window') ? 'Vindu' :
+                     componentId.includes('door') ? 'Dør' :
+                     componentId.includes('wall') ? `Vegg ${componentId.split('-')[1]}` :
+                     componentId.includes('floor-divider') ? `Etasje ${parseInt(componentId.split('-')[2]) + 1}` :
+                     componentId.includes('floor') ? 'Gulv' : 'Komponent';
+
+      onComponentSelect(componentId, componentType, {});
     }
-    console.log(`Selected: ${componentId}`);
   };
 
-  // Handle right-click for context menu with surface normal
+  // Handle right-click for context menu
   const handleRightClick = (event: ThreeEvent<MouseEvent>, componentId: string, normal?: [number, number, number]) => {
     event.stopPropagation();
     if (onContextMenu) {
-      // Get the intersection point where the user clicked
       const intersectionPoint = event.point;
-
-      // Add normal and position to event data
       const eventWithData = {
         ...event,
-        normal: normal || [0, 1, 0], // Default to up if no normal provided
-        intersectionPoint: [intersectionPoint.x, intersectionPoint.y, intersectionPoint.z] // 3D position of click
+        normal: normal || [0, 1, 0],
+        intersectionPoint: [intersectionPoint.x, intersectionPoint.y, intersectionPoint.z]
       };
       onContextMenu(eventWithData as any, componentId);
     }
@@ -290,654 +186,831 @@ export default function BuildingMesh({
     document.body.style.cursor = 'auto';
   };
 
-  // Calculate offset corners by moving each edge perpendicular to itself
-  const offsetCorners = useMemo(() => {
-    if (footprint.length < 3) return footprint;
-
-    const wallThickness = (insulation?.walls?.thickness || 600) / 1000;
-
-    // First, calculate the signed area to determine winding order
-    let signedArea = 0;
-    for (let i = 0; i < footprint.length; i++) {
-      const j = (i + 1) % footprint.length;
-      signedArea += (footprint[j][0] - footprint[i][0]) * (footprint[j][1] + footprint[i][1]);
-    }
-
-    // Positive area = clockwise, negative = counter-clockwise
-    // For area reduction, we need to offset inward
-    const offsetDirection = signedArea > 0 ? 1 : -1;
-
-    // Create offset edges by moving each edge perpendicular to itself
-    const offsetEdges = [];
-    for (let i = 0; i < footprint.length; i++) {
-      const p1 = footprint[i];
-      const p2 = footprint[(i + 1) % footprint.length];
-
-      // Edge vector
-      const dx = p2[0] - p1[0];
-      const dy = p2[1] - p1[1];
-      const edgeLen = Math.sqrt(dx * dx + dy * dy);
-
-      if (edgeLen === 0) continue;
-
-      // Perpendicular (rotated 90 degrees)
-      // For reducing area: CW polygon needs right perpendicular, CCW needs left
-      const perpX = (dy / edgeLen) * offsetDirection;
-      const perpY = (-dx / edgeLen) * offsetDirection;
-
-      // Offset edge endpoints
-      offsetEdges.push({
-        start: [p1[0] + perpX * wallThickness, p1[1] + perpY * wallThickness],
-        end: [p2[0] + perpX * wallThickness, p2[1] + perpY * wallThickness],
-        perpX,
-        perpY
-      });
-    }
-
-    // Find intersection points of consecutive offset edges to get new corners
-    const corners = [];
-    for (let i = 0; i < footprint.length; i++) {
-      const edgeIndex1 = i;
-      const edgeIndex2 = (i + 1) % footprint.length;
-
-      const edge1 = offsetEdges[edgeIndex1];
-      const edge2 = offsetEdges[edgeIndex2];
-
-      if (!edge1 || !edge2 || offsetEdges.length !== footprint.length) {
-        // If we don't have proper offset edges, fall back to simple offset
-        const curr = footprint[i];
-        const prev = footprint[(i - 1 + footprint.length) % footprint.length];
-        const next = footprint[(i + 1) % footprint.length];
-
-        // Simple offset toward center
-        const centerX = footprint.reduce((sum, p) => sum + p[0], 0) / footprint.length;
-        const centerY = footprint.reduce((sum, p) => sum + p[1], 0) / footprint.length;
-        const dirX = centerX - curr[0];
-        const dirY = centerY - curr[1];
-        const dirLen = Math.sqrt(dirX * dirX + dirY * dirY);
-
-        if (dirLen > 0) {
-          corners.push([
-            curr[0] + (dirX / dirLen) * wallThickness,
-            curr[1] + (dirY / dirLen) * wallThickness
-          ]);
-        } else {
-          corners.push(curr);
-        }
-        continue;
-      }
-
-      // Line intersection of two edges
-      const x1 = edge1.start[0], y1 = edge1.start[1];
-      const x2 = edge1.end[0], y2 = edge1.end[1];
-      const x3 = edge2.start[0], y3 = edge2.start[1];
-      const x4 = edge2.end[0], y4 = edge2.end[1];
-
-      const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-      if (Math.abs(denom) < 0.001) {
-        // Parallel lines, use the shared point
-        corners.push(edge1.end);
-      } else {
-        // Find intersection
-        const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-        corners.push([
-          x1 + t * (x2 - x1),
-          y1 + t * (y2 - y1)
-        ]);
-      }
-    }
-
-    console.log('Footprint length:', footprint.length, 'Offset corners length:', corners.length);
-
-    // Ensure we always return the same number of corners as footprint points
-    while (corners.length < footprint.length) {
-      corners.push(footprint[corners.length]);
-    }
-
-    return corners;
-  }, [footprint, insulation?.walls?.thickness]);
 
   return (
     <group>
-      {/* Debug Axes - X (red), Y (green), Z (blue) */}
-      <group>
-        {/* X axis - Red */}
-        <mesh position={[5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
-          <meshBasicMaterial color="red" />
-        </mesh>
-        <mesh position={[10, 0, 0]}>
-          <coneGeometry args={[0.3, 1, 8]} />
-          <meshBasicMaterial color="red" />
-        </mesh>
-
-        {/* Y axis - Green */}
-        <mesh position={[0, 5, 0]}>
-          <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
-          <meshBasicMaterial color="green" />
-        </mesh>
-        <mesh position={[0, 10, 0]}>
-          <coneGeometry args={[0.3, 1, 8]} />
-          <meshBasicMaterial color="green" />
-        </mesh>
-
-        {/* Z axis - Blue */}
-        <mesh position={[0, 0, 5]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
-          <meshBasicMaterial color="blue" />
-        </mesh>
-        <mesh position={[0, 0, 10]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.3, 1, 8]} />
-          <meshBasicMaterial color="blue" />
-        </mesh>
-
-        {/* Origin sphere - White */}
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[0.2, 16, 16]} />
-          <meshBasicMaterial color="white" />
-        </mesh>
-      </group>
-
-      {/* Wall Segments by Floor */}
-      {footprint.length > 0 && (
+      {/* Debug Axes */}
+      {showAxes && (
         <group>
-          {/* Generate walls for each floor */}
-          {Array.from({ length: numberOfFloors }, (_, floor) => {
-            // Skip if floor is hidden
-            if (!visibleFloors.has(floor)) return null;
-
-            const floorHeight = height / numberOfFloors;
-            // Position walls to sit on the slab (bottom of wall at slab level)
-            const slabY = floorHeight * floor;
-            const floorY = slabY + floorHeight / 2;
-
-            return (
-              <group key={`floor-walls-${floor}`}>
-                {footprint.map((outerCorner, index) => {
-                  const nextOuterCorner = footprint[(index + 1) % footprint.length];
-                  const innerCorner = offsetCorners[index] || outerCorner;  // Fallback if undefined
-                  const nextInnerCorner = offsetCorners[(index + 1) % offsetCorners.length] || nextOuterCorner;  // Fallback
-
-                  const wallId = `wall-floor${floor}-${index}`;
-                  const isSelected = selectedComponent === wallId;
-                  const isHovered = hoveredComponent === wallId;
-
-                  // Wall connects between outer and inner edges
-                  // Position is center of all 4 corners
-                  const centerX = (outerCorner[0] + nextOuterCorner[0] + innerCorner[0] + nextInnerCorner[0]) / 4;
-                  // Negate Z to match slab orientation (slabs rotate Y to -Z)
-                  const centerZ = -(outerCorner[1] + nextOuterCorner[1] + innerCorner[1] + nextInnerCorner[1]) / 4;
-
-                  // Calculate wall dimensions
-                  const wallLength = Math.sqrt(
-                    Math.pow(nextOuterCorner[0] - outerCorner[0], 2) +
-                    Math.pow(nextOuterCorner[1] - outerCorner[1], 2)
-                  );
-
-                  // Calculate angle for rotation
-                  const wallAngle = Math.atan2(
-                    nextOuterCorner[1] - outerCorner[1],
-                    nextOuterCorner[0] - outerCorner[0]
-                  );
-
-                  const wallThickness = (insulation?.walls?.thickness || 600) / 1000;
-
-                  // Calculate wall normal (perpendicular to wall, pointing outward)
-                  const wallDX = nextOuterCorner[0] - outerCorner[0];
-                  const wallDZ = nextOuterCorner[1] - outerCorner[1];
-                  const wallNormalX = -wallDZ / wallLength;
-                  // Negate to match coordinate system flip
-                  const wallNormalZ = -wallDX / wallLength;
-
-                  return (
-                    <mesh
-                      key={wallId}
-                      position={[centerX, floorY, centerZ]}
-                      rotation={[0, wallAngle, 0]}
-                      castShadow
-                      receiveShadow
-                      onClick={(e) => handleClick(e, wallId)}
-                      onContextMenu={(e) => handleRightClick(e, wallId, [wallNormalX, 0, wallNormalZ])}
-                      onPointerOver={(e) => handlePointerOver(e, wallId)}
-                      onPointerOut={handlePointerOut}
-                    >
-                      <boxGeometry args={[wallLength, floorHeight, wallThickness]} />
-                      <meshPhysicalMaterial
-                        color={isSelected ? '#10b981' :
-                               isHovered ? '#0ea5e9' : buildingColor}
-                        metalness={0.1}
-                        roughness={0.7}
-                        envMapIntensity={0.5}
-                        transparent={showHeatParticles}
-                        opacity={showHeatParticles ? 0.8 : 1}
-                        emissive={isSelected ? '#10b981' : '#000000'}
-                        emissiveIntensity={isSelected ? 0.2 : 0}
-                        clippingPlanes={clippingPlanes}
-                        side={2} // DoubleSide for proper clipping
-                      />
-                    </mesh>
-                  );
-                })}
-              </group>
-            );
-          })}
+          <mesh position={[5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
+            <meshBasicMaterial color="red" />
+          </mesh>
+          <mesh position={[10, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+            <coneGeometry args={[0.3, 1, 8]} />
+            <meshBasicMaterial color="red" />
+          </mesh>
+          <mesh position={[0, 5, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
+            <meshBasicMaterial color="green" />
+          </mesh>
+          <mesh position={[0, 10, 0]}>
+            <coneGeometry args={[0.3, 1, 8]} />
+            <meshBasicMaterial color="green" />
+          </mesh>
+          <mesh position={[0, 0, 5]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 10, 8]} />
+            <meshBasicMaterial color="blue" />
+          </mesh>
+          <mesh position={[0, 0, 10]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.3, 1, 8]} />
+            <meshBasicMaterial color="blue" />
+          </mesh>
+          <mesh position={[0, 0, 0]}>
+            <sphereGeometry args={[0.2, 16, 16]} />
+            <meshBasicMaterial color="white" />
+          </mesh>
         </group>
       )}
 
-      {/* Heat Particles */}
-      {showHeatParticles && (
-        <group>
-          {[...Array(12)].map((_, i) => (
-            <mesh
-              key={i}
-              ref={(el) => {
-                if (el) particlesRef.current[i] = el;
-              }}
-              position={[
-                (Math.random() - 0.5) * 10,
-                Math.random() * height,
-                (Math.random() - 0.5) * 10
-              ]}
-            >
-              <sphereGeometry args={[0.1, 8, 8]} />
-              <meshBasicMaterial
-                color="#a855f7"
-                transparent
-                opacity={0.6}
-              />
-            </mesh>
-          ))}
-        </group>
-      )}
-
-      {/* Windows and Doors distributed evenly */}
-      {!showHeatParticles && footprint.length > 0 && (
-        <group>
-          {/* Calculate window and door positions with fixed 3m spacing */}
-          {(() => {
-            const doorCount = openings?.doors?.count || 2; // Default 2 doors
-            const wallThickness = (insulation?.walls?.thickness || 600) / 1000;
-
-            // Calculate perimeter segments with indices
-            const segments: { start: [number, number], end: [number, number], length: number, index: number }[] = [];
-            let totalPerimeter = 0;
-
-            for (let i = 0; i < footprint.length; i++) {
-              const start = footprint[i];
-              const end = footprint[(i + 1) % footprint.length];
-              const length = Math.sqrt(
-                Math.pow(end[0] - start[0], 2) +
-                Math.pow(end[1] - start[1], 2)
-              );
-              segments.push({ start, end, length, index: i });
-              totalPerimeter += length;
-            }
-
-            // Sort segments by length to find longest walls
-            const sortedSegments = [...segments].sort((a, b) => b.length - a.length);
-
-            // Get the two longest walls for doors
-            const doorWalls = sortedSegments.slice(0, Math.min(2, sortedSegments.length));
-            const doorWallIndices = new Set(doorWalls.map(w => w.index));
-
-            const openingComponents: React.ReactElement[] = [];
-            let windowIndex = 0;
-
-            // Place openings on each wall for all floors
-            segments.forEach((segment, segmentIndex) => {
-              // Check if this wall gets a door (ground floor only)
-              const hasDoor = doorWallIndices.has(segmentIndex) && doorWalls.length > 0;
-              const wallDoorIndex = doorWalls.findIndex(w => w.index === segmentIndex);
-
-              // Calculate windows for this wall (1 per 3 meters)
-              const windowCount = Math.floor(segment.length / 3);
-
-              // Calculate wall rotation once for all openings
-              const dx = segment.end[0] - segment.start[0];
-              const dz = segment.end[1] - segment.start[1];
-              const rotation = Math.atan2(dz, dx);
-
-              // Loop through each floor
-              for (let floor = 0; floor < numberOfFloors; floor++) {
-                // Skip if floor is hidden
-                if (!visibleFloors.has(floor)) continue;
-
-                const isGroundFloor = floor === 0;
-                const floorHeight = height / numberOfFloors;
-                // Match wall positioning
-                const slabY = floorHeight * floor;
-                const floorY = slabY + floorHeight / 2;
-
-                // Calculate total openings for this floor (windows + door if ground floor)
-                const totalOpenings = windowCount + (hasDoor && isGroundFloor ? 1 : 0);
-                if (totalOpenings === 0) continue;
-
-                // Calculate even spacing across the wall
-                const spacing = segment.length / (totalOpenings + 1);
-
-                // Place door first if this is ground floor and wall has a door
-                if (hasDoor && isGroundFloor) {
-                  // Door at first position
-                  const doorDistance = spacing;
-                  const doorT = doorDistance / segment.length;
-                  const doorX = segment.start[0] + doorT * (segment.end[0] - segment.start[0]);
-                  // Negate Z to match wall coordinate system
-                  const doorZ = -(segment.start[1] + doorT * (segment.end[1] - segment.start[1]));
-
-                  const doorId = `door-${wallDoorIndex}`;
-                  const isSelected = selectedComponent === doorId;
-                  const isHovered = hoveredComponent === doorId;
-
-                  openingComponents.push(
-                    <mesh
-                      key={doorId}
-                      position={[doorX, slabY + 1.1, doorZ]}  // Position door from floor level
-                      rotation={[0, rotation, 0]}
-                      onClick={(e) => handleClick(e, doorId)}
-                      onPointerOver={(e) => handlePointerOver(e, doorId)}
-                      onPointerOut={handlePointerOut}
-                    >
-                      <boxGeometry args={[1.0, 2.2, wallThickness + 0.1]} />
-                      <meshPhysicalMaterial
-                        color={isSelected ? '#f87171' : isHovered ? '#f97316' : '#8b5cf6'}
-                        transparent
-                        opacity={isSelected ? 0.8 : isHovered ? 0.6 : 0.4}
-                        metalness={0.2}
-                        roughness={0.8}
-                        clippingPlanes={clippingPlanes}
-                      />
-                    </mesh>
-                  );
-                }
-
-                // Place windows for this floor
-                for (let i = 0; i < windowCount; i++) {
-                  // Calculate position (skip first spot if door is present on ground floor)
-                  const positionIndex = (hasDoor && isGroundFloor) ? i + 2 : i + 1;
-                  const distanceAlongWall = spacing * positionIndex;
-
-                  const t = distanceAlongWall / segment.length;
-                  const x = segment.start[0] + t * (segment.end[0] - segment.start[0]);
-                  // Negate Z to match wall coordinate system
-                  const z = -(segment.start[1] + t * (segment.end[1] - segment.start[1]));
-
-                  const windowId = `window-floor${floor}-${windowIndex++}`;
-                  const isSelected = selectedComponent === windowId;
-                  const isHovered = hoveredComponent === windowId;
-
-                  openingComponents.push(
-                    <mesh
-                      key={windowId}
-                      position={[x, floorY, z]}
-                      rotation={[0, rotation, 0]}
-                      onClick={(e) => handleClick(e, windowId)}
-                      onPointerOver={(e) => handlePointerOver(e, windowId)}
-                      onPointerOut={handlePointerOut}
-                    >
-                      <boxGeometry args={[1.2, 1.5, wallThickness + 0.1]} />
-                      <meshPhysicalMaterial
-                        color={isSelected ? '#fbbf24' : isHovered ? '#60a5fa' : '#06b6d4'}
-                        transparent
-                        opacity={isSelected ? 0.8 : isHovered ? 0.6 : 0.3}
-                        metalness={0.8}
-                        roughness={0.1}
-                        clippingPlanes={clippingPlanes}
-                      />
-                    </mesh>
-                  );
-                }
-              }
-            });
-
-            return openingComponents;
-          })()}
-        </group>
-      )}
-
-      {/* Floor with insulation thickness - only show when ground floor is visible */}
-      {footprint.length > 0 && visibleFloors.has(0) && (
+      {/* Building Footprint */}
+      {showFootprint && footprint.length > 0 && (
         <mesh
-          position={[0, -(insulation?.floor?.thickness || 250) / 1000, 0]}
+          position={[0, 0.005, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
-          onClick={(e) => handleClick(e, 'floor-ground')}
-          onContextMenu={(e) => handleRightClick(e, 'floor-ground', [0, 1, 0])} // Floor normal points up
-          onPointerOver={(e) => handlePointerOver(e, 'floor-ground')}
-          onPointerOut={handlePointerOut}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedComponent(null);
+            if (onComponentSelect) onComponentSelect(null, undefined);
+          }}
         >
           <shapeGeometry args={[(() => {
             const shape = new Shape();
-            if (footprint.length > 0) {
-              const [firstX, firstY] = footprint[0];
-              shape.moveTo(firstX, firstY);
-              for (let i = 1; i < footprint.length; i++) {
-                const [x, y] = footprint[i];
-                shape.lineTo(x, y);
-              }
-              shape.closePath();
-            }
+            footprint.forEach((point, index) => {
+              if (index === 0) shape.moveTo(point[0], point[1]);
+              else shape.lineTo(point[0], point[1]);
+            });
+            shape.closePath();
             return shape;
           })()]} />
-          <meshPhysicalMaterial
-            color={selectedComponent === 'floor-ground' ? '#f59e0b' :
-                   hoveredComponent === 'floor-ground' ? '#f97316' : '#374151'}
-            roughness={0.9}
-            metalness={0.1}
-            side={2} // DoubleSide
-            clippingPlanes={clippingPlanes}
-          />
+          <meshBasicMaterial color="#4a5568" opacity={0.5} transparent side={2} />
         </mesh>
       )}
 
-      {/* Floor dividers between floors */}
-      {footprint.length > 0 && numberOfFloors > 1 && (
-        <group>
-          {[...Array(numberOfFloors - 1)].map((_, floorIndex) => {
-            // Floor divider belongs to the floor above it (it's the floor of that story)
-            const floorAbove = floorIndex + 1;
-            if (!visibleFloors.has(floorAbove)) return null;
+      {/* Bounding Box */}
+      {showBoundingBox && footprint.length > 0 && (() => {
+        // Calculate bounding box
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
 
-            const floorHeight = (height / numberOfFloors) * (floorIndex + 1);
-            const floorId = `floor-divider-${floorIndex + 1}`;
-            const isSelected = selectedComponent === floorId;
-            const isHovered = hoveredComponent === floorId;
+        footprint.forEach(([x, y]) => {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        });
 
-            return (
-              <mesh
-                key={floorId}
-                position={[0, floorHeight, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                onClick={(e) => handleClick(e, floorId)}
-                onPointerOver={(e) => handlePointerOver(e, floorId)}
-                onPointerOut={handlePointerOut}
-              >
-                <shapeGeometry args={[(() => {
-                  const shape = new Shape();
+        const centerX = (minX + maxX) / 2;
+        const centerZ = -(minY + maxY) / 2;
+        const width = maxX - minX;
+        const depth = maxY - minY;
 
-                  // Create solid floor slab (no hole)
-                  if (footprint.length > 0) {
-                    const [firstX, firstY] = footprint[0];
-                    shape.moveTo(firstX, firstY);
-                    for (let i = 1; i < footprint.length; i++) {
-                      const [x, y] = footprint[i];
-                      shape.lineTo(x, y);
-                    }
-                    shape.closePath();
-                  }
-                  return shape;
-                })()]} />
-                <meshPhysicalMaterial
-                  color={isSelected ? '#10b981' : isHovered ? '#06b6d4' : '#4b5563'}
-                  roughness={0.8}
-                  metalness={0.1}
-                  side={2} // DoubleSide
-                  transparent
-                  opacity={0.9}
-                  emissive={isSelected ? '#10b981' : '#000000'}
-                  emissiveIntensity={isSelected ? 0.1 : 0}
-                  clippingPlanes={clippingPlanes}
-                />
+        return (
+          <group>
+            {/* Bottom box outline */}
+            <lineSegments position={[centerX, 0.01, centerZ]}>
+              <edgesGeometry args={[new THREE.BoxGeometry(width, 0.01, depth)]} />
+              <lineBasicMaterial color="#00ffff" linewidth={2} opacity={0.6} transparent />
+            </lineSegments>
+
+            {/* Top box outline */}
+            <lineSegments position={[centerX, height, centerZ]}>
+              <edgesGeometry args={[new THREE.BoxGeometry(width, 0.01, depth)]} />
+              <lineBasicMaterial color="#00ffff" linewidth={2} opacity={0.6} transparent />
+            </lineSegments>
+
+            {/* Vertical edges */}
+            {[
+              [minX, -minY],
+              [maxX, -minY],
+              [maxX, -maxY],
+              [minX, -maxY]
+            ].map(([x, z], i) => (
+              <mesh key={`bbox-edge-${i}`} position={[x, height / 2, z]}>
+                <cylinderGeometry args={[0.05, 0.05, height, 8]} />
+                <meshBasicMaterial color="#00ffff" opacity={0.6} transparent />
               </mesh>
-            );
-          })}
-        </group>
+            ))}
+
+            {/* Grid lines extending from polygon edges to bounding box */}
+            {footprint.map((point, index) => {
+              const nextPoint = footprint[(index + 1) % footprint.length];
+
+              // Edge direction (parallel to polygon edge)
+              const edgeDX = nextPoint[0] - point[0];
+              const edgeDY = nextPoint[1] - point[1];
+              const edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
+
+              // Normalized edge direction
+              const edgeUnitX = edgeDX / edgeLength;
+              const edgeUnitY = edgeDY / edgeLength;
+
+              const gridLines = [];
+
+              // From point, extend parallel to edge in both directions to bbox
+              const p1X = point[0];
+              const p1Y = point[1];
+
+              // Extend forward (toward nextPoint direction)
+              let tMax = Infinity;
+
+              // Check intersection with all 4 bbox edges
+              if (edgeUnitX > 0.001) {
+                tMax = Math.min(tMax, (maxX - p1X) / edgeUnitX);
+              } else if (edgeUnitX < -0.001) {
+                tMax = Math.min(tMax, (minX - p1X) / edgeUnitX);
+              }
+
+              if (edgeUnitY > 0.001) {
+                tMax = Math.min(tMax, (maxY - p1Y) / edgeUnitY);
+              } else if (edgeUnitY < -0.001) {
+                tMax = Math.min(tMax, (minY - p1Y) / edgeUnitY);
+              }
+
+              // Extend backward (opposite direction)
+              let tMin = -Infinity;
+
+              if (edgeUnitX > 0.001) {
+                tMin = Math.max(tMin, (minX - p1X) / edgeUnitX);
+              } else if (edgeUnitX < -0.001) {
+                tMin = Math.max(tMin, (maxX - p1X) / edgeUnitX);
+              }
+
+              if (edgeUnitY > 0.001) {
+                tMin = Math.max(tMin, (minY - p1Y) / edgeUnitY);
+              } else if (edgeUnitY < -0.001) {
+                tMin = Math.max(tMin, (maxY - p1Y) / edgeUnitY);
+              }
+
+              gridLines.push(
+                <line key={`grid-${index}-line`}>
+                  <bufferGeometry>
+                    <bufferAttribute
+                      attach="attributes-position"
+                      args={[new Float32Array([
+                        p1X + tMin * edgeUnitX, 0.5, -(p1Y + tMin * edgeUnitY),
+                        p1X + tMax * edgeUnitX, 0.5, -(p1Y + tMax * edgeUnitY)
+                      ]), 3]}
+                    />
+                  </bufferGeometry>
+                  <lineBasicMaterial color="#00ffff" opacity={0.3} transparent />
+                </line>
+              );
+
+              return gridLines;
+            })}
+
+            {/* Grid Tiles - 1m regular grid */}
+            {(() => {
+              const tiles: React.ReactElement[] = [];
+              const gridSize = 1.0; // 1 meter tiles
+              let tileCounter = 0;
+
+              // Point-in-polygon test
+              const isPointInPolygon = (px: number, py: number): boolean => {
+                let inside = false;
+                for (let i = 0, j = footprint.length - 1; i < footprint.length; j = i++) {
+                  const xi = footprint[i][0], yi = footprint[i][1];
+                  const xj = footprint[j][0], yj = footprint[j][1];
+
+                  const intersect = ((yi > py) !== (yj > py))
+                    && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                  if (intersect) inside = !inside;
+                }
+                return inside;
+              };
+
+              // Store green tiles info for coverage calculation
+              const greenTiles: Array<{x: number, y: number, size: number}> = [];
+
+              // Create regular 1m grid covering bounding box
+              for (let gx = minX; gx < maxX; gx += gridSize) {
+                for (let gy = minY; gy < maxY; gy += gridSize) {
+                  const centerX = gx + gridSize / 2;
+                  const centerY = gy + gridSize / 2;
+
+                  // Check if this tile center is within bounds
+                  if (centerX > maxX || centerY > maxY) continue;
+
+                  const isInside = isPointInPolygon(centerX, centerY);
+                  const tileId = `tile-${tileCounter++}`;
+
+                  // Store green tile data
+                  if (isInside) {
+                    greenTiles.push({x: gx, y: gy, size: gridSize});
+                  }
+
+                  // Create tile square
+                  const shape = new Shape();
+                  shape.moveTo(gx, gy);
+                  shape.lineTo(gx + gridSize, gy);
+                  shape.lineTo(gx + gridSize, gy + gridSize);
+                  shape.lineTo(gx, gy + gridSize);
+                  shape.closePath();
+
+                  tiles.push(
+                    <mesh
+                      key={tileId}
+                      position={[0, 0.02, 0]}
+                      rotation={[-Math.PI / 2, 0, 0]}
+                      renderOrder={0}
+                    >
+                      <shapeGeometry args={[shape]} />
+                      <meshBasicMaterial
+                        color={isInside ? '#00ff00' : '#ff0000'}
+                        opacity={0.3}
+                        transparent
+                      />
+                    </mesh>
+                  );
+                }
+              }
+
+              // Expose greenTiles for coverage calculation
+              (window as any).__greenTiles = greenTiles;
+
+              return tiles;
+            })()}
+
+            {/* Grid-aligned tiles - sectioned by grid lines */}
+            {(() => {
+              const gridAlignedTiles: React.ReactElement[] = [];
+
+              // Point-in-polygon test (same as 1x1m tiles)
+              const isPointInPolygon = (px: number, py: number): boolean => {
+                let inside = false;
+                for (let i = 0, j = footprint.length - 1; i < footprint.length; j = i++) {
+                  const xi = footprint[i][0], yi = footprint[i][1];
+                  const xj = footprint[j][0], yj = footprint[j][1];
+
+                  const intersect = ((yi > py) !== (yj > py))
+                    && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                  if (intersect) inside = !inside;
+                }
+                return inside;
+              };
+
+              // Function to find intersection between two lines
+              const lineIntersection = (
+                p1: [number, number], d1: [number, number],
+                p2: [number, number], d2: [number, number]
+              ): [number, number] | null => {
+                const denom = d1[0] * d2[1] - d1[1] * d2[0];
+                if (Math.abs(denom) < 0.0001) return null; // Parallel lines
+
+                const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / denom;
+                return [p1[0] + t * d1[0], p1[1] + t * d1[1]];
+              };
+
+              // Collect grid lines (one per polygon edge)
+              const rawGridLines: Array<{
+                point: [number, number];
+                unitX: number;
+                unitY: number;
+              }> = [];
+
+              footprint.forEach((point, index) => {
+                const nextPoint = footprint[(index + 1) % footprint.length];
+                const edgeDX = nextPoint[0] - point[0];
+                const edgeDY = nextPoint[1] - point[1];
+                const edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
+
+                rawGridLines.push({
+                  point: point,
+                  unitX: edgeDX / edgeLength,
+                  unitY: edgeDY / edgeLength
+                });
+              });
+
+              // Merge near-parallel lines (< 2 degrees, < 200mm distance) - very conservative
+              const gridLines: Array<{
+                point: [number, number];
+                unitX: number;
+                unitY: number;
+              }> = [];
+              const merged = new Set<number>();
+
+              const angleDiffDegrees = (ux1: number, uy1: number, ux2: number, uy2: number): number => {
+                const dot = ux1 * ux2 + uy1 * uy2;
+                const clampedDot = Math.max(-1, Math.min(1, dot));
+                return Math.acos(Math.abs(clampedDot)) * 180 / Math.PI;
+              };
+
+              const distancePointToLine = (px: number, py: number, lp: [number, number], lux: number, luy: number): number => {
+                const dx = px - lp[0];
+                const dy = py - lp[1];
+                return Math.abs(dx * (-luy) + dy * lux);
+              };
+
+              for (let i = 0; i < rawGridLines.length; i++) {
+                if (merged.has(i)) continue;
+
+                const line1 = rawGridLines[i];
+                const similarLines = [i];
+
+                for (let j = i + 1; j < rawGridLines.length; j++) {
+                  if (merged.has(j)) continue;
+
+                  const line2 = rawGridLines[j];
+
+                  const angleDiff = angleDiffDegrees(line1.unitX, line1.unitY, line2.unitX, line2.unitY);
+                  const dist1 = distancePointToLine(line2.point[0], line2.point[1], line1.point, line1.unitX, line1.unitY);
+                  const dist2 = distancePointToLine(line1.point[0], line1.point[1], line2.point, line2.unitX, line2.unitY);
+                  const avgDist = (dist1 + dist2) / 2;
+
+                  // Much stricter: only merge if nearly identical (< 2 degrees, < 200mm)
+                  if (angleDiff < 2 && avgDist < 0.2) {
+                    similarLines.push(j);
+                    merged.add(j);
+                  }
+                }
+
+                // Average the direction and position of similar lines
+                let avgUnitX = 0, avgUnitY = 0;
+                let avgPointX = 0, avgPointY = 0;
+
+                similarLines.forEach(idx => {
+                  const line = rawGridLines[idx];
+                  avgUnitX += line.unitX;
+                  avgUnitY += line.unitY;
+                  avgPointX += line.point[0];
+                  avgPointY += line.point[1];
+                });
+
+                avgUnitX /= similarLines.length;
+                avgUnitY /= similarLines.length;
+                avgPointX /= similarLines.length;
+                avgPointY /= similarLines.length;
+
+                // Normalize direction
+                const length = Math.sqrt(avgUnitX * avgUnitX + avgUnitY * avgUnitY);
+                avgUnitX /= length;
+                avgUnitY /= length;
+
+                gridLines.push({
+                  point: [avgPointX, avgPointY],
+                  unitX: avgUnitX,
+                  unitY: avgUnitY
+                });
+              }
+
+              // Create tiles from grid line intersections
+              let tileCounter = 0;
+              const processedTiles = new Set<string>();
+
+              for (let i = 0; i < gridLines.length; i++) {
+                for (let j = i + 1; j < gridLines.length; j++) {
+                  const line1 = gridLines[i];
+                  const line2 = gridLines[j];
+
+                  // Find all intersections on line1 and line2 with other grid lines
+                  const line1Ints: Array<{point: [number, number], lineIdx: number}> = [];
+                  const line2Ints: Array<{point: [number, number], lineIdx: number}> = [];
+
+                  for (let k = 0; k < gridLines.length; k++) {
+                    if (k === i || k === j) continue;
+
+                    const lineK = gridLines[k];
+
+                    const int1 = lineIntersection(line1.point, [line1.unitX, line1.unitY], lineK.point, [lineK.unitX, lineK.unitY]);
+                    if (int1 && int1[0] >= minX && int1[0] <= maxX && int1[1] >= minY && int1[1] <= maxY) {
+                      line1Ints.push({point: int1, lineIdx: k});
+                    }
+
+                    const int2 = lineIntersection(line2.point, [line2.unitX, line2.unitY], lineK.point, [lineK.unitX, lineK.unitY]);
+                    if (int2 && int2[0] >= minX && int2[0] <= maxX && int2[1] >= minY && int2[1] <= maxY) {
+                      line2Ints.push({point: int2, lineIdx: k});
+                    }
+                  }
+
+                  // Create quads from consecutive intersection pairs
+                  line1Ints.forEach((int1a, idx1) => {
+                    if (idx1 >= line1Ints.length - 1) return;
+                    const int1b = line1Ints[idx1 + 1];
+
+                    line2Ints.forEach((int2a, idx2) => {
+                      if (idx2 >= line2Ints.length - 1) return;
+                      const int2b = line2Ints[idx2 + 1];
+
+                      // Check if they share the same perpendicular lines (forming a proper quad)
+                      if (int1a.lineIdx === int2a.lineIdx && int1b.lineIdx === int2b.lineIdx) {
+                        const centerX = (int1a.point[0] + int1b.point[0] + int2a.point[0] + int2b.point[0]) / 4;
+                        const centerY = (int1a.point[1] + int1b.point[1] + int2a.point[1] + int2b.point[1]) / 4;
+
+                        const tileKey = `${centerX.toFixed(2)},${centerY.toFixed(2)}`;
+                        if (!processedTiles.has(tileKey)) {
+                          processedTiles.add(tileKey);
+
+                          // Sort points by angle from centroid
+                          const points = [int1a.point, int1b.point, int2a.point, int2b.point];
+                          const sortedPoints = points.sort((a, b) => {
+                            const angleA = Math.atan2(a[1] - centerY, a[0] - centerX);
+                            const angleB = Math.atan2(b[1] - centerY, b[0] - centerX);
+                            return angleA - angleB;
+                          });
+
+                          // Create quad shape
+                          const shape = new Shape();
+                          shape.moveTo(sortedPoints[0][0], sortedPoints[0][1]);
+                          shape.lineTo(sortedPoints[1][0], sortedPoints[1][1]);
+                          shape.lineTo(sortedPoints[2][0], sortedPoints[2][1]);
+                          shape.lineTo(sortedPoints[3][0], sortedPoints[3][1]);
+                          shape.closePath();
+
+                          const tileId = tileCounter++;
+
+                          // Binary decision: tile is inside OR outside based on center point
+                          // A tile cannot be "in between" - it's one or the other
+                          const isInside = isPointInPolygon(centerX, centerY);
+                          const tileColor = isInside ? '#00ff00' : '#ff0000';
+
+                          gridAlignedTiles.push(
+                            <group key={`grid-tile-${tileId}`}>
+                              {/* Coverage color layer */}
+                              <mesh
+                                position={[0, 1.0, 0]}
+                                rotation={[-Math.PI / 2, 0, 0]}
+                                renderOrder={2}
+                              >
+                                <shapeGeometry args={[shape]} />
+                                <meshBasicMaterial
+                                  color={tileColor}
+                                  opacity={0.9}
+                                  transparent
+                                />
+                              </mesh>
+                              {/* Tile edges */}
+                              <lineSegments
+                                position={[0, 1.01, 0]}
+                                rotation={[-Math.PI / 2, 0, 0]}
+                                renderOrder={3}
+                              >
+                                <edgesGeometry args={[new THREE.ShapeGeometry(shape)]} />
+                                <lineBasicMaterial
+                                  color="#ffffff"
+                                  linewidth={2}
+                                />
+                              </lineSegments>
+                            </group>
+                          );
+                        }
+                      }
+                    });
+                  });
+                }
+              }
+
+              return gridAlignedTiles;
+            })()}
+
+            {/* Neighbor analysis layer - 1m above green/red layer */}
+            {(() => {
+              const neighborTiles: React.ReactElement[] = [];
+
+              // Point-in-polygon test
+              const isPointInPolygon = (px: number, py: number): boolean => {
+                let inside = false;
+                for (let i = 0, j = footprint.length - 1; i < footprint.length; j = i++) {
+                  const xi = footprint[i][0], yi = footprint[i][1];
+                  const xj = footprint[j][0], yj = footprint[j][1];
+
+                  const intersect = ((yi > py) !== (yj > py))
+                    && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                  if (intersect) inside = !inside;
+                }
+                return inside;
+              };
+
+              // Function to find intersection between two lines
+              const lineIntersection = (
+                p1: [number, number], d1: [number, number],
+                p2: [number, number], d2: [number, number]
+              ): [number, number] | null => {
+                const denom = d1[0] * d2[1] - d1[1] * d2[0];
+                if (Math.abs(denom) < 0.0001) return null;
+                const t = ((p2[0] - p1[0]) * d2[1] - (p2[1] - p1[1]) * d2[0]) / denom;
+                return [p1[0] + t * d1[0], p1[1] + t * d1[1]];
+              };
+
+              // Collect grid lines (same as before, with merging)
+              const rawGridLines: Array<{
+                point: [number, number];
+                unitX: number;
+                unitY: number;
+              }> = [];
+
+              footprint.forEach((point, index) => {
+                const nextPoint = footprint[(index + 1) % footprint.length];
+                const edgeDX = nextPoint[0] - point[0];
+                const edgeDY = nextPoint[1] - point[1];
+                const edgeLength = Math.sqrt(edgeDX * edgeDX + edgeDY * edgeDY);
+
+                rawGridLines.push({
+                  point: point,
+                  unitX: edgeDX / edgeLength,
+                  unitY: edgeDY / edgeLength
+                });
+              });
+
+              // Merge near-parallel lines
+              const gridLines: Array<{
+                point: [number, number];
+                unitX: number;
+                unitY: number;
+              }> = [];
+              const merged = new Set<number>();
+
+              const angleDiffDegrees = (ux1: number, uy1: number, ux2: number, uy2: number): number => {
+                const dot = ux1 * ux2 + uy1 * uy2;
+                const clampedDot = Math.max(-1, Math.min(1, dot));
+                return Math.acos(Math.abs(clampedDot)) * 180 / Math.PI;
+              };
+
+              const distancePointToLine = (px: number, py: number, lp: [number, number], lux: number, luy: number): number => {
+                const dx = px - lp[0];
+                const dy = py - lp[1];
+                return Math.abs(dx * (-luy) + dy * lux);
+              };
+
+              for (let i = 0; i < rawGridLines.length; i++) {
+                if (merged.has(i)) continue;
+                const line1 = rawGridLines[i];
+                const similarLines = [i];
+
+                for (let j = i + 1; j < rawGridLines.length; j++) {
+                  if (merged.has(j)) continue;
+                  const line2 = rawGridLines[j];
+                  const angleDiff = angleDiffDegrees(line1.unitX, line1.unitY, line2.unitX, line2.unitY);
+                  const dist1 = distancePointToLine(line2.point[0], line2.point[1], line1.point, line1.unitX, line1.unitY);
+                  const dist2 = distancePointToLine(line1.point[0], line1.point[1], line2.point, line2.unitX, line2.unitY);
+                  const avgDist = (dist1 + dist2) / 2;
+
+                  if (angleDiff < 2 && avgDist < 0.2) {
+                    similarLines.push(j);
+                    merged.add(j);
+                  }
+                }
+
+                let avgUnitX = 0, avgUnitY = 0, avgPointX = 0, avgPointY = 0;
+                similarLines.forEach(idx => {
+                  const line = rawGridLines[idx];
+                  avgUnitX += line.unitX;
+                  avgUnitY += line.unitY;
+                  avgPointX += line.point[0];
+                  avgPointY += line.point[1];
+                });
+
+                avgUnitX /= similarLines.length;
+                avgUnitY /= similarLines.length;
+                avgPointX /= similarLines.length;
+                avgPointY /= similarLines.length;
+
+                const length = Math.sqrt(avgUnitX * avgUnitX + avgUnitY * avgUnitY);
+                avgUnitX /= length;
+                avgUnitY /= length;
+
+                gridLines.push({
+                  point: [avgPointX, avgPointY],
+                  unitX: avgUnitX,
+                  unitY: avgUnitY
+                });
+              }
+
+              // Build tile list with adjacency info
+              interface TileInfo {
+                id: number;
+                center: [number, number];
+                points: [number, number][];
+                isGreen: boolean;
+                edges: Array<{p1: [number, number], p2: [number, number]}>;
+              }
+
+              const allTiles: TileInfo[] = [];
+              let tileCounter = 0;
+              const processedTiles = new Set<string>();
+
+              for (let i = 0; i < gridLines.length; i++) {
+                for (let j = i + 1; j < gridLines.length; j++) {
+                  const line1 = gridLines[i];
+                  const line2 = gridLines[j];
+
+                  const line1Ints: Array<{point: [number, number], lineIdx: number}> = [];
+                  const line2Ints: Array<{point: [number, number], lineIdx: number}> = [];
+
+                  for (let k = 0; k < gridLines.length; k++) {
+                    if (k === i || k === j) continue;
+                    const lineK = gridLines[k];
+
+                    const int1 = lineIntersection(line1.point, [line1.unitX, line1.unitY], lineK.point, [lineK.unitX, lineK.unitY]);
+                    if (int1 && int1[0] >= minX && int1[0] <= maxX && int1[1] >= minY && int1[1] <= maxY) {
+                      line1Ints.push({point: int1, lineIdx: k});
+                    }
+
+                    const int2 = lineIntersection(line2.point, [line2.unitX, line2.unitY], lineK.point, [lineK.unitX, lineK.unitY]);
+                    if (int2 && int2[0] >= minX && int2[0] <= maxX && int2[1] >= minY && int2[1] <= maxY) {
+                      line2Ints.push({point: int2, lineIdx: k});
+                    }
+                  }
+
+                  line1Ints.forEach((int1a, idx1) => {
+                    if (idx1 >= line1Ints.length - 1) return;
+                    const int1b = line1Ints[idx1 + 1];
+
+                    line2Ints.forEach((int2a, idx2) => {
+                      if (idx2 >= line2Ints.length - 1) return;
+                      const int2b = line2Ints[idx2 + 1];
+
+                      if (int1a.lineIdx === int2a.lineIdx && int1b.lineIdx === int2b.lineIdx) {
+                        const centerX = (int1a.point[0] + int1b.point[0] + int2a.point[0] + int2b.point[0]) / 4;
+                        const centerY = (int1a.point[1] + int1b.point[1] + int2a.point[1] + int2b.point[1]) / 4;
+
+                        const tileKey = `${centerX.toFixed(2)},${centerY.toFixed(2)}`;
+                        if (!processedTiles.has(tileKey)) {
+                          processedTiles.add(tileKey);
+
+                          const points = [int1a.point, int1b.point, int2a.point, int2b.point];
+                          const sortedPoints = points.sort((a, b) => {
+                            const angleA = Math.atan2(a[1] - centerY, a[0] - centerX);
+                            const angleB = Math.atan2(b[1] - centerY, b[0] - centerX);
+                            return angleA - angleB;
+                          });
+
+                          const isGreen = isPointInPolygon(centerX, centerY);
+
+                          // Store edges
+                          const edges = [];
+                          for (let e = 0; e < 4; e++) {
+                            edges.push({
+                              p1: sortedPoints[e],
+                              p2: sortedPoints[(e + 1) % 4]
+                            });
+                          }
+
+                          allTiles.push({
+                            id: tileCounter++,
+                            center: [centerX, centerY],
+                            points: sortedPoints,
+                            isGreen,
+                            edges
+                          });
+                        }
+                      }
+                    });
+                  });
+                }
+              }
+
+              // Check adjacency: two tiles share an edge if they have 2 matching corner points
+              const edgesMatch = (edge1: {p1: [number, number], p2: [number, number]}, edge2: {p1: [number, number], p2: [number, number]}): boolean => {
+                const tolerance = 0.01;
+                const dist = (p1: [number, number], p2: [number, number]) =>
+                  Math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2);
+
+                return (dist(edge1.p1, edge2.p1) < tolerance && dist(edge1.p2, edge2.p2) < tolerance) ||
+                       (dist(edge1.p1, edge2.p2) < tolerance && dist(edge1.p2, edge2.p1) < tolerance);
+              };
+
+              // For each green tile, count green neighbors
+              allTiles.forEach(tile => {
+                if (!tile.isGreen) return; // Only process green tiles
+
+                let greenNeighborCount = 0;
+
+                // Check all other tiles
+                allTiles.forEach(otherTile => {
+                  if (tile.id === otherTile.id) return;
+                  if (!otherTile.isGreen) return; // Only count green neighbors
+
+                  // Check if they share an edge
+                  let sharedEdges = 0;
+                  tile.edges.forEach(edge1 => {
+                    otherTile.edges.forEach(edge2 => {
+                      if (edgesMatch(edge1, edge2)) {
+                        sharedEdges++;
+                      }
+                    });
+                  });
+
+                  // If they share at least one edge, they're neighbors
+                  if (sharedEdges > 0) {
+                    greenNeighborCount++;
+                  }
+                });
+
+                // Color based on green neighbor count
+                const tileColor = greenNeighborCount >= 2 ? '#ff00ff' : '#00ffff'; // Magenta : Teal
+
+                const shape = new Shape();
+                shape.moveTo(tile.points[0][0], tile.points[0][1]);
+                shape.lineTo(tile.points[1][0], tile.points[1][1]);
+                shape.lineTo(tile.points[2][0], tile.points[2][1]);
+                shape.lineTo(tile.points[3][0], tile.points[3][1]);
+                shape.closePath();
+
+                neighborTiles.push(
+                  <mesh
+                    key={`neighbor-tile-${tile.id}`}
+                    position={[0, 2.0, 0]}
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    renderOrder={4}
+                  >
+                    <shapeGeometry args={[shape]} />
+                    <meshBasicMaterial
+                      color={tileColor}
+                      opacity={0.7}
+                      transparent
+                    />
+                  </mesh>
+                );
+              });
+
+              return neighborTiles;
+            })()}
+          </group>
+        );
+      })()}
+
+      {/* Wall Segments */}
+      {footprint.length > 0 && (
+        <WallSegments
+          footprint={footprint}
+          numberOfFloors={numberOfFloors}
+          height={height}
+          visibleFloors={visibleFloors}
+          insulation={insulation}
+          buildingColor={buildingColor}
+          selectedComponent={selectedComponent}
+          hoveredComponent={hoveredComponent}
+          clippingPlanes={clippingPlanes}
+          handleClick={handleClick}
+          handleRightClick={handleRightClick}
+          handlePointerOver={handlePointerOver}
+          handlePointerOut={handlePointerOut}
+        />
       )}
 
-      {/* Intelligent roof system based on building shape - DISABLED FOR NOW */}
-      {false && visibleFloors.has(numberOfFloors) && (
-        <group position={[0, height, 0]}>
-        {/* Norwegian standard: 600mm (0.6m) overhang, 200mm (0.2m) below wall top */}
-        {(() => {
-          const { geometry3D, bounds } = roofData;
+      {/* Windows and Doors */}
+      {footprint.length > 0 && (
+        <WindowDoorComponents
+          footprint={footprint}
+          numberOfFloors={numberOfFloors}
+          height={height}
+          visibleFloors={visibleFloors}
+          insulation={insulation}
+          openings={openings}
+          selectedComponent={selectedComponent}
+          hoveredComponent={hoveredComponent}
+          clippingPlanes={clippingPlanes}
+          handleClick={handleClick}
+          handlePointerOver={handlePointerOver}
+          handlePointerOut={handlePointerOut}
+        />
+      )}
 
-          // If intelligent algorithm generated roof sections, render them
-          if (geometry3D && geometry3D.length > 0) {
-            return (
-              <>
-                {geometry3D.map((roofPart, index) => {
-                  if (roofPart.type === 'gable') {
-                    const { ridgeLength, roofWidth, ridgeHeight, orientation, position } = roofPart;
-                    if (!roofWidth || !ridgeLength || !ridgeHeight) return null;
-                    const slopeDepth = roofWidth / 2;
-                    const [posX, , posZ] = position;
+      {/* Floor Components */}
+      {footprint.length > 0 && (
+        <FloorComponents
+          footprint={footprint}
+          numberOfFloors={numberOfFloors}
+          height={height}
+          visibleFloors={visibleFloors}
+          insulation={insulation}
+          selectedComponent={selectedComponent}
+          hoveredComponent={hoveredComponent}
+          clippingPlanes={clippingPlanes}
+          handleClick={handleClick}
+          handleRightClick={handleRightClick}
+          handlePointerOver={handlePointerOver}
+          handlePointerOut={handlePointerOut}
+        />
+      )}
 
-                    return (
-                      <group key={index} position={[posX, 0, posZ]}>
-                        {orientation === 'x' ? (
-                          <>
-                            {/* Ridge runs east-west - North slope */}
-                            <mesh
-                              position={[0, ridgeHeight / 2, -slopeDepth / 2]}
-                              rotation={[-Math.PI / 5, 0, 0]}
-                              onClick={(e) => handleClick(e, `roof-north-${index}`)}
-                              onContextMenu={(e) => {
-                                // Calculate roof slope normal (tilted upward)
-                                const angle = Math.PI / 5;
-                                handleRightClick(e, `roof-north-${index}`, [0, Math.cos(angle), -Math.sin(angle)]);
-                              }}
-                              onPointerOver={(e) => handlePointerOver(e, `roof-north-${index}`)}
-                              onPointerOut={handlePointerOut}
-                            >
-                              <boxGeometry args={[ridgeLength, 0.3, slopeDepth * 1.1]} />
-                              <meshPhysicalMaterial
-                                color={selectedComponent === `roof-north-${index}` ? '#ef4444' :
-                                       hoveredComponent === `roof-north-${index}` ? '#f97316' : '#1f2937'}
-                                roughness={0.9}
-                                metalness={0.1}
-                                emissive={selectedComponent === `roof-north-${index}` ? '#ef4444' : '#000000'}
-                                emissiveIntensity={selectedComponent === `roof-north-${index}` ? 0.1 : 0}
-                                clippingPlanes={clippingPlanes}
-                              />
-                            </mesh>
-                            {/* South slope */}
-                            <mesh
-                              position={[0, ridgeHeight / 2, slopeDepth / 2]}
-                              rotation={[Math.PI / 5, 0, 0]}
-                              onClick={(e) => handleClick(e, `roof-south-${index}`)}
-                              onPointerOver={(e) => handlePointerOver(e, `roof-south-${index}`)}
-                              onPointerOut={handlePointerOut}
-                            >
-                              <boxGeometry args={[ridgeLength, 0.3, slopeDepth * 1.1]} />
-                              <meshPhysicalMaterial
-                                color={selectedComponent === `roof-south-${index}` ? '#ef4444' :
-                                       hoveredComponent === `roof-south-${index}` ? '#f97316' : '#1f2937'}
-                                roughness={0.9}
-                                metalness={0.1}
-                                emissive={selectedComponent === `roof-south-${index}` ? '#ef4444' : '#000000'}
-                                emissiveIntensity={selectedComponent === `roof-south-${index}` ? 0.1 : 0}
-                                clippingPlanes={clippingPlanes}
-                              />
-                            </mesh>
-                            {/* Ridge beam */}
-                            <mesh
-                              position={[0, ridgeHeight, 0]}
-                              onClick={(e) => handleClick(e, `roof-ridge-${index}`)}
-                              onPointerOver={(e) => handlePointerOver(e, `roof-ridge-${index}`)}
-                              onPointerOut={handlePointerOut}
-                            >
-                              <boxGeometry args={[ridgeLength, 0.4, 0.4]} />
-                              <meshPhysicalMaterial
-                                color={selectedComponent === `roof-ridge-${index}` ? '#a855f7' :
-                                       hoveredComponent === `roof-ridge-${index}` ? '#8b5cf6' : '#111827'}
-                                roughness={0.8}
-                                emissive={selectedComponent === `roof-ridge-${index}` ? '#a855f7' : '#000000'}
-                                emissiveIntensity={selectedComponent === `roof-ridge-${index}` ? 0.1 : 0}
-                              />
-                            </mesh>
-                          </>
-                        ) : (
-                          <>
-                            {/* Ridge runs north-south */}
-                            <mesh position={[-slopeDepth / 2, ridgeHeight / 2, 0]} rotation={[0, 0, Math.PI / 5]}>
-                              <boxGeometry args={[slopeDepth * 1.1, 0.3, ridgeLength]} />
-                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                            </mesh>
-                            <mesh position={[slopeDepth / 2, ridgeHeight / 2, 0]} rotation={[0, 0, -Math.PI / 5]}>
-                              <boxGeometry args={[slopeDepth * 1.1, 0.3, ridgeLength]} />
-                              <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                            </mesh>
-                            <mesh position={[0, ridgeHeight, 0]}>
-                              <boxGeometry args={[0.4, 0.4, ridgeLength]} />
-                              <meshPhysicalMaterial color="#111827" roughness={0.8} />
-                            </mesh>
-                          </>
-                        )}
-                      </group>
-                    );
-                  } else if (roofPart.type === 'valley') {
-                    // Render valley geometry
-                    return null; // TODO: Implement valley rendering
-                  }
-                  return null;
-                })}
-              </>
-            );
-          } else {
-            // Fallback to simple single roof if algorithm fails
-            const overhang = 0.6;
-            const width = bounds.width + overhang * 2;
-            const depth = bounds.depth + overhang * 2;
-            const roofHeight = Math.min(width, depth) * 0.35;
-            const orientation = width > depth ? 'x' : 'y';
+      {/* Roof Component */}
+      {visibleFloors.has(numberOfFloors) && (
+        <RoofComponent
+          footprint={footprint}
+          height={height}
+          numberOfFloors={numberOfFloors}
+          roofPlacementFloor={roofPlacementFloor}
+          selectedComponent={selectedComponent}
+          hoveredComponent={hoveredComponent}
+          clippingPlanes={clippingPlanes}
+          handleClick={handleClick}
+          handleRightClick={handleRightClick}
+          handlePointerOver={handlePointerOver}
+          handlePointerOut={handlePointerOut}
+        />
+      )}
 
-            if (orientation === 'x') {
-              return (
-                <>
-                  <mesh position={[0, roofHeight / 2, -depth / 4]} rotation={[-Math.PI / 5, 0, 0]}>
-                    <boxGeometry args={[width, 0.3, depth * 0.55]} />
-                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                  </mesh>
-                  <mesh position={[0, roofHeight / 2, depth / 4]} rotation={[Math.PI / 5, 0, 0]}>
-                    <boxGeometry args={[width, 0.3, depth * 0.55]} />
-                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                  </mesh>
-                  <mesh position={[0, roofHeight, 0]}>
-                    <boxGeometry args={[width, 0.4, 0.4]} />
-                    <meshPhysicalMaterial color="#111827" roughness={0.8} />
-                  </mesh>
-                </>
-              );
-            } else {
-              return (
-                <>
-                  <mesh position={[-width / 4, roofHeight / 2, 0]} rotation={[0, 0, Math.PI / 5]}>
-                    <boxGeometry args={[width * 0.55, 0.3, depth]} />
-                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                  </mesh>
-                  <mesh position={[width / 4, roofHeight / 2, 0]} rotation={[0, 0, -Math.PI / 5]}>
-                    <boxGeometry args={[width * 0.55, 0.3, depth]} />
-                    <meshPhysicalMaterial color="#1f2937" roughness={0.9} metalness={0.1} />
-                  </mesh>
-                  <mesh position={[0, roofHeight, 0]}>
-                    <boxGeometry args={[0.4, 0.4, depth]} />
-                    <meshPhysicalMaterial color="#111827" roughness={0.8} />
-                  </mesh>
-                </>
-              );
-            }
-          }
-        })()}
-        </group>
+      {/* Property Boundaries (Cadastral Lines) */}
+      {showPropertyBoundaries && propertyBoundaries && propertyCenter && (
+        <PropertyBoundaries
+          properties={propertyBoundaries}
+          centerLat={propertyCenter.lat}
+          centerLon={propertyCenter.lon}
+          focusIndex={0}
+          elevation={0.1} // Slightly above ground to prevent z-fighting
+        />
       )}
     </group>
   );

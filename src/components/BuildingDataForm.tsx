@@ -147,9 +147,9 @@ const SystemInfoTooltip = ({ title, descriptions }: { title: string; description
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
-        <HelpCircle className="w-4 h-4 text-slate-400 hover:text-white cursor-help" />
+        <HelpCircle className="w-4 h-4 text-text-tertiary hover:text-foreground cursor-help" />
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs bg-slate-800 border-slate-600 text-white">
+      <TooltipContent className="max-w-xs bg-popover border-border text-foreground">
         <div className="space-y-2">
           <div className="font-medium text-sm">{title}</div>
           {Object.entries(descriptions).map(([key, desc]) => (
@@ -178,7 +178,7 @@ const DataSourceIndicator = ({ source, hasValue }: { source: 'manual' | 'auto' |
             (Egendefinert)
           </span>
         </TooltipTrigger>
-        <TooltipContent className="bg-slate-800 border-slate-600 text-white text-sm">
+        <TooltipContent className="bg-popover border-border text-foreground text-sm">
           Du har definert denne verdien selv
         </TooltipContent>
       </Tooltip>
@@ -222,15 +222,9 @@ export function BuildingDataForm({
   const [enovaDataSource, setEnovaDataSource] = useState<string | null>(null);
 
   // State for multi-select components
-  const [heatingSelections, setHeatingSelections] = useState<RankedSelection[]>([
-    { value: 'Elektrisitet', percentage: 100, ranking: 'primary' }
-  ]);
-  const [lightingSelections, setLightingSelections] = useState<RankedSelection[]>([
-    { value: 'Fluorescerende', percentage: 100, ranking: 'primary' }
-  ]);
-  const [hotWaterSelections, setHotWaterSelections] = useState<RankedSelection[]>([
-    { value: 'Elektrisitet', percentage: 100, ranking: 'primary' }
-  ]);
+  const [heatingSelections, setHeatingSelections] = useState<RankedSelection[]>([]);
+  const [lightingSelections, setLightingSelections] = useState<RankedSelection[]>([]);
+  const [hotWaterSelections, setHotWaterSelections] = useState<RankedSelection[]>([]);
 
   // Track data sources for each field
   const [fieldSources, setFieldSources] = useState<Record<string, 'manual' | 'auto' | 'map' | 'enova' | 'calculated'>>({
@@ -364,10 +358,10 @@ export function BuildingDataForm({
       numberOfFloors: "",  // Use empty string instead of undefined
       sdInstallation: "nei",  // Default to "nei" (No)
       annualEnergyConsumption: calculateEnergyEstimate('Kontor', 120), // Smart default based on office building
-      heatingSystems: [{ value: 'Elektrisitet', percentage: 100, ranking: 'primary' }],
-      lightingSystems: [{ value: 'Fluorescerende', percentage: 100, ranking: 'primary' }],
+      heatingSystems: [],
+      lightingSystems: [],
       ventilationSystem: "Naturlig",
-      hotWaterSystems: [{ value: 'Elektrisitet', percentage: 100, ranking: 'primary' }],
+      hotWaterSystems: [],
     },
   });
 
@@ -681,7 +675,7 @@ export function BuildingDataForm({
     <div className="space-y-3">
       {/* Data Source Status */}
       {(isFetchingBuildingData || isFetchingEnovaData) && (
-        <div className="flex items-center gap-2 text-xs text-slate-400 p-2 bg-white/5 rounded border border-white/10">
+        <div className="flex items-center gap-2 text-xs text-text-tertiary p-2 bg-muted/30 rounded border border-border">
           <Loader2 className="w-3 h-3 animate-spin" />
           {isFetchingEnovaData ? 'Henter Enova-data...' : 'Henter bygningsdata...'}
         </div>
@@ -695,7 +689,7 @@ export function BuildingDataForm({
             name="buildingType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-white text-sm">
+                <FormLabel className="text-foreground text-sm">
                   Bygningstype
                   <DataSourceIndicator
                     source={fieldSources.buildingType || 'auto'}
@@ -707,7 +701,7 @@ export function BuildingDataForm({
                   setFieldSources(prev => ({ ...prev, buildingType: 'manual' }));
                 }} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                    <SelectTrigger className="bg-input border-input-border text-input-foreground">
                       <SelectValue placeholder="Velg bygningstype" />
                     </SelectTrigger>
                   </FormControl>
@@ -731,7 +725,7 @@ export function BuildingDataForm({
               name="totalArea"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">
+                  <FormLabel className="text-foreground text-sm">
                     Total BRA
                     <DataSourceIndicator
                       source={fieldSources.totalArea || 'auto'}
@@ -742,7 +736,7 @@ export function BuildingDataForm({
                     <Input
                       type="number"
                       placeholder="120"
-                      className="bg-white/5 border-white/20 text-white"
+                      className="bg-input border-input-border text-input-foreground"
                       {...field}
                       onChange={(e) => {
                         // Allow any input during typing
@@ -771,7 +765,7 @@ export function BuildingDataForm({
               name="heatedArea"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">
+                  <FormLabel className="text-foreground text-sm">
                     Oppvarmet BRA
                     <DataSourceIndicator
                       source={fieldSources.heatedArea || 'auto'}
@@ -782,7 +776,7 @@ export function BuildingDataForm({
                     <Input
                       type="number"
                       placeholder="110"
-                      className="bg-white/5 border-white/20 text-white"
+                      className="bg-input border-input-border text-input-foreground"
                       {...field}
                       onChange={(e) => {
                         const value = Number(e.target.value);
@@ -808,10 +802,10 @@ export function BuildingDataForm({
               name="buildingYear"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">Byggeår (valgfritt)</FormLabel>
+                  <FormLabel className="text-foreground text-sm">Byggeår (valgfritt)</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-white/5 border-white/20 text-white">
+                      <SelectTrigger className="bg-input border-input-border text-input-foreground">
                         <SelectValue placeholder="Velg byggeperiode" />
                       </SelectTrigger>
                     </FormControl>
@@ -833,7 +827,7 @@ export function BuildingDataForm({
               name="numberOfFloors"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">
+                  <FormLabel className="text-foreground text-sm">
                     Antall etasjer (valgfritt)
                     <DataSourceIndicator
                       source={fieldSources.numberOfFloors || 'auto'}
@@ -844,7 +838,7 @@ export function BuildingDataForm({
                     <Input
                       type="number"
                       placeholder="2"
-                      className="bg-white/5 border-white/20 text-white"
+                      className="bg-input border-input-border text-input-foreground"
                       {...field}
                       value={field.value || ""}
                       onChange={(e) => {
@@ -868,17 +862,17 @@ export function BuildingDataForm({
               name="sdInstallation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">SD-anlegg (valgfritt)</FormLabel>
+                  <FormLabel className="text-foreground text-sm">SD-anlegg (valgfritt)</FormLabel>
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="bg-white/5 border-white/20 text-white h-9">
+                      <SelectTrigger className="bg-white/5 border-border text-white h-9">
                         <SelectValue placeholder="SD-anlegg" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 border-slate-600" style={{ zIndex: 9999 }}>
-                        <SelectItem value="ja" className="text-white hover:bg-slate-700">
+                        <SelectItem value="ja" className="text-foreground hover:bg-muted">
                           Ja
                         </SelectItem>
-                        <SelectItem value="nei" className="text-white hover:bg-slate-700">
+                        <SelectItem value="nei" className="text-foreground hover:bg-muted">
                           Nei
                         </SelectItem>
                       </SelectContent>
@@ -894,7 +888,7 @@ export function BuildingDataForm({
               name="annualEnergyConsumption"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-white text-sm">
+                  <FormLabel className="text-foreground text-sm">
                     Årlig energiforbruk
                     <DataSourceIndicator
                       source={fieldSources.annualEnergyConsumption || 'auto'}
@@ -905,7 +899,7 @@ export function BuildingDataForm({
                     <Input
                       type="number"
                       placeholder="28200"
-                      className="bg-white/5 border-white/20 text-white"
+                      className="bg-input border-input-border text-input-foreground"
                       {...field}
                       onChange={(e) => {
                         const value = Number(e.target.value);
@@ -922,7 +916,7 @@ export function BuildingDataForm({
 
           {/* Energy Systems */}
           <div className="space-y-2">
-            <h4 className="text-white font-medium text-sm border-b border-white/20 pb-1">
+            <h4 className="text-foreground font-medium text-sm border-b border-border pb-1">
               Energisystemer
             </h4>
 
@@ -1071,7 +1065,7 @@ export function BuildingDataForm({
               type="submit"
               disabled={isSubmitting}
               size="sm"
-              className="w-full sm:w-1/2 lg:w-1/5 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+              className="w-full sm:w-1/2 lg:w-1/5 bg-primary hover:bg-primary/90"
             >
               {isSubmitting ? (
                 <>

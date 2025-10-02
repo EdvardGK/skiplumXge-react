@@ -1091,7 +1091,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('wallInsulation', value)}
                           options={insulationOptions}
                           placeholder="Velg isolasjonstype"
-                          emptyStateText="Ingen isolasjon registrert"
                           className="w-full"
                           useThicknessUValue={true}
                           uValueLabel="TEK17: ≤ 0,18"
@@ -1117,7 +1116,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('roofInsulation', value)}
                           options={insulationOptions}
                           placeholder="Velg isolasjonstype"
-                          emptyStateText="Ingen isolasjon registrert"
                           className="w-full"
                           useThicknessUValue={true}
                           uValueLabel="TEK17: ≤ 0,13"
@@ -1143,7 +1141,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('floorInsulation', value)}
                           options={insulationOptions}
                           placeholder="Velg isolasjonstype"
-                          emptyStateText="Ingen isolasjon registrert"
                           className="w-full"
                           useThicknessUValue={true}
                           uValueLabel="TEK17: ≤ 0,10"
@@ -1169,7 +1166,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('foundationInsulation', value)}
                           options={insulationOptions}
                           placeholder="Velg isolasjonstype"
-                          emptyStateText="Ingen isolasjon registrert"
                           className="w-full"
                           useThicknessUValue={true}
                           uValueLabel="TEK17: ≤ 0,15"
@@ -1229,7 +1225,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('windowTypes', value)}
                           options={windowTypeOptions}
                           placeholder="Velg vindustyper"
-                          emptyStateText="Ingen vinduer registrert"
                           className="w-full"
                           useQuantityUValue={true}  // Use quantity/U-value mode for windows
                           uValueLabel="TEK17: ≤ 0,80"
@@ -1291,7 +1286,6 @@ export default function DataEditingOverlay({
                           onSelectionsChange={(value) => updateField('heatingSystems', value)}
                           options={heatingSystemOptions}
                           placeholder="Velg oppvarmingssystem(er)"
-                          emptyStateText="Ingen oppvarmingssystem valgt"
                           className="w-full"
                           title=""
                         />

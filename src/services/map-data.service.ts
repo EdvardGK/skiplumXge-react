@@ -177,33 +177,52 @@ export class MapDataService {
   }
 
   /**
-   * Execute Overpass API query with fallback endpoints
+   * Execute Overpass API query with fallback endpoints and retry logic
    */
   private static async executeOverpassQuery(query: string): Promise<OSMResponse> {
     let lastError: Error | null = null;
 
     for (const endpoint of this.OVERPASS_ENDPOINTS) {
       try {
+        console.log(`🗺️ Fetching building data from ${endpoint}...`);
+
+        // Create abort controller with 30 second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         const response = await fetch(endpoint, {
           method: 'POST',
           body: `data=${encodeURIComponent(query)}`,
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log(`✅ Successfully fetched building data from ${endpoint}`);
+        return data;
       } catch (error) {
         lastError = error as Error;
-        console.warn(`Failed to fetch from ${endpoint}:`, error);
-        // Try next endpoint
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.warn(`❌ Failed to fetch from ${endpoint}: ${errorMsg}`);
+
+        // If it's a timeout or network error, try next endpoint immediately
+        // Otherwise wait a bit before next attempt
+        if (!errorMsg.includes('abort') && !errorMsg.includes('504')) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
     }
 
+    // All endpoints failed
+    console.error('⚠️ All Overpass API endpoints failed. Building data unavailable.');
     throw lastError || new Error('All Overpass endpoints failed');
   }
 
@@ -251,7 +270,9 @@ export class MapDataService {
               parseFloat(element.tags.height) : undefined,
             name: element.tags.name,
             address: this.formatAddress(element.tags),
-            bygningsnummer: element.tags['ref:bygningsnr'],
+            // Don't use OSM's bygningsnummer - it's often the OSM element ID, not real Matrikkel number
+            // Real bygningsnummer comes from Enova certificates matched later
+            bygningsnummer: undefined,
             addressLabel: this.createAddressLabel(element.tags),
             category: 'neighbor', // Default category, will be updated by fetchCategorizedBuildings
             isSelected: false,

@@ -1,0 +1,506 @@
+{
+  "color": {
+    "dark": {
+      "base": {
+        "background": {
+          "value": "#0a0a0a",
+          "type": "color",
+          "description": "Main background - Near black"
+        },
+        "background-elevated": {
+          "value": "#111111",
+          "type": "color"
+        },
+        "background-subtle": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        }
+      },
+      "card": {
+        "default": {
+          "value": "#111111",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "border": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "hover": {
+          "value": "#1a1a1a",
+          "type": "color"
+        }
+      },
+      "glass": {
+        "bg": {
+          "value": "rgba(17, 17, 17, 0.5)",
+          "type": "color"
+        },
+        "border": {
+          "value": "rgba(255, 255, 255, 0.1)",
+          "type": "color"
+        }
+      },
+      "popover": {
+        "default": {
+          "value": "#111111",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        }
+      },
+      "modal": {
+        "overlay": {
+          "value": "rgba(0, 0, 0, 0.8)",
+          "type": "color"
+        }
+      },
+      "primary": {
+        "default": {
+          "value": "#10b981",
+          "type": "color",
+          "description": "Emerald green - Primary brand color"
+        },
+        "hover": {
+          "value": "#34d399",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "muted": {
+          "value": "rgba(16, 185, 129, 0.15)",
+          "type": "color"
+        }
+      },
+      "secondary": {
+        "default": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "hover": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        }
+      },
+      "accent": {
+        "default": {
+          "value": "#06b6d4",
+          "type": "color",
+          "description": "Cyan accent color"
+        },
+        "hover": {
+          "value": "#22d3ee",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "muted": {
+          "value": "rgba(6, 182, 212, 0.15)",
+          "type": "color"
+        }
+      },
+      "semantic": {
+        "success": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "success-foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "success-muted": {
+          "value": "rgba(16, 185, 129, 0.15)",
+          "type": "color"
+        },
+        "destructive": {
+          "value": "#ef4444",
+          "type": "color"
+        },
+        "destructive-hover": {
+          "value": "#f87171",
+          "type": "color"
+        },
+        "destructive-foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "destructive-muted": {
+          "value": "rgba(239, 68, 68, 0.15)",
+          "type": "color"
+        },
+        "warning": {
+          "value": "#f59e0b",
+          "type": "color"
+        },
+        "warning-foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "warning-muted": {
+          "value": "rgba(245, 158, 11, 0.15)",
+          "type": "color"
+        }
+      },
+      "text": {
+        "primary": {
+          "value": "#fafafa",
+          "type": "color",
+          "description": "Primary text - High contrast"
+        },
+        "secondary": {
+          "value": "#d4d4d8",
+          "type": "color",
+          "description": "Secondary text - Good contrast (was #a1a1aa)"
+        },
+        "tertiary": {
+          "value": "#a1a1aa",
+          "type": "color",
+          "description": "Tertiary text - Adequate contrast (was #71717a)"
+        },
+        "muted": {
+          "value": "#71717a",
+          "type": "color",
+          "description": "Muted text - Lower contrast but readable (was #52525b)"
+        },
+        "disabled": {
+          "value": "#52525b",
+          "type": "color",
+          "description": "Disabled text - Intentionally low contrast"
+        }
+      },
+      "border": {
+        "default": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "subtle": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "strong": {
+          "value": "#3f3f46",
+          "type": "color"
+        }
+      },
+      "input": {
+        "default": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "border": {
+          "value": "#3f3f46",
+          "type": "color"
+        },
+        "border-hover": {
+          "value": "#52525b",
+          "type": "color"
+        },
+        "border-focus": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "placeholder": {
+          "value": "#71717a",
+          "type": "color"
+        },
+        "disabled": {
+          "value": "#1a1a1a",
+          "type": "color"
+        }
+      },
+      "button": {
+        "primary-bg": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "primary-hover": {
+          "value": "#34d399",
+          "type": "color"
+        },
+        "primary-active": {
+          "value": "#059669",
+          "type": "color"
+        },
+        "primary-text": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "secondary-bg": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "secondary-hover": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "secondary-active": {
+          "value": "#3f3f46",
+          "type": "color"
+        },
+        "secondary-text": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "ghost-hover": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "ghost-active": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "outline-border": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "outline-hover-bg": {
+          "value": "#111111",
+          "type": "color"
+        }
+      },
+      "chart": {
+        "1": {
+          "value": "#10b981",
+          "type": "color",
+          "description": "Emerald - Primary energy"
+        },
+        "2": {
+          "value": "#06b6d4",
+          "type": "color",
+          "description": "Cyan - Secondary energy"
+        },
+        "3": {
+          "value": "#8b5cf6",
+          "type": "color",
+          "description": "Purple - Tertiary"
+        },
+        "4": {
+          "value": "#f59e0b",
+          "type": "color",
+          "description": "Amber - Warning/attention"
+        },
+        "5": {
+          "value": "#ef4444",
+          "type": "color",
+          "description": "Red - Critical/loss"
+        },
+        "6": {
+          "value": "#ec4899",
+          "type": "color",
+          "description": "Pink - Accent data"
+        },
+        "grid": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "axis": {
+          "value": "#52525b",
+          "type": "color"
+        },
+        "label": {
+          "value": "#71717a",
+          "type": "color"
+        }
+      },
+      "polygon": {
+        "fill": {
+          "value": "rgba(34, 197, 94, 0.3)",
+          "type": "color",
+          "description": "Green - Default/neighbor buildings"
+        },
+        "stroke": {
+          "value": "#22c55e",
+          "type": "color",
+          "description": "Green - Default/neighbor buildings"
+        },
+        "hover-fill": {
+          "value": "rgba(34, 197, 94, 0.5)",
+          "type": "color",
+          "description": "Green hover"
+        },
+        "selected-fill": {
+          "value": "rgba(236, 72, 153, 0.5)",
+          "type": "color",
+          "description": "Magenta/pink - Selected building"
+        },
+        "selected-stroke": {
+          "value": "#ec4899",
+          "type": "color",
+          "description": "Magenta/pink - Selected building"
+        },
+        "target-stroke": {
+          "value": "#ec4899",
+          "type": "color",
+          "description": "Magenta - Target buildings (same as selected)"
+        },
+        "target-fill": {
+          "value": "rgba(236, 72, 153, 0.4)",
+          "type": "color",
+          "description": "Magenta - Target buildings"
+        },
+        "neighbor-stroke": {
+          "value": "#22c55e",
+          "type": "color",
+          "description": "Green - Neighbor buildings"
+        },
+        "neighbor-fill": {
+          "value": "rgba(34, 197, 94, 0.3)",
+          "type": "color",
+          "description": "Green - Neighbor buildings"
+        }
+      },
+      "mesh": {
+        "ambient": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "directional": {
+          "value": "#fafafa",
+          "type": "color"
+        }
+      },
+      "map": {
+        "base": {
+          "value": "#52525b",
+          "type": "color",
+          "description": "Middle-dark grey background for Leaflet maps"
+        },
+        "water": {
+          "value": "#1e3a5f",
+          "type": "color"
+        },
+        "land": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "border": {
+          "value": "#fafafa",
+          "type": "color",
+          "description": "White lines for map borders and streets"
+        },
+        "label": {
+          "value": "#fafafa",
+          "type": "color",
+          "description": "White labels for map text"
+        },
+        "marker": {
+          "value": "#22c55e",
+          "type": "color",
+          "description": "Green for neighbor buildings"
+        },
+        "marker-hover": {
+          "value": "#4ade80",
+          "type": "color",
+          "description": "Lighter green for neighbor hover"
+        },
+        "marker-selected": {
+          "value": "#ec4899",
+          "type": "color",
+          "description": "Magenta/pink for selected building"
+        },
+        "marker-selected-hover": {
+          "value": "#f472b6",
+          "type": "color",
+          "description": "Lighter magenta for selected hover"
+        }
+      },
+      "sidebar": {
+        "default": {
+          "value": "#111111",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "primary": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "primary-foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "accent": {
+          "value": "#1a1a1a",
+          "type": "color"
+        },
+        "accent-foreground": {
+          "value": "#fafafa",
+          "type": "color"
+        },
+        "border": {
+          "value": "#27272a",
+          "type": "color"
+        },
+        "ring": {
+          "value": "#71717a",
+          "type": "color"
+        }
+      },
+      "aurora": {
+        "green": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "cyan": {
+          "value": "#06b6d4",
+          "type": "color"
+        },
+        "purple": {
+          "value": "#8b5cf6",
+          "type": "color"
+        },
+        "pink": {
+          "value": "#ec4899",
+          "type": "color"
+        },
+        "yellow": {
+          "value": "#f59e0b",
+          "type": "color"
+        },
+        "red": {
+          "value": "#ef4444",
+          "type": "color"
+        },
+        "blue": {
+          "value": "#3b82f6",
+          "type": "color"
+        },
+        "glow-green": {
+          "value": "rgba(16, 185, 129, 0.3)",
+          "type": "color"
+        },
+        "glow-cyan": {
+          "value": "rgba(6, 182, 212, 0.3)",
+          "type": "color"
+        },
+        "glow-purple": {
+          "value": "rgba(139, 92, 246, 0.3)",
+          "type": "color"
+        }
+      }
+    }
+  }
+}

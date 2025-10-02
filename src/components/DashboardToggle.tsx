@@ -32,24 +32,29 @@ export default function DashboardToggle({ currentPath, searchParams }: Dashboard
       } else {
         router.push(targetPath);
       }
+
+      // Reset animation state after navigation attempt
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 500);
     }, 300);
   };
 
   return (
-    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+    <Card className="bg-card/50 border-border backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {isWaterfall ? (
-              <Waves className="w-5 h-5 text-cyan-400" />
+              <Waves className="w-5 h-5 text-aurora-cyan" />
             ) : (
               <LayoutGrid className="w-5 h-5 text-blue-400" />
             )}
             <div>
-              <div className="text-sm font-semibold text-white">
+              <div className="text-sm font-semibold text-foreground">
                 {isWaterfall ? 'Waterfall Dashboard' : 'Grid Dashboard'}
               </div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-text-tertiary">
                 {isWaterfall ? '3D visuell historie' : 'BI-stil oversikt'}
               </div>
             </div>
@@ -59,14 +64,14 @@ export default function DashboardToggle({ currentPath, searchParams }: Dashboard
             variant="outline"
             size="sm"
             className={`
-              border-white/20 text-white hover:bg-white/10 transition-all duration-300
+              border-border text-foreground hover:bg-muted transition-all duration-300
               ${isAnimating ? 'scale-95 opacity-50' : 'hover:scale-105'}
             `}
             onClick={switchDashboard}
             disabled={isAnimating}
           >
             {isAnimating ? (
-              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              <div className="animate-spin w-4 h-4 border-2 border-foreground border-t-transparent rounded-full" />
             ) : (
               <>
                 {isWaterfall ? (
@@ -87,11 +92,11 @@ export default function DashboardToggle({ currentPath, searchParams }: Dashboard
         </div>
 
         {/* Feature highlight */}
-        <div className="mt-3 pt-3 border-t border-white/10">
-          <div className="text-xs text-slate-400">
+        <div className="mt-3 pt-3 border-t border-border">
+          <div className="text-xs text-text-tertiary">
             {isWaterfall ? (
               <>
-                <span className="text-cyan-400">Aktiv:</span> 3D bygning, aurora-effekter, narrativ flyt
+                <span className="text-aurora-cyan">Aktiv:</span> 3D bygning, aurora-effekter, narrativ flyt
               </>
             ) : (
               <>

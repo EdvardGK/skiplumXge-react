@@ -1,0 +1,244 @@
+{
+  "core": {
+    "radius": {
+      "value": "0.625rem",
+      "type": "dimension",
+      "description": "Base border radius"
+    },
+    "glass": {
+      "backdrop": {
+        "value": "blur(12px)",
+        "type": "string"
+      }
+    },
+    "overlay": {
+      "blur": {
+        "light": {
+          "value": "blur(8px)",
+          "type": "string"
+        },
+        "dark": {
+          "value": "blur(12px)",
+          "type": "string"
+        }
+      }
+    },
+    "divider": {
+      "light": {
+        "value": "#e2e8f0",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#27272a",
+        "type": "color"
+      }
+    },
+    "ring": {
+      "light": {
+        "value": "#94a3b8",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#71717a",
+        "type": "color"
+      }
+    },
+    "ring-offset": {
+      "light": {
+        "value": "#ffffff",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#0a0a0a",
+        "type": "color"
+      }
+    },
+    "selection": {
+      "bg-light": {
+        "value": "rgba(16, 185, 129, 0.2)",
+        "type": "color"
+      },
+      "bg-dark": {
+        "value": "rgba(16, 185, 129, 0.3)",
+        "type": "color"
+      },
+      "text-light": {
+        "value": "#0a0a0a",
+        "type": "color"
+      },
+      "text-dark": {
+        "value": "#fafafa",
+        "type": "color"
+      }
+    },
+    "muted": {
+      "light": {
+        "value": "#f1f5f9",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#1a1a1a",
+        "type": "color"
+      }
+    },
+    "muted-foreground": {
+      "light": {
+        "value": "#64748b",
+        "type": "color"
+      },
+      "dark": {
+        "value": "#71717a",
+        "type": "color"
+      }
+    },
+    "mesh-intensity": {
+      "light": {
+        "value": "0.8",
+        "type": "number"
+      },
+      "dark": {
+        "value": "0.5",
+        "type": "number"
+      }
+    }
+  },
+  "gradient": {
+    "light": {
+      "primary": {
+        "value": "linear-gradient(90deg, #d6894a 0%, #d64a51 50%, #f5f5f5 100%)",
+        "type": "string",
+        "description": "Horizon Blend - Terracotta to sunset red-orange to warm off-white"
+      },
+      "accent": {
+        "value": "linear-gradient(45deg, #d64a51 0%, #d6894a 100%)",
+        "type": "string",
+        "description": "Vitality Pulse - Sunset red-orange to terracotta for CTAs"
+      },
+      "aurora": {
+        "value": "linear-gradient(135deg, #d6894a 0%, #4a97d6 50%, #d6cf4a 100%)",
+        "type": "string",
+        "description": "Terracotta Aurora - Warm to cool spectrum"
+      },
+      "energy": {
+        "value": "linear-gradient(180deg, #d6894a 0%, #d6cf4a 100%)",
+        "type": "string",
+        "description": "Energy gradient - Terracotta to golden lime"
+      },
+      "earth-radial": {
+        "value": "radial-gradient(ellipse at center, #e9bf9d 0%, #d6894a 60%, #d6cf4a 100%)",
+        "type": "string",
+        "description": "Earth Radial - Soft peach to terracotta to golden lime"
+      },
+      "balance-conic": {
+        "value": "conic-gradient(from 0deg, #4a97d6 0%, #d6894a 180deg, #d6cf4a 360deg)",
+        "type": "string",
+        "description": "Balance Conic - Azure to terracotta to golden lime for metrics"
+      }
+    },
+    "dark": {
+      "primary": {
+        "value": "linear-gradient(45deg, #4A7C92 0%, #A4C8E1 50%, #1A1A1A 100%)",
+        "type": "string",
+        "description": "Dark Fjord Fade - Nordic blue to deep charcoal"
+      },
+      "accent": {
+        "value": "linear-gradient(to right, #F2B05C 0%, #1A1A1A 50%, #A4C8E1 100%)",
+        "type": "string",
+        "description": "Dark Aurora Accent - Warm amber to ice blue"
+      },
+      "aurora": {
+        "value": "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%)",
+        "type": "string",
+        "description": "Classic aurora for dark mode"
+      },
+      "energy": {
+        "value": "linear-gradient(180deg, #10b981 0%, #f59e0b 100%)",
+        "type": "string",
+        "description": "Energy gradient - Emerald to amber"
+      },
+      "forest-whisper": {
+        "value": "radial-gradient(circle at center, #2C4A3A 0%, #1A1A1A 70%, #4A7C92 100%)",
+        "type": "string",
+        "description": "Dark Forest Whisper - Forest green center to fjord blue edge"
+      },
+      "snowy-subtle": {
+        "value": "conic-gradient(from 0deg, #E8E8E8 0deg, #2C4A3A 90deg, #4A7C92 180deg, #E8E8E8 270deg)",
+        "type": "string",
+        "description": "Dark Snowy Subtle - Light gray to forest/fjord rotation"
+      }
+    }
+  },
+  "shadow": {
+    "light": {
+      "sm": {
+        "value": "0 1px 2px 0 rgba(214, 137, 74, 0.08)",
+        "type": "string",
+        "description": "Subtle warm shadow for cards"
+      },
+      "md": {
+        "value": "0 4px 12px rgba(214, 137, 74, 0.12)",
+        "type": "string",
+        "description": "Terracotta shadow at 12% for elevation"
+      },
+      "lg": {
+        "value": "0 10px 15px -3px rgba(214, 137, 74, 0.15)",
+        "type": "string",
+        "description": "Warm terracotta shadow for modals"
+      },
+      "xl": {
+        "value": "0 20px 25px -5px rgba(214, 137, 74, 0.18)",
+        "type": "string",
+        "description": "Deep warm shadow for overlays"
+      },
+      "glow": {
+        "value": "0 0 20px rgba(214, 137, 74, 0.3)",
+        "type": "string",
+        "description": "Terracotta glow for focus states"
+      }
+    },
+    "dark": {
+      "sm": {
+        "value": "0 1px 2px 0 rgba(0, 0, 0, 0.5)",
+        "type": "string"
+      },
+      "md": {
+        "value": "0 4px 6px -1px rgba(0, 0, 0, 0.5)",
+        "type": "string"
+      },
+      "lg": {
+        "value": "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+        "type": "string"
+      },
+      "xl": {
+        "value": "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+        "type": "string"
+      },
+      "glow": {
+        "value": "0 0 30px rgba(16, 185, 129, 0.5)",
+        "type": "string"
+      }
+    }
+  },
+  "overlay": {
+    "light": {
+      "light": {
+        "value": "rgba(255, 255, 255, 0.8)",
+        "type": "color"
+      },
+      "dark": {
+        "value": "rgba(0, 0, 0, 0.5)",
+        "type": "color"
+      }
+    },
+    "dark": {
+      "light": {
+        "value": "rgba(255, 255, 255, 0.1)",
+        "type": "color"
+      },
+      "dark": {
+        "value": "rgba(0, 0, 0, 0.8)",
+        "type": "color"
+      }
+    }
+  }
+}

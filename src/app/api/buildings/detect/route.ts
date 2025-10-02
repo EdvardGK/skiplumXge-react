@@ -11,6 +11,7 @@ interface BuildingDetectionResult {
     buildingCategory?: string;
     energyConsumption?: number;
     constructionYear?: number;
+    organization_number?: string | null;
     isRegistered: boolean;
   }[];
 }
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
             buildingCategory: cert.building_category || cert.bygningskategori,
             energyConsumption: cert.energy_consumption || cert.energiforbruk,
             constructionYear: cert.construction_year || cert.byggeaar,
+            organization_number: cert.organization_number || null,
             isRegistered: true,
           });
         }

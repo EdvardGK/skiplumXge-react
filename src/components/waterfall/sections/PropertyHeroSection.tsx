@@ -43,7 +43,14 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
   const isInView = useInView(ref, { once: true, margin: "-20%" });
 
   // State for selected 3D component
-  const [selectedComponent, setSelectedComponent] = useState<{ id: string | null; type?: string }>({ id: null });
+  const [selectedComponent, setSelectedComponent] = useState<{
+    id: string | null;
+    type?: string | null;
+    color?: string;
+    coverage?: number;
+    greenSides?: number;
+    segment?: string;
+  }>({ id: null });
 
   // State for camera rotation (for north arrow)
   const [cameraAzimuth, setCameraAzimuth] = useState<number>(0);
@@ -63,6 +70,35 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
   // Track shift key state
   const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+
+  // State for footprint and axes visualization
+  const [showFootprint, setShowFootprint] = useState(true);  // Building footprint on ground
+  const [showAxes, setShowAxes] = useState(false);
+  const [showBoundingBox, setShowBoundingBox] = useState(true);  // Bounding box
+
+  // State for roof placement - which floor supports the roof
+  const [roofPlacementFloor, setRoofPlacementFloor] = useState<number | null>(null);  // null = top of building, number = specific floor
+
+  // Get header height dynamically
+  const [headerHeight, setHeaderHeight] = useState(60);
+
+  // Measure header height on mount and resize
+  useEffect(() => {
+    const measureHeader = () => {
+      const header = document.querySelector('header');
+      if (header) {
+        setHeaderHeight(header.offsetHeight);
+      }
+    };
+
+    measureHeader();
+    window.addEventListener('resize', measureHeader);
+
+    return () => {
+      window.removeEventListener('resize', measureHeader);
+    };
+  }, []);
 
   // Listen for shift key press/release
   useEffect(() => {
@@ -213,7 +249,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
           {/* Address Header */}
           <div className="space-y-4">
             <motion.div
-              className="flex items-center space-x-2 text-cyan-400"
+              className="flex items-center space-x-2 text-aurora-cyan"
               initial={{ opacity: 0 }}
               animate={{ opacity: isInView ? 1 : 0 }}
               transition={{ delay: 0.5 }}
@@ -223,7 +259,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
             </motion.div>
 
             <motion.h1
-              className="text-4xl lg:text-6xl font-bold text-white leading-tight"
+              className="text-4xl lg:text-6xl font-bold text-foreground leading-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 20 }}
               transition={{ delay: 0.7 }}
@@ -232,7 +268,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
             </motion.h1>
 
             <motion.p
-              className="text-lg text-slate-300"
+              className="text-lg text-text-secondary"
               initial={{ opacity: 0 }}
               animate={{ opacity: isInView ? 1 : 0 }}
               transition={{ delay: 0.9 }}
@@ -249,60 +285,60 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
             transition={{ delay: 1.1 }}
           >
             {/* Building Type */}
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border backdrop-blur-sm">
               <CardContent className="p-4 text-center">
-                <Building className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-                <div className="text-white font-bold">
+                <Building className="w-6 h-6 text-aurora-cyan mx-auto mb-2" />
+                <div className="text-foreground font-bold">
                   {buildingData.buildingType || 'Ukjent type'}
                 </div>
-                <div className="text-xs text-slate-400">Bygningstype</div>
+                <div className="text-xs text-text-tertiary">Bygningstype</div>
               </CardContent>
             </Card>
 
             {/* Total Area */}
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border backdrop-blur-sm">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-white mb-1">
+                <div className="text-2xl font-bold text-foreground mb-1">
                   {buildingData.totalArea || '–'}
                   {buildingData.totalArea && <span className="text-sm">m²</span>}
                 </div>
-                <div className="text-xs text-slate-400">Bruksareal</div>
+                <div className="text-xs text-text-tertiary">Bruksareal</div>
               </CardContent>
             </Card>
 
             {/* TEK17 Compliance */}
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border backdrop-blur-sm">
               <CardContent className="p-4 text-center">
                 {isCompliant !== null ? (
                   <>
                     {isCompliant ? (
-                      <CheckCircle className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+                      <CheckCircle className="w-6 h-6 text-success mx-auto mb-2" />
                     ) : (
                       <AlertTriangle className="w-6 h-6 text-orange-400 mx-auto mb-2" />
                     )}
-                    <div className={`font-bold ${isCompliant ? 'text-emerald-400' : 'text-orange-400'}`}>
+                    <div className={`font-bold ${isCompliant ? 'text-success' : 'text-orange-400'}`}>
                       {isCompliant ? 'Godkjent' : 'Over krav'}
                     </div>
-                    <div className="text-xs text-slate-400">TEK17 § 14-2</div>
+                    <div className="text-xs text-text-tertiary">TEK17 § 14-2</div>
                   </>
                 ) : (
                   <>
-                    <Thermometer className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                    <div className="text-slate-400 font-bold">Ukjent</div>
-                    <div className="text-xs text-slate-400">TEK17 status</div>
+                    <Thermometer className="w-6 h-6 text-text-tertiary mx-auto mb-2" />
+                    <div className="text-text-tertiary font-bold">Ukjent</div>
+                    <div className="text-xs text-text-tertiary">TEK17 status</div>
                   </>
                 )}
               </CardContent>
             </Card>
 
             {/* Energy Class */}
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border backdrop-blur-sm">
               <CardContent className="p-4 text-center">
-                <Zap className="w-6 h-6 text-purple-400 mx-auto mb-2" />
-                <div className="text-white font-bold">
+                <Zap className="w-6 h-6 text-aurora-purple mx-auto mb-2" />
+                <div className="text-foreground font-bold">
                   {energyClass || (enovaResult?.status === 'Ikke registrert' ? 'Ikke registrert' : 'Ukjent')}
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-text-tertiary">
                   {hasEnovaCertificate ? 'Enova-sertifisert' : 'Energimerking'}
                 </div>
               </CardContent>
@@ -320,16 +356,16 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-xs text-slate-400 mb-1">Strømsone</div>
-                    <div className="text-lg font-bold text-cyan-400">{priceZone}</div>
+                    <div className="text-xs text-text-tertiary mb-1">Strømsone</div>
+                    <div className="text-lg font-bold text-aurora-cyan">{priceZone}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-slate-400 mb-1">Gjennomsnittspris (36 mnd)</div>
-                    <div className="text-lg font-bold text-white">{electricityPrice.toFixed(2)} kr/kWh</div>
+                    <div className="text-xs text-text-tertiary mb-1">Gjennomsnittspris (36 mnd)</div>
+                    <div className="text-lg font-bold text-foreground">{electricityPrice.toFixed(2)} kr/kWh</div>
                   </div>
                 </div>
                 {realEnergyData?.priceZone && (
-                  <div className="text-xs text-slate-500 mt-2">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Kilde: NVE • Supabase database
                   </div>
                 )}
@@ -344,7 +380,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 1.5 }}
           >
-            <p className="text-slate-400 text-sm mb-2">Rull ned for å utforske energihistorien</p>
+            <p className="text-text-tertiary text-sm mb-2">Rull ned for å utforske energihistorien</p>
             <motion.div
               className="w-6 h-10 border-2 border-cyan-400/50 rounded-full mx-auto relative"
               animate={{
@@ -363,41 +399,44 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
         {/* Right Column - 3D Building Visualization */}
         <motion.div
-          className={`${isFullscreen ? 'fixed inset-0 z-[100] bg-background' : 'relative h-96 lg:h-[600px]'}`}
+          className={`${isFullscreen ? 'fixed left-0 right-0 bottom-0 z-[45] bg-background' : 'relative h-96 lg:h-[600px]'}`}
+          style={isFullscreen ? { top: `${headerHeight}px` } : {}}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : 50 }}
           transition={{ duration: 1, delay: 0.5 }}
           onClick={() => setContextMenu(null)} // Close context menu on click outside
         >
-          {/* Expand/Minimize Button */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute top-4 right-4 z-50 bg-background/90 backdrop-blur-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsFullscreen(!isFullscreen);
-            }}
-            title={isFullscreen ? "Minimer" : "Utvid"}
-          >
-            {isFullscreen ? (
-              <Minimize2 className="w-4 h-4" />
-            ) : (
-              <Maximize2 className="w-4 h-4" />
-            )}
-          </Button>
+          {/* Container for 3D scene and controls */}
+          <div className="w-full h-full relative">
+            {/* Expand/Minimize Button - positioned to avoid compass overlap */}
+            <Button
+              variant="outline"
+              size="icon"
+              className={`absolute z-50 bg-background/90 backdrop-blur-sm top-4 left-4`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsFullscreen(!isFullscreen);
+              }}
+              title={isFullscreen ? "Minimer" : "Utvid"}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </Button>
 
-          {/* Fullscreen hint */}
+          {/* Fullscreen hint - positioned next to button */}
           {isFullscreen && (
-            <div className="absolute top-4 left-4 z-50 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-border">
+            <div className="absolute top-4 left-16 z-50 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-border">
               <p className="text-sm text-muted-foreground">
                 Trykk <kbd className="px-1 py-0.5 text-xs bg-border rounded">ESC</kbd> for å avslutte fullskjerm
               </p>
             </div>
           )}
 
-          <div
-            className={`w-full h-full ${isFullscreen ? '' : 'bg-background/30 rounded-2xl border border-border backdrop-blur-sm'} overflow-hidden`}
+            <div
+              className={`w-full h-full ${isFullscreen ? '' : 'bg-background/30 rounded-2xl border border-border backdrop-blur-sm'} overflow-hidden`}
             onWheel={(e) => {
               // Check if shift is held for section control
               if (e.shiftKey && sectionPlane?.active) {
@@ -405,7 +444,9 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                 e.stopPropagation();
 
                 // Update section position based on scroll
-                const delta = e.deltaY > 0 ? -0.5 : 0.5; // Scroll direction
+                // Inverted: scroll UP (negative deltaY) → push section away (positive delta)
+                // scroll DOWN (positive deltaY) → pull section toward user (negative delta)
+                const delta = e.deltaY > 0 ? 0.5 : -0.5; // Inverted for natural feel
                 setSectionPlane(prev => {
                   if (!prev) return null;
                   const newPosition = Math.max(-20, Math.min(20, prev.position + delta));
@@ -422,24 +463,77 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
               <Canvas
                 camera={{ position: [20, 20, 20], fov: 50 }}
                 className="w-full h-full"
-                gl={{ localClippingEnabled: true }} // Enable clipping planes
+                gl={{
+                  localClippingEnabled: true, // Enable clipping planes
+                  antialias: true, // Keep antialiasing for visual quality
+                  powerPreference: "high-performance" // Request high-performance GPU
+                }}
+                dpr={[1, 2]} // Limit device pixel ratio for performance
               >
-                <ambientLight intensity={0.4} />
+                {/* Brighter ambient light */}
+                <ambientLight intensity={0.7} />
+
+                {/* Main sun light */}
                 <directionalLight
-                  position={[10, 10, 10]}
-                  intensity={1}
+                  position={[10, 15, 10]}
+                  intensity={1.2}
                   castShadow
                   shadow-mapSize-width={2048}
                   shadow-mapSize-height={2048}
                 />
+
+                {/* Fill light from opposite side */}
+                <directionalLight
+                  position={[-5, 8, -5]}
+                  intensity={0.5}
+                />
+
+                {/* Space-themed gradient backdrop - clickable to deselect */}
+                <mesh
+                  position={[0, 20, -50]}
+                  scale={[200, 100, 1]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedComponent({ id: null, type: null });
+                  }}
+                >
+                  <planeGeometry />
+                  <meshBasicMaterial
+                    color="#001d3d"
+                    transparent
+                    opacity={0.9}
+                  />
+                </mesh>
+
+                {/* Additional backdrop for depth - clickable to deselect */}
+                <mesh
+                  position={[0, 0, -80]}
+                  scale={[200, 100, 1]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedComponent({ id: null, type: null });
+                  }}
+                >
+                  <planeGeometry />
+                  <meshBasicMaterial color="#000814" />
+                </mesh>
 
                 <BuildingMesh
                   footprint={buildingFootprint}
                   height={explicitHeight}
                   numberOfFloors={numberOfFloors}
                   buildingType={buildingData.buildingType || 'Kontor'}
-                  showHeatParticles={!isCompliant && energyConsumption !== null}
-                  onComponentSelect={(id, type) => setSelectedComponent({ id, type })}
+                  showFootprint={showFootprint}
+                  showAxes={showAxes}
+                  showBoundingBox={showBoundingBox}
+                  roofPlacementFloor={roofPlacementFloor}
+                  onComponentSelect={(id, type, additionalInfo) => {
+                    if (id === null) {
+                      setSelectedComponent({ id: null, type: null });
+                    } else {
+                      setSelectedComponent({ id, type, ...additionalInfo });
+                    }
+                  }}
                   onContextMenu={(event, componentId) => {
                     // Calculate screen position for context menu
                     const x = event.nativeEvent.offsetX;
@@ -452,11 +546,22 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                   visibleFloors={visibleFloors}
                 />
 
-                {/* Ground plane */}
-                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-                  <planeGeometry args={[50, 50]} />
-                  <meshLambertMaterial color="#0f172a" />
+                {/* Green ground plane - clickable to deselect */}
+                <mesh
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  position={[0, -0.5, 0]}
+                  receiveShadow
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedComponent({ id: null, type: null });
+                  }}
+                >
+                  <planeGeometry args={[100, 100]} />
+                  <meshLambertMaterial color="#2d5016" /> {/* Dark grass green */}
                 </mesh>
+
+                {/* Environment for better lighting */}
+                <Environment preset="sunset" />
 
                 <OrbitControls
                   enableZoom={!(sectionPlane?.active && isShiftPressed)}
@@ -481,7 +586,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
           {/* North Arrow Indicator */}
           <motion.div
-            className="absolute top-4 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-2 border border-border/50"
+            className={`absolute top-4 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-2 border border-border/50`}
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 1 }}
@@ -521,16 +626,16 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                 </svg>
               </div>
               {/* Fixed cardinal directions (don't rotate) */}
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 text-[8px] text-cyan-400 font-bold">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 text-[8px] text-aurora-cyan font-bold">
                 N
               </div>
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 text-[8px] text-slate-500">
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 text-[8px] text-muted-foreground">
                 S
               </div>
-              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 text-[8px] text-slate-500">
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 text-[8px] text-muted-foreground">
                 V
               </div>
-              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 text-[8px] text-slate-500">
+              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-1 text-[8px] text-muted-foreground">
                 Ø
               </div>
             </div>
@@ -538,15 +643,15 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
           {/* Floor Toggle Menu */}
           <motion.div
-            className="absolute top-20 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50"
+            className={`absolute top-20 right-4 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50`}
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 1.2 }}
           >
-            <div className="text-xs text-cyan-400 font-semibold mb-2">Etasjer</div>
-            <div className="space-y-1">
+            <div className="text-xs text-aurora-cyan font-semibold mb-2">Etasjer</div>
+            <div className="space-y-1 mb-3">
               {/* Roof toggle */}
-              <label className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5">
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-card/50 rounded px-1 py-0.5">
                 <input
                   type="checkbox"
                   checked={visibleFloors.has(numberOfFloors)}
@@ -561,12 +666,12 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                   }}
                   className="w-3 h-3 accent-cyan-400"
                 />
-                <span className="text-[10px] text-slate-300">Tak</span>
+                <span className="text-[10px] text-text-secondary">Tak</span>
               </label>
 
               {/* Floor toggles (reverse order - top to bottom) */}
               {Array.from({ length: numberOfFloors }, (_, i) => numberOfFloors - 1 - i).map((floor) => (
-                <label key={floor} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded px-1 py-0.5">
+                <label key={floor} className="flex items-center gap-2 cursor-pointer hover:bg-card/50 rounded px-1 py-0.5">
                   <input
                     type="checkbox"
                     checked={visibleFloors.has(floor)}
@@ -581,11 +686,43 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                     }}
                     className="w-3 h-3 accent-cyan-400"
                   />
-                  <span className="text-[10px] text-slate-300">
+                  <span className="text-[10px] text-text-secondary">
                     {floor === 0 ? '1. etg' : `${floor + 1}. etg`}
                   </span>
                 </label>
               ))}
+            </div>
+
+            {/* Visualization Toggle */}
+            <div className="border-t border-border/30 pt-2 mt-2">
+              <div className="text-xs text-aurora-purple font-semibold mb-2">Visualisering</div>
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-card/50 rounded px-1 py-0.5">
+                <input
+                  type="checkbox"
+                  checked={showFootprint}
+                  onChange={(e) => setShowFootprint(e.target.checked)}
+                  className="w-3 h-3 accent-slate-400"
+                />
+                <span className="text-[10px] text-text-secondary">Fotavtrykk tak</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-card/50 rounded px-1 py-0.5">
+                <input
+                  type="checkbox"
+                  checked={showBoundingBox}
+                  onChange={(e) => setShowBoundingBox(e.target.checked)}
+                  className="w-3 h-3 accent-cyan-400"
+                />
+                <span className="text-[10px] text-text-secondary">Bounding box</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer hover:bg-card/50 rounded px-1 py-0.5">
+                <input
+                  type="checkbox"
+                  checked={showAxes}
+                  onChange={(e) => setShowAxes(e.target.checked)}
+                  className="w-3 h-3 accent-purple-400"
+                />
+                <span className="text-[10px] text-text-secondary">Vis koordinatakser</span>
+              </label>
             </div>
           </motion.div>
 
@@ -635,7 +772,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
               </button>
               {sectionPlane?.active && (
                 <button
-                  className="block w-full text-left px-3 py-2 text-sm hover:bg-red-500/10 rounded transition-colors text-red-400"
+                  className="block w-full text-left px-3 py-2 text-sm hover:bg-red-500/10 rounded transition-colors text-destructive"
                   onClick={() => {
                     setSectionPlane(null);
                     setContextMenu(null);
@@ -663,9 +800,9 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
               <div className="space-y-2.5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-cyan-400 font-semibold">✂️ Snittplan aktivt</div>
+                  <div className="text-xs text-aurora-cyan font-semibold">✂️ Snittplan aktivt</div>
                   <button
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-1"
+                    className="text-xs text-destructive hover:text-red-300 transition-colors px-1"
                     onClick={() => setSectionPlane(null)}
                     title="Lukk snittplan"
                   >
@@ -675,11 +812,11 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
 
                 {/* Position display */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-300">
+                  <span className="text-xs text-text-secondary">
                     {sectionPlane.axis === 'y' ? 'Høyde' :
                      sectionPlane.axis === 'x' ? 'X-pos' : 'Z-pos'}:
                   </span>
-                  <span className="text-sm font-mono text-white bg-black/30 px-2 py-0.5 rounded">
+                  <span className="text-sm font-mono text-foreground bg-black/30 px-2 py-0.5 rounded">
                     {sectionPlane.position.toFixed(1)}m
                   </span>
                 </div>
@@ -690,25 +827,25 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
                     <kbd className="px-2 py-1 text-[11px] bg-background rounded border border-border font-mono shadow-sm">
                       ⇧ Shift
                     </kbd>
-                    <span className="text-[11px] text-slate-400">+</span>
+                    <span className="text-[11px] text-text-tertiary">+</span>
                     <div className="flex flex-col items-center">
-                      <div className="text-[10px] text-slate-500">▲</div>
+                      <div className="text-[10px] text-muted-foreground">▲</div>
                       <div className="px-2 py-0.5 text-[11px] bg-background rounded border border-border">
                         Scroll
                       </div>
-                      <div className="text-[10px] text-slate-500">▼</div>
+                      <div className="text-[10px] text-muted-foreground">▼</div>
                     </div>
-                    <span className="text-[11px] text-slate-300 ml-1">flytt snitt</span>
+                    <span className="text-[11px] text-text-secondary ml-1">flytt snitt</span>
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Selected Component Info */}
+          {/* Selected Component Info - positioned below expand button */}
           {selectedComponent.id && (
             <motion.div
-              className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm rounded-lg p-3 border border-border"
+              className="absolute top-16 left-4 bg-background/80 backdrop-blur-sm rounded-lg p-3 border border-border"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -747,6 +884,7 @@ export default function PropertyHeroSection({ buildingData, realEnergyData, ener
               )}
             </motion.div>
           )}
+          </div> {/* End of relative container */}
         </motion.div>
       </div>
 

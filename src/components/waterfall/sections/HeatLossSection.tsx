@@ -93,7 +93,7 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
           </motion.div>
 
           <motion.h2
-            className="text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="text-4xl lg:text-5xl font-bold text-foreground mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 20 }}
             transition={{ delay: 0.4 }}
@@ -102,7 +102,7 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
           </motion.h2>
 
           <motion.p
-            className="text-xl text-slate-300 max-w-2xl mx-auto"
+            className="text-xl text-text-secondary max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.6 }}
@@ -122,7 +122,7 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
             animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : -50 }}
             transition={{ delay: 0.8 }}
           >
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm p-6">
+            <Card className="bg-card/50 border-border backdrop-blur-sm p-6">
               <CardContent className="p-0">
                 <div className="space-y-4">
                   {heatLossItems.map((item, index) => (
@@ -137,10 +137,10 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-2">
                           <div>
-                            <span className="text-white font-medium">{item.name}</span>
-                            <span className="text-xs text-slate-500 ml-2">({item.source || heatLossBreakdown.source})</span>
+                            <span className="text-foreground font-medium">{item.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">({item.source || heatLossBreakdown.source})</span>
                           </div>
-                          <span className="text-white font-bold text-lg">{item.value}</span>
+                          <span className="text-foreground font-bold text-lg">{item.value}</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                           <motion.div
@@ -167,41 +167,41 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
           >
             <Card className="bg-gradient-to-br from-purple-500/10 to-cyan-500/10 border-cyan-500/20 backdrop-blur-sm">
               <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-cyan-400 mb-3">
+                <h3 className="text-xl font-bold text-aurora-cyan mb-3">
                   Største tapspost
                 </h3>
-                <p className="text-slate-300 text-lg mb-4">
-                  <strong className="text-white">Yttervegger ({heatLossBreakdown.walls}%)</strong> er
+                <p className="text-text-secondary text-lg mb-4">
+                  <strong className="text-foreground">Yttervegger ({heatLossBreakdown.walls}%)</strong> er
                   hovedårsaken til varmetap i din bygning
                   {buildingAge > 25 && " fra " + buildingData.buildingYear}.
                 </p>
-                <div className="flex items-center space-x-2 text-emerald-400">
+                <div className="flex items-center space-x-2 text-success">
                   <span className="text-sm font-medium">Isolering kan redusere dette med 60-80%</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+            <Card className="bg-card/50 border-border backdrop-blur-sm">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-white mb-3">
+                <h3 className="text-lg font-bold text-foreground mb-3">
                   Oppgraderingsrekkefølge
                 </h3>
-                <div className="space-y-2 text-slate-300">
+                <div className="space-y-2 text-text-secondary">
                   <div className="flex justify-between">
                     <span>1. Yttervegger</span>
-                    <span className="text-emerald-400">Høy effekt</span>
+                    <span className="text-success">Høy effekt</span>
                   </div>
                   <div className="flex justify-between">
                     <span>2. Tak</span>
-                    <span className="text-emerald-400">Høy effekt</span>
+                    <span className="text-success">Høy effekt</span>
                   </div>
                   <div className="flex justify-between">
                     <span>3. Vinduer</span>
-                    <span className="text-yellow-400">Medium effekt</span>
+                    <span className="text-warning">Medium effekt</span>
                   </div>
                   <div className="flex justify-between">
                     <span>4. Ventilasjon</span>
-                    <span className="text-yellow-400">Medium effekt</span>
+                    <span className="text-warning">Medium effekt</span>
                   </div>
                 </div>
               </CardContent>
@@ -216,10 +216,10 @@ export default function HeatLossSection({ buildingData, energyAnalysis }: HeatLo
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 2 }}
         >
-          <p className="text-slate-400 text-sm mb-4">
+          <p className="text-text-tertiary text-sm mb-4">
             Men hvordan påvirker dette deg gjennom året?
           </p>
-          <ArrowDown className="w-6 h-6 text-cyan-400 mx-auto animate-bounce" />
+          <ArrowDown className="w-6 h-6 text-aurora-cyan mx-auto animate-bounce" />
         </motion.div>
       </div>
     </section>

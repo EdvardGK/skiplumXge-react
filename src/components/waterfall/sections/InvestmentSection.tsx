@@ -88,7 +88,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
     >
       {/* Waterfall background effect */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 to-blue-900/20"
+        className="absolute inset-0 bg-gradient-to-br from-aurora-green/30 to-aurora-cyan/20"
         initial={{ opacity: 0 }}
         animate={{ opacity: isInView ? 1 : 0 }}
         transition={{ duration: 2 }}
@@ -153,7 +153,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
           </motion.div>
 
           <motion.h2
-            className="text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="text-4xl lg:text-5xl font-bold text-foreground mb-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.4 }}
@@ -162,7 +162,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
           </motion.h2>
 
           <motion.p
-            className="text-xl text-slate-300 max-w-2xl mx-auto"
+            className="text-xl text-text-secondary max-w-2xl mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: isInView ? 1 : 0 }}
             transition={{ delay: 0.6 }}
@@ -182,12 +182,12 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
           >
             <Card className="bg-red-900/20 border-red-500/30 backdrop-blur-sm text-center">
               <CardContent className="p-6">
-                <div className="text-red-400 text-4xl mb-4">💸</div>
-                <h3 className="text-xl font-bold text-red-400 mb-2">Årlig sløsing</h3>
-                <div className="text-3xl font-bold text-white mb-2">
+                <div className="text-destructive text-4xl mb-4">💸</div>
+                <h3 className="text-xl font-bold text-destructive mb-2">Årlig sløsing</h3>
+                <div className="text-3xl font-bold text-foreground mb-2">
                   {annualWaste}
                 </div>
-                <p className="text-slate-300 text-sm">
+                <p className="text-text-secondary text-sm">
                   Penger som forsvinner i unødvendig energibruk
                 </p>
               </CardContent>
@@ -216,13 +216,13 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
               <CardContent className="p-6">
                 <div className="text-cyan-400 text-4xl mb-4">✨</div>
                 <h3 className="text-xl font-bold text-cyan-400 mb-2">Investeringsrom</h3>
-                <div className="text-3xl font-bold text-white mb-2">
+                <div className="text-3xl font-bold text-foreground mb-2">
                   {investmentRoom}
                 </div>
-                <p className="text-slate-300 text-sm">
+                <p className="text-text-secondary text-sm">
                   Budsjett for lønnsome energitiltak
                 </p>
-                <p className="text-xs text-slate-500 mt-2">Kilde: {dataSource}</p>
+                <p className="text-xs text-muted-foreground mt-2">Kilde: {dataSource}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -242,14 +242,14 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
               animate={{ opacity: isInView ? 1 : 0, x: isInView ? 0 : (index % 2 === 0 ? -30 : 30) }}
               transition={{ delay: 2 + index * 0.1 }}
             >
-              <Card className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors">
+              <Card className="bg-card/50 border-border backdrop-blur-sm hover:bg-card/70 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold text-white">{option.name}</h3>
+                    <h3 className="text-lg font-bold text-foreground">{option.name}</h3>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${
                       option.impact === 'Høy' ? 'bg-emerald-500/20 text-emerald-400' :
-                      option.impact === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-blue-500/20 text-blue-400'
+                      option.impact === 'Medium' ? 'bg-yellow-500/20 text-warning' :
+                      'bg-blue-500/20 text-info'
                     }`}>
                       {option.impact} effekt
                     </span>
@@ -257,21 +257,21 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
 
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Investering:</span>
-                      <span className="text-white font-semibold">
+                      <span className="text-text-tertiary">Investering:</span>
+                      <span className="text-foreground font-semibold">
                         {option.cost}
                       </span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Årlig besparelse:</span>
+                      <span className="text-text-tertiary">Årlig besparelse:</span>
                       <span className="text-emerald-400 font-semibold">
                         {option.annualSaving}
                       </span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Tilbakebetaling:</span>
+                      <span className="text-text-tertiary">Tilbakebetaling:</span>
                       <span className="text-cyan-400 font-semibold">
                         {option.paybackYears} år
                       </span>
@@ -287,7 +287,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
                           transition={{ delay: 2.5 + index * 0.1, duration: 1 }}
                         />
                       </div>
-                      <div className="text-xs text-slate-400 mt-1">
+                      <div className="text-xs text-text-tertiary mt-1">
                         {option.source}
                       </div>
                     </div>
@@ -305,15 +305,15 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 3 }}
         >
-          <Card className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-cyan-500/30 backdrop-blur-sm inline-block">
+          <Card className="bg-gradient-to-r from-success/10 to-accent/10 border-accent/30 backdrop-blur-sm inline-block">
             <CardContent className="p-6">
-              <h3 className="text-xl font-bold text-white mb-3">
+              <h3 className="text-xl font-bold text-foreground mb-3">
                 Klar for å ta steget?
               </h3>
-              <p className="text-slate-300 mb-4">
+              <p className="text-text-secondary mb-4">
                 Få personlig rådgivning om energioppgradering
               </p>
-              <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
+              <Button className="bg-primary hover:bg-primary/90">
                 <TrendingUp className="w-4 h-4 mr-2" />
                 Bestill konsultasjon
               </Button>
@@ -328,7 +328,7 @@ export default function InvestmentSection({ buildingData, energyAnalysis, realEn
           animate={{ opacity: isInView ? 1 : 0 }}
           transition={{ delay: 3.5 }}
         >
-          <p className="text-slate-400 text-sm mb-4">
+          <p className="text-text-tertiary text-sm mb-4">
             Hvordan står du sammenlignet med naboene?
           </p>
           <ArrowDown className="w-6 h-6 text-cyan-400 mx-auto animate-bounce" />

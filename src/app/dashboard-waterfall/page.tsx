@@ -222,7 +222,7 @@ function WaterfallContent() {
                 <div className="ml-6 flex items-center space-x-2">
                   <span className="text-muted-foreground">•</span>
                   <span className="text-primary font-medium">{addressParam}</span>
-                  <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                  <span className="text-xs px-2 py-1 rounded-full bg-success-muted text-success">
                     Waterfall View
                   </span>
                 </div>

@@ -185,8 +185,8 @@ function DashboardContent() {
   if (!addressParam) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center text-slate-400">
-          <h1 className="text-2xl font-bold text-white mb-2">Mangler adresseinformasjon</h1>
+        <div className="text-center text-text-secondary">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Mangler adresseinformasjon</h1>
           <p className="mb-4">Gå tilbake til søket for å starte energianalysen.</p>
           <Button
             variant="outline"
@@ -329,22 +329,22 @@ function DashboardContent() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-slate-300 hover:text-white px-2 py-1"
+              className="text-text-secondary hover:text-foreground px-2 py-1"
               onClick={() => window.history.back()}
             >
               <ArrowLeft className="w-3 h-3 mr-1" />
               Tilbake
             </Button>
             <div className="flex items-center space-x-2">
-              <Zap className="w-6 h-6 text-cyan-400" />
-              <span className="text-xl font-bold text-white">SkiplumXGE</span>
+              <Zap className="w-6 h-6 text-aurora-cyan" />
+              <span className="text-xl font-bold text-foreground">SkiplumXGE</span>
             </div>
             {addressParam && (
               <div className="ml-6 flex items-center space-x-2">
-                <span className="text-slate-400">•</span>
-                <span className="text-cyan-400 font-medium">{addressParam}</span>
+                <span className="text-text-tertiary">•</span>
+                <span className="text-aurora-cyan font-medium">{addressParam}</span>
                 {hasRealBuildingData && (
-                  <span className="text-slate-400 text-sm">({buildingType} • {totalArea}m²)</span>
+                  <span className="text-text-secondary text-sm">({buildingType} • {totalArea}m²)</span>
                 )}
               </div>
             )}
@@ -383,8 +383,8 @@ function DashboardContent() {
         {/* Dashboard Header */}
         <div className="dashboard-header pt-1 pb-4">
           <div className="flex justify-between items-center">
-            <div className="text-xs text-slate-400">
-              Hjem → Velg bygg → <span className="text-cyan-400">Dashboard</span>
+            <div className="text-xs text-text-tertiary">
+              Hjem → Velg bygg → <span className="text-aurora-cyan">Dashboard</span>
             </div>
 
             {/* Dashboard Toggle */}
@@ -408,8 +408,8 @@ function DashboardContent() {
           <DashboardTile id="tek17-gauge" variant="default">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <CheckCircle className="w-5 h-5 text-emerald-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400">
+                <CheckCircle className="w-5 h-5 text-success" />
+                <span className="text-xs px-2 py-1 rounded-full bg-success-muted text-success">
                   TEK17 § 14-2
                 </span>
               </div>
@@ -421,16 +421,16 @@ function DashboardContent() {
 
                     return (
                       <div>
-                        <div className={`text-2xl font-bold mb-1 ${isCompliant ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <div className={`text-2xl font-bold mb-1 ${isCompliant ? 'text-success' : 'text-destructive'}`}>
                           {isCompliant ? 'Godkjent' : 'Ikke godkjent'}
                         </div>
-                        <div className="text-xs text-slate-300">
+                        <div className="text-xs text-text-secondary">
                           {isCompliant
                             ? `${Math.abs(percentageDeviation)}% bedre enn krav`
                             : `${percentageDeviation}% over energiramme`
                           }
                         </div>
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="text-xs text-text-tertiary mt-1">
                           Krav: {Math.round(realEnergyData.tek17Requirement)} kWh/m²/år
                         </div>
                       </div>
@@ -438,8 +438,8 @@ function DashboardContent() {
                   })()
                 ) : (
                   <div>
-                    <div className="text-2xl font-bold text-slate-400 mb-1">–</div>
-                    <div className="text-xs text-slate-300">
+                    <div className="text-2xl font-bold text-text-muted mb-1">–</div>
+                    <div className="text-xs text-text-secondary">
                       Legg til bygningsdata for TEK17-analyse
                     </div>
                   </div>
@@ -452,18 +452,18 @@ function DashboardContent() {
           <DashboardTile id="enova-grade">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Award className="w-5 h-5 text-emerald-400" />
+                <Award className="w-5 h-5 text-success" />
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   dashboardData.isEnovaRegistered
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-slate-500/20 text-slate-400'
+                    ? 'bg-success-muted text-success'
+                    : 'bg-secondary text-text-tertiary'
                 }`}>
                   {dashboardData.isLoadingEnova ? 'LASTER...' : 'ENOVA'}
                 </span>
               </div>
               <div className="flex items-center justify-center" style={{ marginTop: '-30px', height: '80px' }}>
                 {dashboardData.isLoadingEnova ? (
-                  <div className="text-sm text-slate-400">Laster...</div>
+                  <div className="text-sm text-text-tertiary">Laster...</div>
                 ) : dashboardData.isEnovaRegistered && dashboardData.energyGrade ? (
                   <EnergyGaugeChart
                     currentGrade={dashboardData.energyGrade}
@@ -485,7 +485,7 @@ function DashboardContent() {
                   />
                 )}
               </div>
-              <div className="text-slate-400 text-xs text-center">
+              <div className="text-text-tertiary text-xs text-center">
                 {dashboardData.isLoadingEnova ? (
                   "Sjekker Enova..."
                 ) : dashboardData.energyConsumption ? (
@@ -503,8 +503,8 @@ function DashboardContent() {
           <DashboardTile id="energy-zone">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Thermometer className="w-5 h-5 text-orange-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
+                <Thermometer className="w-5 h-5 text-warning" />
+                <span className="text-xs px-2 py-1 rounded-full bg-warning-muted text-warning">
                   Varmetap
                 </span>
               </div>
@@ -523,7 +523,7 @@ function DashboardContent() {
                     className="text-xs"
                   />
                 </div>
-                <div className="text-xs text-slate-400 mt-1">
+                <div className="text-xs text-text-tertiary mt-1">
                   Største tapspost: {hasRealBuildingData ? 'Yttervegger' : 'Yttervegger'}
                 </div>
               </div>
@@ -534,14 +534,14 @@ function DashboardContent() {
           <DashboardTile id="roi-budget" variant="default">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <Target className="w-5 h-5 text-fuchsia-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-fuchsia-500/20 text-fuchsia-400">Budsjett</span>
+                <Target className="w-5 h-5 text-aurora-purple" />
+                <span className="text-xs px-2 py-1 rounded-full bg-aurora-purple/20 text-aurora-purple">Budsjett</span>
               </div>
               <div className="text-center">
                 <div>
                   <span className={hasRealBuildingData && realEnergyData.annualWaste === 0 ?
-                    "text-lg font-bold text-fuchsia-400" :
-                    "text-2xl font-bold text-fuchsia-400"}>
+                    "text-lg font-bold text-aurora-purple" :
+                    "text-2xl font-bold text-aurora-purple"}>
                     {hasRealBuildingData && realEnergyData.investmentRoom > 0 ?
                       `${realEnergyData.investmentRoom.toLocaleString()} kr` :
                       hasRealBuildingData && realEnergyData.annualWaste === 0 ?
@@ -549,7 +549,7 @@ function DashboardContent() {
                     }
                   </span>
                 </div>
-                <div className="text-xs text-slate-300 mt-1">
+                <div className="text-xs text-text-secondary mt-1">
                   {hasRealBuildingData && realEnergyData.annualWaste === 0
                     ? ''
                     : dashboardData.priceZone === 'NO4' && annualSavings < 30000
@@ -569,7 +569,7 @@ function DashboardContent() {
               <div className="w-full ">
                 {dashboardData.isLoadingHistory ? (
                   <div className="flex items-center justify-center h-20">
-                    <div className="text-sm text-slate-400">Laster prisdata...</div>
+                    <div className="text-sm text-text-tertiary">Laster prisdata...</div>
                   </div>
                 ) : dashboardData.priceHistory.length > 0 ? (
                   (() => {
@@ -596,7 +596,7 @@ function DashboardContent() {
                   })()
                 ) : (
                   <div className="flex items-center justify-center h-20">
-                    <div className="text-sm text-red-400">Prishistorikk ikke tilgjengelig</div>
+                    <div className="text-sm text-destructive">Prishistorikk ikke tilgjengelig</div>
                   </div>
                 )}
               </div>
@@ -629,14 +629,14 @@ function DashboardContent() {
                 <div className="w-48 space-y-1.5 flex flex-col h-full">
                   {/* Energy Analysis Insights - Expanded */}
                   <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-                    <div className="text-sm text-fuchsia-400 mb-2 font-semibold">Energifordeling</div>
+                    <div className="text-sm text-aurora-purple mb-2 font-semibold">Energifordeling</div>
                     <div className="space-y-1 text-sm mb-3">
                       <div className="flex justify-between">
                         <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-fuchsia-400"></span>
-                          <span className="text-slate-300">Oppvarming</span>
+                          <span className="w-3 h-3 rounded-full bg-aurora-purple"></span>
+                          <span className="text-text-secondary">Oppvarming</span>
                         </span>
-                        <span className="text-fuchsia-400 font-bold">
+                        <span className="text-aurora-purple font-bold">
                           {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
                             `${realEnergyData.breakdown.heating}%` :
                             hasRealBuildingData ?
@@ -647,10 +647,10 @@ function DashboardContent() {
                       </div>
                       <div className="flex justify-between">
                         <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-amber-400"></span>
-                          <span className="text-slate-300">Belysning</span>
+                          <span className="w-3 h-3 rounded-full bg-warning"></span>
+                          <span className="text-text-secondary">Belysning</span>
                         </span>
-                        <span className="text-amber-400 font-bold">
+                        <span className="text-warning font-bold">
                           {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
                             `${realEnergyData.breakdown.lighting}%` :
                             hasRealBuildingData ?
@@ -661,10 +661,10 @@ function DashboardContent() {
                       </div>
                       <div className="flex justify-between">
                         <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-teal-500"></span>
-                          <span className="text-slate-300">Ventilasjon</span>
+                          <span className="w-3 h-3 rounded-full bg-accent"></span>
+                          <span className="text-text-secondary">Ventilasjon</span>
                         </span>
-                        <span className="text-teal-500 font-bold">
+                        <span className="text-accent font-bold">
                           {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
                             `${realEnergyData.breakdown.ventilation}%` :
                             hasRealBuildingData ?
@@ -675,10 +675,10 @@ function DashboardContent() {
                       </div>
                       <div className="flex justify-between">
                         <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                          <span className="text-slate-300">Varmtvann</span>
+                          <span className="w-3 h-3 rounded-full bg-success"></span>
+                          <span className="text-text-secondary">Varmtvann</span>
                         </span>
-                        <span className="text-green-500 font-bold">
+                        <span className="text-success font-bold">
                           {hasRealBuildingData && realEnergyData.annualWaste === 0 ?
                             `${realEnergyData.breakdown.hotWater}%` :
                             hasRealBuildingData ?
@@ -692,13 +692,13 @@ function DashboardContent() {
                     {/* Zone-specific Lead Domino Action */}
                     <div className={`p-2 rounded border-l-4 ${urgencyColors.background} ${urgencyColors.border}`}>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="w-2 h-2 rounded-full bg-fuchsia-400"></span>
-                        <span className="text-xs font-semibold text-white">Anbefalt første steg</span>
+                        <span className="w-2 h-2 rounded-full bg-aurora-purple"></span>
+                        <span className="text-xs font-semibold text-foreground">Anbefalt første steg</span>
                       </div>
-                      <div className="text-xs text-slate-300">
+                      <div className="text-xs text-text-secondary">
                         {heatPumpRec.recommendation}
                       </div>
-                      <div className="text-xs text-slate-400 mt-1">
+                      <div className="text-xs text-text-tertiary mt-1">
                         {heatPumpRec.reasoning}
                       </div>
                     </div>
@@ -740,8 +740,8 @@ function DashboardContent() {
 
           <DashboardTile id="action-report">
             <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <FileText className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-3">Detaljert rapport</h3>
+              <FileText className="w-8 h-8 text-success mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-foreground mb-3">Detaljert rapport</h3>
               <Button
                 size="sm"
                 className="w-full bg-primary hover:bg-primary/90"
@@ -761,15 +761,15 @@ function DashboardContent() {
                 )}
               </Button>
               {error && (
-                <p className="text-red-400 text-xs mt-2">{error}</p>
+                <p className="text-destructive text-xs mt-2">{error}</p>
               )}
             </CardContent>
           </DashboardTile>
 
           <DashboardTile id="action-consultation" variant="default">
             <CardContent className="p-4 text-center h-full flex flex-col justify-center">
-              <Settings className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-white mb-3">Avansert analyse</h3>
+              <Settings className="w-12 h-12 text-aurora-purple mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-foreground mb-3">Avansert analyse</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -784,14 +784,14 @@ function DashboardContent() {
           <DashboardTile id="action-share" variant="default">
             <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <AlertTriangle className="w-5 h-5 text-orange-400" />
-                <span className="text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+                <span className="text-xs px-2 py-1 rounded-full bg-warning-muted text-warning">
                   Sløsing
                 </span>
               </div>
               <div className="text-center">
                 <div>
-                  <span className="text-2xl font-bold text-orange-400">
+                  <span className="text-2xl font-bold text-warning">
                     {hasRealBuildingData && realEnergyData.annualWaste > 0 ?
                       `${realEnergyData.annualWaste.toLocaleString()} kWh` :
                       hasRealBuildingData && realEnergyData.annualWaste === 0 ?
@@ -862,12 +862,12 @@ function DashboardContent() {
 // Loading component for Suspense boundary
 function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-background">
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
-          <Zap className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
-          <h1 className="text-2xl font-bold text-white mb-2">Laster energianalyse...</h1>
-          <p className="text-slate-400">Beregner energidata for eiendommen</p>
+          <Zap className="w-16 h-16 text-aurora-cyan mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Laster energianalyse...</h1>
+          <p className="text-text-secondary">Beregner energidata for eiendommen</p>
         </div>
       </div>
     </div>

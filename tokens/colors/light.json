@@ -1,0 +1,503 @@
+{
+  "color": {
+    "light": {
+      "base": {
+        "background": {
+          "value": "#f5f5f5",
+          "type": "color",
+          "description": "Main background - Warm off-white (ties to terracotta)"
+        },
+        "background-elevated": {
+          "value": "#ffffff",
+          "type": "color",
+          "description": "Elevated surfaces - Pure white"
+        },
+        "background-subtle": {
+          "value": "#faf7f5",
+          "type": "color",
+          "description": "Subtle background variation - Warm tint"
+        },
+        "foreground": {
+          "value": "#333333",
+          "type": "color",
+          "description": "Main text color - Deep gray for readability"
+        }
+      },
+      "card": {
+        "default": {
+          "value": "#ffffff",
+          "type": "color",
+          "description": "Card background - Pure white"
+        },
+        "foreground": {
+          "value": "#333333",
+          "type": "color",
+          "description": "Card text - Deep gray"
+        },
+        "border": {
+          "value": "#e8d5c4",
+          "type": "color",
+          "description": "Card border - Warm terracotta tint"
+        },
+        "hover": {
+          "value": "#faf7f5",
+          "type": "color",
+          "description": "Card hover - Warm subtle"
+        }
+      },
+      "glass": {
+        "bg": {
+          "value": "rgba(255, 255, 255, 0.9)",
+          "type": "color"
+        },
+        "border": {
+          "value": "rgba(226, 232, 240, 0.8)",
+          "type": "color"
+        }
+      },
+      "popover": {
+        "default": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        }
+      },
+      "modal": {
+        "overlay": {
+          "value": "rgba(0, 0, 0, 0.5)",
+          "type": "color"
+        }
+      },
+      "primary": {
+        "default": {
+          "value": "#d6894a",
+          "type": "color",
+          "description": "Terracotta Core - Warm earth accent"
+        },
+        "hover": {
+          "value": "#c0773d",
+          "type": "color",
+          "description": "Deeper terracotta on hover"
+        },
+        "foreground": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "muted": {
+          "value": "rgba(214, 137, 74, 0.1)",
+          "type": "color"
+        }
+      },
+      "secondary": {
+        "default": {
+          "value": "#f1f5f9",
+          "type": "color"
+        },
+        "hover": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#1e293b",
+          "type": "color"
+        }
+      },
+      "accent": {
+        "default": {
+          "value": "#4a97d6",
+          "type": "color",
+          "description": "Cool Azure - Balance complement to terracotta"
+        },
+        "hover": {
+          "value": "#3d7eb8",
+          "type": "color",
+          "description": "Deeper azure"
+        },
+        "foreground": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "muted": {
+          "value": "rgba(74, 151, 214, 0.1)",
+          "type": "color"
+        }
+      },
+      "semantic": {
+        "success": {
+          "value": "#d6cf4a",
+          "type": "color",
+          "description": "Golden Lime - Sunlit success (analogous cool)"
+        },
+        "success-foreground": {
+          "value": "#333333",
+          "type": "color"
+        },
+        "success-muted": {
+          "value": "rgba(214, 207, 74, 0.1)",
+          "type": "color"
+        },
+        "destructive": {
+          "value": "#d64a51",
+          "type": "color",
+          "description": "Sunset Red-Orange - Vitality warning (analogous warm)"
+        },
+        "destructive-hover": {
+          "value": "#c03e44",
+          "type": "color"
+        },
+        "destructive-foreground": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "destructive-muted": {
+          "value": "rgba(214, 74, 81, 0.1)",
+          "type": "color"
+        },
+        "warning": {
+          "value": "#d6894a",
+          "type": "color",
+          "description": "Terracotta for warnings - matches primary"
+        },
+        "warning-foreground": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "warning-muted": {
+          "value": "rgba(214, 137, 74, 0.1)",
+          "type": "color"
+        }
+      },
+      "text": {
+        "primary": {
+          "value": "#333333",
+          "type": "color",
+          "description": "Deep gray for high readability"
+        },
+        "secondary": {
+          "value": "#6b5d54",
+          "type": "color",
+          "description": "Warm brown-gray"
+        },
+        "tertiary": {
+          "value": "#8c7d73",
+          "type": "color",
+          "description": "Lighter warm gray"
+        },
+        "muted": {
+          "value": "#aca399",
+          "type": "color",
+          "description": "Subtle warm gray"
+        },
+        "disabled": {
+          "value": "#d8d3cd",
+          "type": "color",
+          "description": "Very light warm gray for disabled"
+        }
+      },
+      "border": {
+        "default": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "subtle": {
+          "value": "#f1f5f9",
+          "type": "color"
+        },
+        "strong": {
+          "value": "#cbd5e1",
+          "type": "color"
+        }
+      },
+      "input": {
+        "default": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "border": {
+          "value": "#cbd5e1",
+          "type": "color"
+        },
+        "border-hover": {
+          "value": "#94a3b8",
+          "type": "color"
+        },
+        "border-focus": {
+          "value": "#d6894a",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "placeholder": {
+          "value": "#94a3b8",
+          "type": "color"
+        },
+        "disabled": {
+          "value": "#f1f5f9",
+          "type": "color"
+        }
+      },
+      "button": {
+        "primary-bg": {
+          "value": "#d6894a",
+          "type": "color",
+          "description": "Terracotta primary button"
+        },
+        "primary-hover": {
+          "value": "#c0773d",
+          "type": "color"
+        },
+        "primary-active": {
+          "value": "#aa6530",
+          "type": "color"
+        },
+        "primary-text": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "secondary-bg": {
+          "value": "#f1f5f9",
+          "type": "color"
+        },
+        "secondary-hover": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "secondary-active": {
+          "value": "#cbd5e1",
+          "type": "color"
+        },
+        "secondary-text": {
+          "value": "#1e293b",
+          "type": "color"
+        },
+        "ghost-hover": {
+          "value": "#f1f5f9",
+          "type": "color"
+        },
+        "ghost-active": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "outline-border": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "outline-hover-bg": {
+          "value": "#f8fafc",
+          "type": "color"
+        }
+      },
+      "chart": {
+        "1": {
+          "value": "#d6894a",
+          "type": "color",
+          "description": "Warm amber-orange - Primary energy data"
+        },
+        "2": {
+          "value": "#a86f47",
+          "type": "color",
+          "description": "Burnt orange - Secondary energy"
+        },
+        "3": {
+          "value": "#e5a56e",
+          "type": "color",
+          "description": "Light amber - Tertiary"
+        },
+        "4": {
+          "value": "#f59e0b",
+          "type": "color",
+          "description": "Amber - Warning/attention"
+        },
+        "5": {
+          "value": "#ef4444",
+          "type": "color",
+          "description": "Red - Critical/loss"
+        },
+        "6": {
+          "value": "#10b981",
+          "type": "color",
+          "description": "Green - Efficiency/savings"
+        },
+        "grid": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "axis": {
+          "value": "#94a3b8",
+          "type": "color"
+        },
+        "label": {
+          "value": "#64748b",
+          "type": "color"
+        }
+      },
+      "polygon": {
+        "fill": {
+          "value": "rgba(214, 137, 74, 0.3)",
+          "type": "color"
+        },
+        "stroke": {
+          "value": "#d6894a",
+          "type": "color"
+        },
+        "hover-fill": {
+          "value": "rgba(214, 137, 74, 0.5)",
+          "type": "color"
+        },
+        "selected-fill": {
+          "value": "rgba(214, 137, 74, 0.7)",
+          "type": "color"
+        },
+        "selected-stroke": {
+          "value": "#c0773d",
+          "type": "color"
+        },
+        "target-stroke": {
+          "value": "#14b8a6",
+          "type": "color",
+          "description": "Teal - Target buildings from address"
+        },
+        "target-fill": {
+          "value": "rgba(20, 184, 166, 0.4)",
+          "type": "color"
+        },
+        "neighbor-stroke": {
+          "value": "#22c55e",
+          "type": "color",
+          "description": "Green - Neighbor buildings"
+        },
+        "neighbor-fill": {
+          "value": "rgba(34, 197, 94, 0.3)",
+          "type": "color"
+        }
+      },
+      "mesh": {
+        "ambient": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "directional": {
+          "value": "#ffffff",
+          "type": "color"
+        }
+      },
+      "map": {
+        "base": {
+          "value": "#faf7f5",
+          "type": "color",
+          "description": "Warm subtle map base"
+        },
+        "water": {
+          "value": "#4a97d6",
+          "type": "color",
+          "description": "Cool azure for water (complement)"
+        },
+        "land": {
+          "value": "#f5f5f5",
+          "type": "color",
+          "description": "Warm off-white for land"
+        },
+        "border": {
+          "value": "#e8d5c4",
+          "type": "color",
+          "description": "Warm terracotta-tinted border"
+        },
+        "label": {
+          "value": "#6b5d54",
+          "type": "color",
+          "description": "Warm brown-gray for labels"
+        },
+        "marker": {
+          "value": "#d6894a",
+          "type": "color",
+          "description": "Terracotta marker"
+        },
+        "marker-hover": {
+          "value": "#c0773d",
+          "type": "color"
+        }
+      },
+      "sidebar": {
+        "default": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "foreground": {
+          "value": "#0a0a0a",
+          "type": "color"
+        },
+        "primary": {
+          "value": "#d6894a",
+          "type": "color"
+        },
+        "primary-foreground": {
+          "value": "#ffffff",
+          "type": "color"
+        },
+        "accent": {
+          "value": "#f1f5f9",
+          "type": "color"
+        },
+        "accent-foreground": {
+          "value": "#1e293b",
+          "type": "color"
+        },
+        "border": {
+          "value": "#e2e8f0",
+          "type": "color"
+        },
+        "ring": {
+          "value": "#94a3b8",
+          "type": "color"
+        }
+      },
+      "aurora": {
+        "green": {
+          "value": "#10b981",
+          "type": "color"
+        },
+        "cyan": {
+          "value": "#06b6d4",
+          "type": "color"
+        },
+        "purple": {
+          "value": "#8b5cf6",
+          "type": "color"
+        },
+        "pink": {
+          "value": "#ec4899",
+          "type": "color"
+        },
+        "yellow": {
+          "value": "#f59e0b",
+          "type": "color"
+        },
+        "red": {
+          "value": "#ef4444",
+          "type": "color"
+        },
+        "blue": {
+          "value": "#3b82f6",
+          "type": "color"
+        },
+        "glow-green": {
+          "value": "rgba(16, 185, 129, 0.2)",
+          "type": "color"
+        },
+        "glow-cyan": {
+          "value": "rgba(6, 182, 212, 0.2)",
+          "type": "color"
+        },
+        "glow-purple": {
+          "value": "rgba(139, 92, 246, 0.2)",
+          "type": "color"
+        }
+      }
+    }
+  }
+}

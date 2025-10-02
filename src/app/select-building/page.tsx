@@ -4,9 +4,15 @@ import React, { useState, useEffect, useRef, Suspense, Fragment } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Building, MapPin, Zap, CheckCircle, Home, Calendar, Map, FormInput } from "lucide-react";
 import { MapDataService } from "@/services/map-data.service";
 import { BuildingDataFormModal } from "@/components/BuildingDataFormModal";
+import { usePolygonColors, useThemeColors } from "@/hooks/useThemeColors";
+import { fetchOrganization, type OrganizationInfo } from "@/lib/brreg";
+import { useAddressData, createAddressKey } from "@/contexts/AddressDataContext";
+import { fetchPropertyBoundaries, parsePropertyBoundaries } from '@/lib/geonorge-api';
+import type { PropertyBoundary } from '@/types/geonorge';
 import dynamic from 'next/dynamic';
 
 // Dynamically import react-leaflet components to avoid SSR issues
@@ -41,6 +47,7 @@ interface EnovaCertificate {
   buildingCategory?: string;
   energyConsumption?: number;
   constructionYear?: number;
+  organization_number?: string | null;
 }
 
 // Component to track zoom changes (will be loaded dynamically)
@@ -70,6 +77,7 @@ const ZoomTracker = ({ onZoomChange }: { onZoomChange: (zoom: number) => void })
 function SelectBuildingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { getAddressData, setAddressData, hasAddressData } = useAddressData();
 
   // Get address data from URL params
   const address = searchParams.get('address');
@@ -85,8 +93,11 @@ function SelectBuildingContent() {
   const [enovaCertificates, setEnovaCertificates] = useState<EnovaCertificate[]>([]);
   const [isLoadingMap, setIsLoadingMap] = useState(true);
   const [isLoadingEnova, setIsLoadingEnova] = useState(true);
+  const [propertyBoundaries, setPropertyBoundaries] = useState<PropertyBoundary[]>([]);
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
   const [selectedCertificate, setSelectedCertificate] = useState<string | null>(null);
+  const [buildingOwner, setBuildingOwner] = useState<OrganizationInfo | null>(null);
+  const [isLoadingOwner, setIsLoadingOwner] = useState(false);
   const [showCertificates, setShowCertificates] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
@@ -97,6 +108,10 @@ function SelectBuildingContent() {
   const [hasParameterError, setHasParameterError] = useState(false);
   const [showInactivityPrompt, setShowInactivityPrompt] = useState(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get theme-aware colors for map elements
+  const polygonColors = usePolygonColors();
+  const themeColors = useThemeColors();
 
   // Handle inactivity timer
   const resetInactivityTimer = () => {
@@ -151,7 +166,7 @@ function SelectBuildingContent() {
     };
   }, [selectedBuildingId, showForm, showCertificates, showInactivityPrompt]);
 
-  // Fetch map buildings and Enova certificates in parallel
+  // Fetch map buildings and Enova certificates in parallel (with session cache)
   useEffect(() => {
     const fetchData = async () => {
       console.log('Select building page params:', { address, lat, lon, gnr, bnr });
@@ -163,6 +178,29 @@ function SelectBuildingContent() {
         setIsLoadingEnova(false);
         return;
       }
+
+      // Generate cache key
+      const cacheKey = createAddressKey({ address, gnr, bnr, knr: municipalityNumber });
+
+      // Check cache first
+      const cachedData = getAddressData(cacheKey);
+      if (cachedData) {
+        console.log('✅ Using cached data for:', cacheKey);
+        setMapBuildings(cachedData.buildings);
+        setEnovaCertificates(cachedData.certificates);
+        setMapCenter([parseFloat(lat), parseFloat(lon)]);
+        setIsLoadingMap(false);
+        setIsLoadingEnova(false);
+
+        // Reset selection state
+        setSelectedBuildingId(null);
+        setSelectedCertificate(null);
+        setShowCertificates(false);
+        setShowForm(false);
+        return;
+      }
+
+      console.log('📡 Fetching fresh data for:', cacheKey);
 
       // Reset state for new property search
       setEnovaCertificates([]);
@@ -183,10 +221,28 @@ function SelectBuildingContent() {
         // Calculate labels for all buildings before setting them
         const buildingsWithLabels = calculateBuildingLabels(buildings, address, lat, lon);
         fetchedBuildings = buildingsWithLabels;
-        setMapBuildings(buildingsWithLabels);
+
+        // Don't set buildings yet - wait for certificate enrichment
+        // setMapBuildings(buildingsWithLabels);
 
         // Simple: just center on address coordinates
         setMapCenter([parseFloat(lat), parseFloat(lon)]);
+
+        // Fetch property boundaries from Geonorge
+        console.log('🗺️ Fetching property boundaries from Geonorge...');
+        const boundariesResponse = await fetchPropertyBoundaries(
+          parseFloat(lat),
+          parseFloat(lon),
+          10 // 10m radius to find nearest property
+        );
+
+        if (boundariesResponse) {
+          const parsedBoundaries = parsePropertyBoundaries(boundariesResponse);
+          setPropertyBoundaries(parsedBoundaries);
+          console.log(`✅ Found ${parsedBoundaries.length} property boundaries`);
+        } else {
+          console.warn('⚠️ No property boundaries found');
+        }
       } catch (error) {
         console.error('Failed to fetch map buildings:', error);
         setMapBuildings([]);
@@ -234,6 +290,88 @@ function SelectBuildingContent() {
         setIsLoadingEnova(false);
       }
 
+      // Enrich OSM buildings with Enova certificate data (match by proximity)
+      if (fetchedBuildings.length > 0 && fetchedCertificates.length > 0 && lat && lon) {
+        const enrichedBuildings = fetchedBuildings.map(building => {
+          // For each building, find the certificate for the closest building
+          // Since we only have one property (gnr/bnr), all certificates are for buildings on this property
+          // We'll match the closest building to the searched address with certificate #1, next with #2, etc.
+          const buildingCenter = getPolygonCenter(building.coordinates);
+          const distanceFromSearch = calculateDistanceInMeters(
+            parseFloat(lat),
+            parseFloat(lon),
+            buildingCenter.lat,
+            buildingCenter.lon
+          );
+
+          // Store distance for sorting
+          return { ...building, _distanceFromSearch: distanceFromSearch };
+        });
+
+        // Sort buildings by distance from searched address
+        const sortedBuildings = enrichedBuildings.sort((a, b) =>
+          (a._distanceFromSearch || Infinity) - (b._distanceFromSearch || Infinity)
+        );
+
+        // Sort certificates by building number (ascending)
+        const sortedCertificates = [...fetchedCertificates].sort((a, b) =>
+          parseInt(a.bygningsnummer || '999') - parseInt(b.bygningsnummer || '999')
+        );
+
+        // Match closest building to lowest building number, etc.
+        const finalBuildings = sortedBuildings.map((building, index) => {
+          const cert = sortedCertificates[index];
+          const { _distanceFromSearch, ...cleanBuilding } = building as any;
+
+          if (cert) {
+            return {
+              ...cleanBuilding,
+              bygningsnummer: cert.bygningsnummer
+            };
+          }
+          return cleanBuilding;
+        });
+
+        fetchedBuildings = finalBuildings;
+        setMapBuildings(finalBuildings);
+
+        // Debug: Log enriched buildings
+        console.log('🏗️ Buildings enriched with certificates:', finalBuildings.map(b => ({
+          id: b.id,
+          address: b.address,
+          addressLabel: b.addressLabel,
+          calculatedLabel: b.calculatedLabel,
+          bygningsnummer: b.bygningsnummer
+        })));
+      } else {
+        // No certificates to match, just set the buildings
+        setMapBuildings(fetchedBuildings);
+
+        // Debug: Log buildings without enrichment
+        console.log('🏗️ Buildings without certificate enrichment:', fetchedBuildings.map(b => ({
+          id: b.id,
+          address: b.address,
+          addressLabel: b.addressLabel,
+          calculatedLabel: b.calculatedLabel,
+          bygningsnummer: b.bygningsnummer
+        })));
+      }
+
+      // Cache the fetched data
+      if (cacheKey && (fetchedBuildings.length > 0 || fetchedCertificates.length > 0)) {
+        setAddressData(cacheKey, {
+          buildings: fetchedBuildings,
+          certificates: fetchedCertificates,
+          cadastralData: {
+            gnr: gnr || '',
+            bnr: bnr || '',
+            knr: municipalityNumber || '',
+            address: address
+          }
+        });
+        console.log('💾 Cached data for:', cacheKey);
+      }
+
       // Smart auto-selection logic with 10m→25m fallback
       if (fetchedBuildings.length > 0 && address && lat && lon) {
         // Find the closest building using 10m→25m fallback proximity
@@ -274,6 +412,46 @@ function SelectBuildingContent() {
 
     fetchData();
   }, [address, lat, lon, gnr, bnr, router]);
+
+  // Fetch building owner from Brønnøysund when building or certificate is selected
+  useEffect(() => {
+    const fetchOwnerInfo = async () => {
+      let cert: EnovaCertificate | undefined;
+
+      // Check if we have a selected certificate directly
+      if (selectedCertificate) {
+        cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
+      }
+      // Otherwise, check if selected building has a matching certificate
+      else if (selectedBuildingId) {
+        const selectedBuilding = mapBuildings.find(b => b.id === selectedBuildingId);
+        if (selectedBuilding?.bygningsnummer) {
+          cert = enovaCertificates.find(c => c.bygningsnummer === selectedBuilding.bygningsnummer);
+        }
+      }
+
+      // Check if certificate has an organization number
+      if (!cert || !cert.organization_number) {
+        setBuildingOwner(null);
+        return;
+      }
+
+      console.log('🏢 Fetching organization info for:', cert.organization_number);
+      setIsLoadingOwner(true);
+      try {
+        const owner = await fetchOrganization(cert.organization_number);
+        setBuildingOwner(owner);
+        console.log('✅ Organization found:', owner?.name);
+      } catch (error) {
+        console.error('Failed to fetch building owner:', error);
+        setBuildingOwner(null);
+      } finally {
+        setIsLoadingOwner(false);
+      }
+    };
+
+    fetchOwnerInfo();
+  }, [selectedCertificate, selectedBuildingId, enovaCertificates, mapBuildings]);
 
   // Helper function to check if building matches the searched address
   const isBuildingRelevantToAddress = (building: MapBuilding, searchedAddress: string, searchedLat: number, searchedLon: number) => {
@@ -470,6 +648,44 @@ function SelectBuildingContent() {
     return closestBuilding;
   };
 
+  // Helper function to check if a point is inside a polygon (ray casting algorithm)
+  const isPointInPolygon = (point: [number, number], polygon: [number, number][]): boolean => {
+    const [lat, lon] = point;
+    let inside = false;
+
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const [lat1, lon1] = polygon[i];
+      const [lat2, lon2] = polygon[j];
+
+      const intersect = ((lon1 > lon) !== (lon2 > lon)) &&
+        (lat < (lat2 - lat1) * (lon - lon1) / (lon2 - lon1) + lat1);
+
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
+  };
+
+  // Helper function to check if a building is within a property boundary
+  const isBuildingInProperty = (building: MapBuilding, property: PropertyBoundary): boolean => {
+    if (!building.coordinates || building.coordinates.length === 0) return false;
+
+    // Get building centroid
+    const coords = building.coordinates;
+    let latSum = 0, lonSum = 0;
+    for (const [lat, lon] of coords) {
+      latSum += lat;
+      lonSum += lon;
+    }
+    const centroid: [number, number] = [latSum / coords.length, lonSum / coords.length];
+
+    // Convert property boundary to [lat, lon] format (GeoJSON is [lon, lat])
+    const propertyCoords: [number, number][] = property.coordinates[0].map(coord => [coord[1], coord[0]]);
+
+    // Check if building centroid is inside property polygon
+    return isPointInPolygon(centroid, propertyCoords);
+  };
+
   // Helper function to check if building address matches searched address
   const hasAddressMatch = (building: MapBuilding, searchedAddress: string): boolean => {
     if (!building.address || !searchedAddress) return false;
@@ -505,12 +721,12 @@ function SelectBuildingContent() {
       <div class="relative">
         <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 transition-all duration-300 ${
           isSelected
-            ? 'bg-cyan-400 border-cyan-300 scale-125 shadow-lg shadow-cyan-400/50'
-            : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+            ? 'bg-accent border-accent-hover scale-125 shadow-lg shadow-accent/50'
+            : 'bg-secondary border-input-border hover:bg-secondary-hover'
         }">
           ${buildingNumber}
         </div>
-        ${isSelected ? '<div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-cyan-400 rotate-45"></div>' : ''}
+        ${isSelected ? '<div class="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-accent rotate-45"></div>' : ''}
       </div>
     `;
 
@@ -539,18 +755,18 @@ function SelectBuildingContent() {
   };
 
   const getEnergyClassBadgeColor = (energyClass?: string) => {
-    if (!energyClass) return 'bg-gray-600 text-white border-gray-500';
+    if (!energyClass) return 'bg-secondary text-foreground border-border';
 
     const colorMap: Record<string, string> = {
-      'A': 'bg-green-500 text-white border-green-400',
-      'B': 'bg-lime-500 text-white border-lime-400',
-      'C': 'bg-yellow-500 text-black border-yellow-400',
-      'D': 'bg-orange-500 text-white border-orange-400',
-      'E': 'bg-red-500 text-white border-red-400',
-      'F': 'bg-red-600 text-white border-red-500',
-      'G': 'bg-red-700 text-white border-red-600'
+      'A': 'bg-success text-success-foreground border-success',
+      'B': 'bg-success text-success-foreground border-success',
+      'C': 'bg-warning text-warning-foreground border-warning',
+      'D': 'bg-warning text-warning-foreground border-warning',
+      'E': 'bg-destructive text-destructive-foreground border-destructive',
+      'F': 'bg-destructive text-destructive-foreground border-destructive',
+      'G': 'bg-destructive text-destructive-foreground border-destructive'
     };
-    return colorMap[energyClass.toUpperCase()] || 'bg-gray-600 text-white border-gray-500';
+    return colorMap[energyClass.toUpperCase()] || 'bg-secondary text-foreground border-border';
   };
 
   const handleMapBuildingSelect = (buildingId: string) => {
@@ -687,22 +903,22 @@ function SelectBuildingContent() {
 
   if (hasParameterError) {
     return (
-      <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+      <div className="h-screen bg-background relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-aurora-green/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-aurora-cyan/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
         </div>
 
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="text-center">
-            <Building className="w-16 h-16 text-red-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-white mb-2">Mangler adresseinformasjon</h1>
-            <p className="text-slate-400 mb-4">Gå tilbake til søket for å velge en adresse.</p>
+            <Building className="w-16 h-16 text-destructive mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">Mangler adresseinformasjon</h1>
+            <p className="text-text-tertiary mb-4">Gå tilbake til søket for å velge en adresse.</p>
             <Button
               variant="outline"
               onClick={() => window.location.href = '/'}
-              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              className="border-primary/30 text-primary hover:bg-primary/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Tilbake til søk
@@ -715,18 +931,18 @@ function SelectBuildingContent() {
 
   if (isLoadingMap || isLoadingEnova) {
     return (
-      <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+      <div className="h-screen bg-background relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-aurora-green/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-aurora-cyan/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
         </div>
 
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="text-center">
-            <Building className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
-            <h1 className="text-2xl font-bold text-white mb-2">Laster bygningsdata...</h1>
-            <p className="text-slate-400">
+            <Building className="w-16 h-16 text-aurora-cyan mx-auto mb-4 animate-pulse" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">Laster bygningsdata...</h1>
+            <p className="text-text-tertiary">
               {isLoadingMap && isLoadingEnova && "Henter kart og energisertifikater"}
               {isLoadingMap && !isLoadingEnova && "Henter kartdata"}
               {!isLoadingMap && isLoadingEnova && "Henter energisertifikater"}
@@ -738,22 +954,22 @@ function SelectBuildingContent() {
   }
 
   return (
-    <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+    <div className="h-screen bg-background relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-violet-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '4s'}}></div>
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-aurora-green/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-aurora-cyan/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-aurora-purple/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
       {/* Inactivity Prompt Overlay */}
       {showInactivityPrompt && selectedBuildingId && !showForm && !showCertificates && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="bg-gray-900/95 border-cyan-500/30 max-w-md">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-modal-overlay backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="bg-popover border-accent/30 max-w-md">
             <CardContent className="p-6">
               <div className="text-center space-y-4">
-                <Building className="w-12 h-12 text-cyan-400 mx-auto" />
-                <h3 className="text-xl font-semibold text-white">
+                <Building className="w-12 h-12 text-aurora-cyan mx-auto" />
+                <h3 className="text-xl font-semibold text-foreground">
                   Er riktig bygg valgt?
                 </h3>
                 <div className="flex gap-3 justify-center pt-2">
@@ -764,7 +980,7 @@ function SelectBuildingContent() {
                       setSelectedBuildingId(null);
                       resetInactivityTimer();
                     }}
-                    className="border-gray-600 hover:bg-gray-800"
+                    className="border-input-border hover:bg-secondary-hover"
                   >
                     Velg annet bygg
                   </Button>
@@ -773,7 +989,7 @@ function SelectBuildingContent() {
                       setShowInactivityPrompt(false);
                       proceedToForm();
                     }}
-                    className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     Ja, fortsett
                   </Button>
@@ -792,21 +1008,31 @@ function SelectBuildingContent() {
             <Button
               variant="ghost"
               onClick={handleBack}
-              className="text-slate-400 hover:text-white"
+              className="text-text-tertiary hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {showForm ? 'Tilbake til sertifikater' : showCertificates ? 'Tilbake til bygninger' : 'Tilbake til søk'}
             </Button>
           </div>
 
-          {/* Center column - Address (always centered) */}
-          <div className="flex items-center justify-center gap-3 text-white">
-            <MapPin className="w-4 h-4 text-cyan-400" />
-            <div className="text-sm">
-              <span className="font-medium">{address}</span>
-              <span className="text-slate-400 ml-2">
-                {municipality}{municipalityNumber && <span className="text-slate-500 ml-1">({municipalityNumber})</span>}
-              </span>
+          {/* Center column - Address with Owner Info */}
+          <div className="flex flex-col items-center justify-center gap-1 text-foreground">
+            {/* Owner Name (if available) */}
+            {buildingOwner && (
+              <div className="text-xs text-text-secondary">
+                Eier: <span className="font-medium">{buildingOwner.name}</span>
+              </div>
+            )}
+
+            {/* Address Line */}
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-aurora-cyan flex-shrink-0" />
+              <div className="text-sm">
+                <span className="font-medium">{address}</span>
+                <span className="text-text-tertiary ml-2">
+                  {municipality}{municipalityNumber && <span className="text-text-muted ml-1">({municipalityNumber})</span>}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -846,7 +1072,7 @@ function SelectBuildingContent() {
                     }
                   }
                 }}
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                className="bg-gradient-primary hover:opacity-90 text-primary-foreground"
               >
                 Fortsett
               </Button>
@@ -854,7 +1080,7 @@ function SelectBuildingContent() {
             {showCertificates && !showForm && (
               <Button
                 onClick={proceedToForm}
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                className="bg-gradient-primary hover:opacity-90 text-primary-foreground"
               >
                 Fortsett til bygningsdata
               </Button>
@@ -867,13 +1093,13 @@ function SelectBuildingContent() {
           <div className="flex-1 flex overflow-hidden">
             {mapBuildings.length === 0 ? (
               <div className="flex-1 flex items-center justify-center">
-                <Card className="bg-white/5 backdrop-blur-lg border-white/10 max-w-md">
-                  <CardContent className="text-center py-8 text-slate-400">
+                <Card className="bg-card/50 backdrop-blur-lg border-card-border max-w-md">
+                  <CardContent className="text-center py-8 text-text-tertiary">
                     <Building className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <h3 className="text-white text-lg font-semibold mb-2">Ingen bygninger funnet</h3>
+                    <h3 className="text-foreground text-lg font-semibold mb-2">Ingen bygninger funnet</h3>
                     <p className="mb-4">Ingen bygningsdata tilgjengelig for denne adressen.</p>
                     <Button
-                      className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={proceedToForm}
                     >
                       Fortsett uten kartdata
@@ -886,11 +1112,11 @@ function SelectBuildingContent() {
                 {/* Interactive Map - Takes most of the screen */}
                 <div className="flex-1 relative">
                   {!isMapReady && (
-                    <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-10">
-                      <div className="text-white text-sm">Laster kart...</div>
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-10">
+                      <div className="text-foreground text-sm">Laster kart...</div>
                     </div>
                   )}
-                  <div className="w-full h-full bg-slate-900">
+                  <div className="w-full h-full bg-background">
                     {typeof window !== 'undefined' && (
                       <MapContainer
                         center={mapCenter}
@@ -910,29 +1136,75 @@ function SelectBuildingContent() {
                       >
                         <ZoomTracker onZoomChange={(zoom) => setCurrentZoom(zoom)} />
                         <TileLayer
-                          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                          url={`https://{s}.basemaps.cartocdn.com/${themeColors.mode === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
                           attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
                           maxZoom={20}
                           minZoom={10}
                         />
 
-                        {mapBuildings.map((building) => (
-                          <BuildingMarker
-                            key={building.id}
-                            building={building}
-                            buildingNumber={getBuildingNumber(building)}
-                            buildingLabel={getBuildingLabel(building)}
-                            isSelected={selectedBuildingId === building.id}
-                            onSelect={() => handleMapBuildingSelect(building.id)}
-                            showCertificates={showCertificates}
-                            showForm={showForm}
-                            enovaCertificates={enovaCertificates}
-                            selectedBuildingId={selectedBuildingId}
-                            currentZoom={currentZoom}
-                            selectedCertificate={selectedCertificate}
-                            address={address || ''}
-                          />
-                        ))}
+                        {/* Property Boundaries from Geonorge */}
+                        {propertyBoundaries.map((property, index) => {
+                          // Convert GeoJSON coordinates [lon, lat] to Leaflet [lat, lon]
+                          const outerRing = property.coordinates[0];
+                          const leafletCoords: [number, number][] = outerRing.map(coord => [coord[1], coord[0]]);
+                          const isFocus = index === 0;
+
+                          // Get CSS variable colors - use info (cyan) for better dark mode visibility
+                          const propertyColor = getComputedStyle(document.documentElement).getPropertyValue('--info').trim() || '#06b6d4';
+                          const propertyLightColor = getComputedStyle(document.documentElement).getPropertyValue('--aurora-cyan').trim() || '#22d3ee';
+
+                          return (
+                            <Polygon
+                              key={`property-${index}`}
+                              positions={leafletCoords}
+                              pathOptions={{
+                                color: isFocus ? propertyColor : propertyLightColor,
+                                fillColor: 'transparent', // No fill - only outline
+                                fillOpacity: 0,
+                                weight: 2,
+                                dashArray: '5, 10',
+                              }}
+                            >
+                              <Tooltip permanent={false} direction="top">
+                                <div className="text-xs">
+                                  <div className="font-bold text-info">
+                                    {isFocus ? 'Eiendomsgrense (valgt)' : 'Nabo eiendom'}
+                                  </div>
+                                  <div>
+                                    <strong>Matrikkel:</strong> {property.matrikkel.kommunenummer}/{property.matrikkel.gardsnummer}/{property.matrikkel.bruksnummer}
+                                  </div>
+                                  <div className="text-text-tertiary">Kilde: Kartverket</div>
+                                </div>
+                              </Tooltip>
+                            </Polygon>
+                          );
+                        })}
+
+                        {mapBuildings.map((building) => {
+                          // Check if building is on the selected property (first property boundary)
+                          const isOnProperty = propertyBoundaries.length > 0
+                            ? isBuildingInProperty(building, propertyBoundaries[0])
+                            : false;
+
+                          return (
+                            <BuildingMarker
+                              key={building.id}
+                              building={building}
+                              buildingNumber={getBuildingNumber(building)}
+                              buildingLabel={getBuildingLabel(building)}
+                              isSelected={selectedBuildingId === building.id}
+                              onSelect={() => handleMapBuildingSelect(building.id)}
+                              showCertificates={showCertificates}
+                              showForm={showForm}
+                              enovaCertificates={enovaCertificates}
+                              selectedBuildingId={selectedBuildingId}
+                              currentZoom={currentZoom}
+                              selectedCertificate={selectedCertificate}
+                              address={address || ''}
+                              isOnSelectedProperty={isOnProperty}
+                            />
+                          );
+                        })}
                       </MapContainer>
                     )}
                   </div>
@@ -945,11 +1217,11 @@ function SelectBuildingContent() {
                       <>
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                              <FormInput className="w-5 h-5 text-cyan-400" />
+                            <h3 className="text-foreground font-semibold text-lg flex items-center gap-2">
+                              <FormInput className="w-5 h-5 text-aurora-cyan" />
                               Bygningsdata
                             </h3>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <p className="text-text-tertiary text-sm mt-1">
                               Fyll ut bygningsinformasjon for analyse
                             </p>
                           </div>
@@ -964,7 +1236,7 @@ function SelectBuildingContent() {
                             }}
                             size="sm"
                             variant="outline"
-                            className="border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10 text-sm px-3 py-1"
+                            className="border-accent/50 text-accent hover:bg-accent/10 text-sm px-3 py-1"
                           >
                             Bruk estimater
                           </Button>
@@ -972,23 +1244,23 @@ function SelectBuildingContent() {
                       </>
                     ) : !showCertificates ? (
                       <>
-                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                          <Building className="w-5 h-5 text-cyan-400" />
+                        <h3 className="text-foreground font-semibold text-lg flex items-center gap-2">
+                          <Building className="w-5 h-5 text-aurora-cyan" />
                           Bygninger ({mapBuildings.length})
                         </h3>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <p className="text-text-tertiary text-sm mt-1">
                           Klikk bygning i kartet eller listen
                         </p>
                       </>
                     ) : (
                       <>
-                        <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-cyan-400" />
+                        <h3 className="text-foreground font-semibold text-lg flex items-center gap-2">
+                          <Zap className="w-5 h-5 text-aurora-cyan" />
                           Tilleggssertifikater ({enovaCertificates.filter(cert =>
                             !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
                           ).length})
                         </h3>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <p className="text-text-tertiary text-sm mt-1">
                           Koble sertifikater til bygninger eller fortsett uten
                         </p>
                       </>
@@ -999,7 +1271,7 @@ function SelectBuildingContent() {
                     {showForm ? (
                       // Empty state - form is now shown in modal
                       <div className="flex items-center justify-center h-full">
-                        <p className="text-slate-400">Fyller ut bygningsdata...</p>
+                        <p className="text-text-tertiary">Fyller ut bygningsdata...</p>
                       </div>
                     ) : !showCertificates ? (
                       // Building List - Show all buildings, selected first
@@ -1052,69 +1324,63 @@ function SelectBuildingContent() {
                                     <div className="flex items-center gap-3">
                                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 ${
                                         isSelected
-                                          ? 'bg-fuchsia-500 border-fuchsia-400 text-white'
-                                          : 'bg-slate-700 border-slate-600 text-white'
+                                          ? 'bg-primary border-primary-hover text-primary-foreground'
+                                          : 'bg-secondary border-input-border text-foreground'
                                       }`}>
                                         {buildingLabel}
                                       </div>
 
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <h4 className="text-white font-medium text-sm truncate">
-                                            {building.name || (building.addressLabel ? `Adresse ${buildingLabel}` : `Bygning ${building.bygningsnummer || buildingLabel}`)}
-                                          </h4>
-                                          {isSelected && (
-                                            <CheckCircle className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
+                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <h4 className="text-foreground font-medium text-sm truncate">
+                                              {building.bygningsnummer ? `Bygg ${building.bygningsnummer}` : (building.name || `Bygning ${buildingLabel}`)}
+                                            </h4>
+                                            {isSelected && (
+                                              <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                                            )}
+                                          </div>
+                                          {matchingCertificate?.energyClass && (
+                                            <Badge variant={`grade-${matchingCertificate.energyClass}` as any} className="flex-shrink-0">
+                                              {matchingCertificate.energyClass}
+                                            </Badge>
                                           )}
                                         </div>
 
-                                        <div className="text-xs text-slate-300 space-y-1">
-                                          {building.area && (
-                                            <div>{Math.round(building.area)} m²</div>
+                                        <div className="text-xs text-text-secondary space-y-1">
+                                          {matchingCertificate && (
+                                            <>
+                                              {matchingCertificate.buildingCategory && (
+                                                <div className="font-medium text-text-primary">
+                                                  {matchingCertificate.buildingCategory}
+                                                </div>
+                                              )}
+                                              <div className="flex gap-3 flex-wrap">
+                                                {matchingCertificate.constructionYear && (
+                                                  <div>Byggeår {matchingCertificate.constructionYear}</div>
+                                                )}
+                                                {matchingCertificate.energyConsumption && (
+                                                  <div>{Math.round(matchingCertificate.energyConsumption)} kWh/m²</div>
+                                                )}
+                                                {building.area && (
+                                                  <div>{Math.round(building.area)} m²</div>
+                                                )}
+                                              </div>
+                                            </>
                                           )}
-                                          {building.type && (
-                                            <div className="capitalize">{building.type}</div>
+                                          {!matchingCertificate && (
+                                            <>
+                                              {building.area && (
+                                                <div>{Math.round(building.area)} m²</div>
+                                              )}
+                                              {building.type && (
+                                                <div className="capitalize">{building.type}</div>
+                                              )}
+                                            </>
                                           )}
                                           {building.matchesSearchedAddress && (
-                                            <div className="text-cyan-400 font-medium">
+                                            <div className="text-accent font-medium">
                                               ✓ Matcher søkt adresse
-                                            </div>
-                                          )}
-                                          {matchingCertificate && (
-                                            <div className="bg-emerald-500/20 border border-emerald-400/30 rounded px-3 py-2 mt-1">
-                                              <div className="flex items-center gap-2 mb-1">
-                                                <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                                                <span className="text-emerald-400 font-medium text-xs">
-                                                  Energimerke {matchingCertificate.energyClass}
-                                                </span>
-                                              </div>
-                                              <div className="space-y-1">
-                                                {matchingCertificate.energyConsumption && (
-                                                  <div className="text-xs text-emerald-300">
-                                                    ⚡ {Math.round(matchingCertificate.energyConsumption)} kWh/m²
-                                                  </div>
-                                                )}
-                                                {matchingCertificate.address && (
-                                                  <div className="text-xs text-emerald-300">
-                                                    📍 {matchingCertificate.address}
-                                                  </div>
-                                                )}
-                                                {matchingCertificate.city && (
-                                                  <div className="text-xs text-emerald-300">
-                                                    🏛️ {matchingCertificate.city}
-                                                  </div>
-                                                )}
-                                                {matchingCertificate.buildingCategory && (
-                                                  <div className="text-xs text-emerald-300">
-                                                    🏢 {matchingCertificate.buildingCategory}
-                                                  </div>
-                                                )}
-                                                {matchingCertificate.constructionYear && (
-                                                  <div className="text-xs text-emerald-300">
-                                                    📅 Byggeår {matchingCertificate.constructionYear}
-                                                  </div>
-                                                )}
-                                              </div>
                                             </div>
                                           )}
                                         </div>
@@ -1142,32 +1408,31 @@ function SelectBuildingContent() {
                           <CardContent className="p-3">
                             <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg ${
-                                selectedCertificate === null ? 'bg-cyan-400 text-slate-900' : 'bg-slate-700 text-white'
+                                selectedCertificate === null ? 'bg-accent text-accent-foreground' : 'bg-secondary text-foreground'
                               }`}>
                                 ✕
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="text-white font-medium text-sm">Ikke bruk sertifikat</h4>
+                                  <h4 className="text-foreground font-medium text-sm">Ikke bruk sertifikat</h4>
                                   {selectedCertificate === null && (
-                                    <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                    <CheckCircle className="w-4 h-4 text-accent flex-shrink-0" />
                                   )}
                                 </div>
-                                <p className="text-slate-400 text-xs">Fyll ut energidata manuelt</p>
+                                <p className="text-text-tertiary text-xs">Fyll ut energidata manuelt</p>
                               </div>
                             </div>
                           </CardContent>
                         </Card>
 
-                        {/* Available certificates - only show unmatched certificates for manual mapping */}
+                        {/* Available certificates - show all with auto-match indicators */}
                         {enovaCertificates
-                          .filter(cert =>
-                            // Show certificates that are NOT automatically matched to any building
-                            !mapBuildings.some(building => building.bygningsnummer === cert.bygningsnummer)
-                          )
                           .map((cert) => {
                           const isSelected = selectedCertificate === cert.bygningsnummer;
                           const badgeColor = getEnergyClassBadgeColor(cert.energyClass);
+                          // Check if this certificate was auto-matched to a building
+                          const autoMatchedBuilding = mapBuildings.find(b => b.bygningsnummer === cert.bygningsnummer);
+                          const isAutoMatched = !!autoMatchedBuilding;
 
                           return (
                             <Card
@@ -1184,19 +1449,24 @@ function SelectBuildingContent() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                       <h4 className="text-white font-medium text-sm">
-                                        Bygning {cert.bygningsnummer}
+                                        Bygg {cert.bygningsnummer}
                                       </h4>
                                       {cert.energyClass && (
-                                        <div className={`px-1.5 py-0.5 rounded text-xs font-bold border ${badgeColor}`}>
+                                        <Badge variant={`grade-${cert.energyClass}` as any} className="flex-shrink-0">
                                           {cert.energyClass}
-                                        </div>
+                                        </Badge>
+                                      )}
+                                      {isAutoMatched && (
+                                        <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                                          Auto-koblet
+                                        </Badge>
                                       )}
                                       {isSelected && (
-                                        <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                                        <CheckCircle className="w-4 h-4 text-accent flex-shrink-0" />
                                       )}
                                     </div>
 
-                                    <div className="text-xs text-slate-300 space-y-1">
+                                    <div className="text-xs text-text-secondary space-y-1">
                                       {cert.buildingCategory && (
                                         <div className="flex items-center gap-1">
                                           <Home className="w-3 h-3" />
@@ -1256,18 +1526,18 @@ function SelectBuildingContent() {
 // Loading component for Suspense boundary
 function SelectBuildingLoading() {
   return (
-    <div className="h-screen bg-[#0c0c0e] relative overflow-hidden">
+    <div className="h-screen bg-background relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-400/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-aurora-green/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-aurora-cyan/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
 
       <div className="relative z-10 h-full flex items-center justify-center">
         <div className="text-center">
-          <Building className="w-16 h-16 text-cyan-400 mx-auto mb-4 animate-pulse" />
-          <h1 className="text-2xl font-bold text-white mb-2">Laster bygningsvalg...</h1>
-          <p className="text-slate-400">Klargjør bygningsdata</p>
+          <Building className="w-16 h-16 text-aurora-cyan mx-auto mb-4 animate-pulse" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Laster bygningsvalg...</h1>
+          <p className="text-text-tertiary">Klargjør bygningsdata</p>
         </div>
       </div>
     </div>
@@ -1297,11 +1567,16 @@ interface BuildingMarkerProps {
   currentZoom: number;
   selectedCertificate: string | null;
   address: string;
+  isOnSelectedProperty?: boolean;
 }
 
-function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, onSelect, showCertificates, showForm, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate, address }: BuildingMarkerProps) {
+function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, onSelect, showCertificates, showForm, enovaCertificates, selectedBuildingId, currentZoom, selectedCertificate, address, isOnSelectedProperty = false }: BuildingMarkerProps) {
   const [centroid, setCentroid] = useState<[number, number] | null>(null);
   const [numberIcon, setNumberIcon] = useState<any>(null);
+
+  // Building color scheme: use theme-aware colors from design token system
+  // IMPORTANT: All hooks must be called before any conditional returns
+  const polygonColors = usePolygonColors();
 
   // Calculate polygon centroid
   useEffect(() => {
@@ -1328,36 +1603,30 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
 
       const L = await import('leaflet');
 
-      // Determine what to display: address label or energy grade
+      // Determine what to display: energy grade (if available) or address label
       let displayText = buildingLabel;
-      let bgColor = 'bg-slate-700 text-white';
+      let bgColor = 'bg-secondary text-foreground';
 
-      if (showCertificates && enovaCertificates.length > 0 && building.id === selectedBuildingId) {
-        // Only show energy grade for the selected building
-        let cert = null;
+      // Check if this building has a matched Enova certificate
+      const matchedCert = building.bygningsnummer
+        ? enovaCertificates.find(c => c.bygningsnummer === building.bygningsnummer)
+        : null;
 
-        if (selectedCertificate) {
-          // Find the specific selected certificate
-          cert = enovaCertificates.find(c => c.bygningsnummer === selectedCertificate);
-        } else {
-          // If no certificate selected (user chose "Ikke bruk sertifikat"), don't show any grade
-          cert = null;
-        }
+      if (matchedCert && matchedCert.energyClass) {
+        // Show energy grade with appropriate color
+        displayText = matchedCert.energyClass;
 
-        if (cert && cert.energyClass) {
-          displayText = cert.energyClass;
-          // Color code the energy grade
-          const gradeColors: Record<string, string> = {
-            'A': 'bg-green-500 text-white',
-            'B': 'bg-lime-500 text-white',
-            'C': 'bg-yellow-500 text-black',
-            'D': 'bg-orange-500 text-white',
-            'E': 'bg-red-500 text-white',
-            'F': 'bg-red-600 text-white',
-            'G': 'bg-red-700 text-white'
-          };
-          bgColor = gradeColors[cert.energyClass.toUpperCase()] || 'bg-gray-500 text-white';
-        }
+        // Color code the energy grade using design system colors
+        const gradeColors: Record<string, string> = {
+          'A': 'bg-success text-success-foreground',
+          'B': 'bg-success text-success-foreground',
+          'C': 'bg-warning text-warning-foreground',
+          'D': 'bg-warning text-warning-foreground',
+          'E': 'bg-destructive text-destructive-foreground',
+          'F': 'bg-destructive text-destructive-foreground',
+          'G': 'bg-destructive text-destructive-foreground'
+        };
+        bgColor = gradeColors[matchedCert.energyClass.toUpperCase()] || 'bg-secondary text-foreground';
       }
 
       // Hide markers when zoomed out 2+ levels from starting zoom (19)
@@ -1366,8 +1635,8 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
       const iconHtml = shouldShowMarker ? `
         <div class="flex items-center justify-center w-8 h-8 rounded-full font-bold text-lg shadow-lg cursor-pointer transition-all duration-300 border-2 ${bgColor} ${
           isSelected
-            ? 'border-fuchsia-500 scale-110'
-            : 'border-slate-600'
+            ? 'border-primary scale-110'
+            : 'border-input-border'
         }">
           ${displayText}
         </div>
@@ -1386,7 +1655,7 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
     };
 
     createNumberIcon();
-  }, [buildingLabel, isSelected, showCertificates, enovaCertificates, selectedBuildingId, building.id, currentZoom, selectedCertificate]);
+  }, [buildingLabel, isSelected, enovaCertificates, building.id, building.bygningsnummer, currentZoom]);
 
   if (!building.coordinates || building.coordinates.length === 0 || !centroid || !numberIcon) {
     return null;
@@ -1395,15 +1664,25 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
   // Convert coordinates to Leaflet format [lat, lon]
   const polygonCoords = building.coordinates.map(([lat, lon]) => [lat, lon] as [number, number]);
 
-  // Building color scheme: magenta for selected, neutral gray for unselected (like dashboard)
-  const polygonStyle = {
-    fillColor: isSelected ? '#d946ef' : '#475569', // Magenta for selected, neutral gray for unselected
-    color: isSelected ? '#e879f9' : '#64748b', // Border colors
-    weight: isSelected ? 3 : 2, // Thicker border for selected
-    opacity: 1,
-    stroke: true,
-    fillOpacity: isSelected ? 0.6 : 0.3,
-  };
+  // Get CSS color for property buildings - use accent (magenta/pink) for good dark mode visibility
+  const propertyBuildingColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#ec4899';
+
+  // Use polygon colors: accent color for buildings on property, default otherwise
+  // Always use full opacity - no transparency or dimming
+  let polygonStyle;
+  if (isOnSelectedProperty) {
+    polygonStyle = {
+      color: propertyBuildingColor,
+      fillColor: propertyBuildingColor,
+      fillOpacity: isSelected ? 0.8 : 0.4, // More filled when selected, less when not
+      weight: isSelected ? 3 : 2,
+    };
+  } else {
+    polygonStyle = {
+      ...polygonColors.default,
+      fillOpacity: 0.6, // Ensure default buildings also have good visibility
+    };
+  }
 
   return (
     <>
@@ -1424,11 +1703,11 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
       >
         <Tooltip direction="top" offset={[0, -10]} className="custom-tooltip">
           <div className="p-2 min-w-48">
-            <h3 className={`font-bold text-sm mb-2 ${isSelected ? 'text-fuchsia-400' : 'text-slate-400'}`}>
+            <h3 className={`font-bold text-sm mb-2 ${isSelected ? 'text-primary' : 'text-text-tertiary'}`}>
               🏢 {isSelected ? 'Valgt bygning' : 'Klikk for å velge'}
             </h3>
-            <div className="space-y-1 text-xs text-slate-300">
-              <div><strong>Label:</strong> {buildingLabel}</div>
+            <div className="space-y-1 text-xs text-text-secondary">
+              <div><strong>Kjennemerke:</strong> {buildingLabel}</div>
               {building.address && <div><strong>Adresse:</strong> {building.address}</div>}
               {building.bygningsnummer && <div><strong>Bygningsnummer:</strong> {building.bygningsnummer}</div>}
               {building.name && <div><strong>Navn:</strong> {building.name}</div>}
@@ -1436,9 +1715,9 @@ function BuildingMarker({ building, buildingNumber, buildingLabel, isSelected, o
               {building.area && <div><strong>Areal:</strong> ~{Math.round(building.area)} m²</div>}
               {building.levels && <div><strong>Etasjer:</strong> {building.levels}</div>}
               {building.matchesSearchedAddress && (
-                <div className="text-cyan-400 mt-2 text-xs">✓ Matcher søkt adresse</div>
+                <div className="text-accent mt-2 text-xs">✓ Matcher søkt adresse</div>
               )}
-              <div className="text-slate-400 mt-2 text-xs">Kilde: OpenStreetMap</div>
+              <div className="text-text-tertiary mt-2 text-xs">Kilde: OpenStreetMap</div>
             </div>
           </div>
         </Tooltip>

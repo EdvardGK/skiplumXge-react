@@ -1,10 +1,12 @@
 /**
  * Intelligent roof generation algorithm for complex building footprints
- * Handles simple rectangles, L-shapes, T-shapes, and multi-T configurations
+ * Uses grid-based analysis instead of corner counting for better reliability
  * Ensures complete coverage with 600mm overhang on all sides
  */
 
 import { Shape, Vector2 } from 'three';
+import { decomposeUsingGrid } from './grid-algorithm';
+import { determineMainBody } from './polygon-main-body';
 
 export interface Point2D {
   x: number;
@@ -39,6 +41,21 @@ export interface RoofIntersection {
   line: [Point2D, Point2D];
   sections: [RoofSection, RoofSection];
 }
+
+export type Roof3DPart =
+  | {
+      type: 'gable';
+      position: [number, number, number];
+      ridgeLength: number;
+      roofWidth: number;
+      ridgeHeight: number;
+      orientation: 'x' | 'y';
+    }
+  | {
+      type: 'valley';
+      line: { start: [number, number]; end: [number, number] };
+      depth: number;
+    };
 
 const STANDARD_OVERHANG = 0.6; // 600mm in meters
 const ROOF_SLOPE_RATIO = 0.35; // Height is 35% of perpendicular distance
@@ -89,10 +106,10 @@ export function generateRoofSections(footprint: [number, number][]): {
 
 /**
  * Decomposes a polygon footprint into overlapping rectangles
- * Uses a corner-based approach for L and T shapes
+ * Uses grid-based analysis for better reliability
  */
 function decomposeIntoRectangles(footprint: [number, number][]): Rectangle[] {
-  const rectangles: Rectangle[] = [];
+  console.log('Starting decomposition with main body detection');
 
   // First, check if it's already a simple rectangle
   if (isRectangle(footprint)) {
@@ -102,50 +119,55 @@ function decomposeIntoRectangles(footprint: [number, number][]): Rectangle[] {
     return [rect];
   }
 
-  // Find corner types (convex vs concave)
-  const corners = analyzeCorners(footprint);
-  console.log('Corner analysis:', corners);
+  // Step 1: Determine the main body
+  const mainBodyResult = determineMainBody(footprint);
+  console.log(`Main body found with ${(mainBodyResult.confidence * 100).toFixed(1)}% confidence using ${mainBodyResult.method}`);
 
-  // For L-shapes: Find the concave corner and split into 2 rectangles
-  const concaveCorners = corners.filter(c => c.type === 'concave');
-  console.log('Found', concaveCorners.length, 'concave corners');
+  // Step 2: Use grid-based analysis for complete decomposition
+  const rectangles = decomposeUsingGrid(footprint);
 
-  if (concaveCorners.length === 1) {
-    console.log('L-shape detected');
-    return decomposeLShape(footprint, concaveCorners[0]);
-  }
+  // Step 3: Enhance priority based on main body detection
+  const enhancedRectangles = rectangles.map(rect => {
+    // Check if this rectangle overlaps significantly with the main body
+    const overlapX = Math.min(rect.maxX, mainBodyResult.mainBody.maxX) - Math.max(rect.minX, mainBodyResult.mainBody.minX);
+    const overlapY = Math.min(rect.maxY, mainBodyResult.mainBody.maxY) - Math.max(rect.minY, mainBodyResult.mainBody.minY);
+    const overlapArea = Math.max(0, overlapX) * Math.max(0, overlapY);
+    const overlapRatio = overlapArea / rect.area;
 
-  if (concaveCorners.length === 2) {
-    console.log('Simple T-shape detected');
-    return decomposeTShape(footprint, concaveCorners);
-  }
-
-  if (concaveCorners.length === 3) {
-    console.log('Complex T-shape detected with 3 concave corners');
-    // Check if this is actually a T-shape with 3 corners
-    const tShapeRectangles = decomposeComplexTShape(footprint, concaveCorners);
-    if (tShapeRectangles.length >= 2) {
-      return tShapeRectangles;
+    // Boost priority if this is likely the main body
+    if (overlapRatio > 0.8) {
+      rect.priority = 1;
+      console.log(`Rectangle at [${rect.minX.toFixed(1)}, ${rect.minY.toFixed(1)}] identified as main body`);
     }
-    // Fallback to multi-wing if T-shape detection fails
-    return decomposeMultiWingShape(footprint, concaveCorners);
+
+    return rect;
+  });
+
+  // Validate rectangles
+  const validRectangles = enhancedRectangles.filter(rect => {
+    return rect.width > 0 && rect.height > 0 && !isNaN(rect.area);
+  });
+
+  if (validRectangles.length === 0) {
+    console.warn('Decomposition failed, using main body as single rectangle');
+    const mainRect = mainBodyResult.mainBody;
+    return [{
+      minX: mainRect.minX,
+      maxX: mainRect.maxX,
+      minY: mainRect.minY,
+      maxY: mainRect.maxY,
+      width: mainRect.width,
+      height: mainRect.height,
+      centerX: mainRect.centerX,
+      centerY: mainRect.centerY,
+      area: mainRect.area,
+      orientation: mainRect.width > mainRect.height ? 'horizontal' : 'vertical',
+      priority: 1
+    }];
   }
 
-  if (concaveCorners.length === 4) {
-    console.log('Multi-wing shape detected with', concaveCorners.length, 'concave corners');
-    return decomposeMultiWingShape(footprint, concaveCorners);
-  }
-
-  if (concaveCorners.length > 4) {
-    console.log('Complex shape detected with', concaveCorners.length, 'concave corners');
-    return decomposeComplexShape(footprint, concaveCorners);
-  }
-
-  // Fallback: use bounding box
-  console.log('Fallback to bounding box');
-  const boundingRect = getBoundingRectangle(footprint);
-  boundingRect.priority = 1;
-  return [boundingRect];
+  console.log('Decomposition successful:', validRectangles.length, 'rectangles');
+  return validRectangles;
 }
 
 /**
@@ -974,8 +996,8 @@ function isPointInPolygon(point: [number, number], polygon: [number, number][]):
 /**
  * Generate 3D roof geometry for Three.js
  */
-export function generateRoof3DGeometry(sections: RoofSection[], intersections: RoofIntersection[]) {
-  const roofParts = [];
+export function generateRoof3DGeometry(sections: RoofSection[], intersections: RoofIntersection[]): Roof3DPart[] {
+  const roofParts: Roof3DPart[] = [];
 
   for (const section of sections) {
     const { rectangle, ridgeOrientation, ridgeHeight, overhang } = section;
@@ -994,7 +1016,7 @@ export function generateRoof3DGeometry(sections: RoofSection[], intersections: R
       // Ridge runs east-west
       roofParts.push({
         type: 'gable',
-        position: [rectangle.centerX, 0, rectangle.centerY],
+        position: [rectangle.centerX, 0, -rectangle.centerY], // Negate Y for Three.js Z
         ridgeLength: roofBounds.width,
         roofWidth: roofBounds.depth,
         ridgeHeight: ridgeHeight,
@@ -1004,7 +1026,7 @@ export function generateRoof3DGeometry(sections: RoofSection[], intersections: R
       // Ridge runs north-south
       roofParts.push({
         type: 'gable',
-        position: [rectangle.centerX, 0, rectangle.centerY],
+        position: [rectangle.centerX, 0, -rectangle.centerY], // Negate Y for Three.js Z
         ridgeLength: roofBounds.depth,
         roofWidth: roofBounds.width,
         ridgeHeight: ridgeHeight,
@@ -1016,9 +1038,13 @@ export function generateRoof3DGeometry(sections: RoofSection[], intersections: R
   // Add valley/hip geometries for intersections
   for (const intersection of intersections) {
     if (intersection.type === 'valley') {
+      const [start, end] = intersection.line;
       roofParts.push({
         type: 'valley',
-        line: intersection.line,
+        line: {
+          start: [start.x, start.y],
+          end: [end.x, end.y]
+        },
         depth: 0.2 // Valley depth
       });
     }

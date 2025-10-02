@@ -45,17 +45,17 @@ export function BuildingDataFormModal({
       />
 
       {/* Modal - Dynamic sizing to avoid scrolling */}
-      <div className="relative bg-[#0c0c0e] border border-gray-800/50 rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col">
+      <div className="relative bg-popover border border-border rounded-xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col">
         {/* Header with close button */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800/50">
-          <h2 className="text-lg font-semibold text-white">Bygningsdata</h2>
+        <div className="flex items-center justify-between p-4">
+          <h2 className="text-lg font-semibold text-foreground">Bygningsdata</h2>
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Lukk"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-text-tertiary" />
           </button>
         </div>
 
